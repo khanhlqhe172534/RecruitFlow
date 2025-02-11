@@ -92,3 +92,25 @@ async function createUser(req, res, next) {
     next(err);
   }
 }
+async function getUserByRole(req, res, next) {
+  try {
+    const { role } = req.params;
+
+    // Find the role by name (or ID)
+    const roleDoc = await Role.findOne({ name: role });
+    if (!roleDoc) {
+      return res.status(404).json({ message: "Role not found" });
+    }
+
+    // Find users with the corresponding rolesdfs
+    // asdfdsafasdfs
+    // This is aaa
+    const users = await User.find({ role: roleDoc._id })
+      .populate("role", "name")
+      .populate("status", "name");
+
+    res.status(200).json(users);
+  } catch (err) {
+    next(err);
+  }
+}
