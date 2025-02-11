@@ -103,8 +103,6 @@ async function getUserByRole(req, res, next) {
     }
 
     // Find users with the corresponding rolesdfs
-    // asdfdsafasdfs
-    // This is aaa
     const users = await User.find({ role: roleDoc._id })
       .populate("role", "name")
       .populate("status", "name");
