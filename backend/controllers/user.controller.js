@@ -112,3 +112,13 @@ async function getUserByRole(req, res, next) {
     next(err);
   }
 }
+async function getAllUser(req, res, next) {
+  try {
+    const users = await User.find()
+      .populate("role", "name")
+      .populate("status", "name");
+    res.status(200).json(users);
+  } catch (err) {
+    next(err);
+  }
+}
