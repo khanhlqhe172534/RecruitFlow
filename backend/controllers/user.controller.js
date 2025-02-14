@@ -122,3 +122,45 @@ async function getAllUser(req, res, next) {
     next(err);
   }
 }
+
+async function updateUserStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { statusId } = req.body; // Get statusId from request body
+
+    console.log("Updating status for user ID:", id, "to status ID:", statusId); // Log request
+
+    // Verify the user exists
+    // const user = await User.findById(id);
+    // if (!user) return res.status(404).json({ message: "User not found" }); adsfsadf
+
+    // Find the new status document sadfsado 123 rgi
+    // const statusDoc = await Status.findById(statusId);sadfdsa
+    // if (!statusDoc)
+    //   return res.status(400).json({ message: "Invalid status ID" });asdfadsf
+
+    // Update the user's status with the status document's ID12321
+    // user.status = statusDoc._id;werglv
+    // await user.save();12e9999
+
+    const updatedUser = await User.findById(id)
+      .populate("role", "name")
+      .populate("status", "name");
+
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    console.error("Error updating user status:", err);
+    next(err);
+  }
+}
+
+const userController = {
+  createUser,
+  getUserByRole,
+  getAllUser,
+  updateUser,
+  deleteUser,
+  updateUserStatus,
+};
+
+module.exports = userController;
