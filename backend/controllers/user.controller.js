@@ -131,17 +131,17 @@ async function updateUserStatus(req, res, next) {
     console.log("Updating status for user ID:", id, "to status ID:", statusId); // Log request
 
     // Verify the user exists
-    // const user = await User.findById(id);
-    // if (!user) return res.status(404).json({ message: "User not found" }); adsfsadf
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find the new status document sadfsado 123 rgi
-    // const statusDoc = await Status.findById(statusId);sadfdsa
-    // if (!statusDoc)
-    //   return res.status(400).json({ message: "Invalid status ID" });asdfadsf
+    // Find the new status document
+    const statusDoc = await Status.findById(statusId);
+    if (!statusDoc)
+      return res.status(400).json({ message: "Invalid status ID" });
 
-    // Update the user's status with the status document's ID12321
-    // user.status = statusDoc._id;werglv
-    // await user.save();12e9999
+    // Update the user's status with the status document's ID
+    user.status = statusDoc._id;
+    await user.save();
 
     const updatedUser = await User.findById(id)
       .populate("role", "name")
