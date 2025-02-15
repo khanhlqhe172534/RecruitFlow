@@ -123,6 +123,71 @@ async function getAllUser(req, res, next) {
   }
 }
 
+async function updateUser(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { fullname, email, phoneNumber, gender, dob, status, role } =
+      req.body;
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find role by name and get its ID
+    let roleDoc;
+    try {
+      roleDoc = await Role.findOne({ name: role });
+      if (!roleDoc) {
+        return res.status(400).json({ message: "Invalid role specified" });
+      }
+    } catch (error) {
+      return res.status(400).json({ message: "Error finding role" });
+    }
+
+    // Find status by name or ID
+    let statusDoc;
+    try {
+      statusDoc = await Status.findOne({
+        $or: [{ name: status }, { _id: status }],
+      });
+      if (!statusDoc) {
+        return res.status(400).json({ message: "Invalid status specified" });
+      }
+    } catch (error) {
+      return res.status(400).json({ message: "Error finding status" });
+    }
+
+    // Update user fields
+    const updateData = {
+      fullname,
+      email,
+      phoneNumber,
+      isMale: gender === "Male",
+      dob: dob ? new Date(dob) : user.dob,
+      status: statusDoc._id,
+      role: roleDoc._id,
+    };
+
+    // Update and populate in one go
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("role", "name")
+      .populate("status", "name");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function updateUserStatus(req, res, next) {
   try {
     const { id } = req.params;
