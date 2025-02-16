@@ -219,6 +219,25 @@ async function updateUserStatus(req, res, next) {
   }
 }
 
+async function deleteUser(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete user
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 const userController = {
   createUser,
   getUserByRole,
