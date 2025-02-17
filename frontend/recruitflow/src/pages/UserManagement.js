@@ -19,6 +19,18 @@ function UserManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
+  const [alert, setAlert] = useState(null);
+  const [sortColumn, setSortColumn] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const usersPerPage = 6;
 
   const [newUser, setNewUser] = useState({
     fullName: "",
@@ -140,6 +152,11 @@ function UserManagement() {
     }
   };
 
+  const handleDeleteUser = (userId) => {
+    setUserToDelete(userId);
+    setShowDeleteModal(true);
+  };
+
   const confirmDeleteUser = async () => {
     try {
       const response = await fetch(
@@ -161,7 +178,22 @@ function UserManagement() {
     }
   };
 
-  
+  const handleSort = useCallback(
+    (column) => {
+      if (column === "action") return;
+
+      setSortColumn(column);
+      setSortOrder((prevOrder) => {
+        // If clicking the same column, toggle the order
+        if (column === sortColumn) {
+          return prevOrder === "asc" ? "desc" : "asc";
+        }
+        // If clicking a new column, default to ascending
+        return "asc";
+      });
+    },
+    [sortColumn]
+  );
 
   // Update the useEffect for sorting
   useEffect(() => {
@@ -313,12 +345,151 @@ function UserManagement() {
             </Alert>
           )}
 
-          {/* asdfsadfsad */}
-{/* asd qweqw qweqw
-sadsd
-sdafasd
-q2312
-2134 */}
+          <div className="card p-4 rounded shadow border-0 overflow-auto">
+            <Row className="mb-4">
+              <Col md={6}>
+                <Form.Control
+                  className="form-control bg-light rounded-pill"
+                  type="text"
+                  placeholder="Search Full Name..."
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </Col>
+              <Col md={3}>
+                <Form.Select
+                  className="form-select bg-light rounded-pill"
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="All">All Roles</option>
+                  <option value="Interviewer">Interviewer</option>
+                  <option value="Recruiter">Recruiter</option>
+                  <option value="Accountant">Accountant</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Admin">Admin</option>
+                </Form.Select>
+              </Col>
+              <Col md={3} className="text-end">
+                <Button
+                  variant="warning"
+                  className="rounded-pill"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  <UserPlus className="pb-1" size={20} /> Add New User
+                </Button>
+              </Col>
+            </Row>
+
+            <Table hover responsive>
+              <thead className="table-lighter">
+                <tr>
+                  {[
+                    "fullname",
+                    "email",
+                    "phoneNumber",
+                    "role",
+                    "status",
+                    "action",
+                  ].map((column) => (
+                    <th
+                      key={column}
+                      onClick={() => column !== "action" && handleSort(column)}
+                    >
+                      {column.charAt(0).toUpperCase() + column.slice(1)}
+                      {column !== "action" && (
+                        <ChevronsUpDown
+                          size={20}
+                          className={`pb-1 ${
+                            sortColumn === column
+                              ? sortOrder === "desc"
+                                ? "text-primary rotate-180"
+                                : "text-primary"
+                              : "text-muted"
+                          }`}
+                        />
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="table-group-divider">
+                {paginatedUsers.map((user) => (
+                  <tr key={user._id}>
+                    <td>{user.fullname}</td>
+                    <td>{user.email}</td>
+                    <td>{user.phoneNumber}</td>
+                    <td>{user.role?.name || user.role}</td>
+                    <td>
+                      <span
+                        className={`px-2 inline-flex text-sm badge rounded-pill ${
+                          user.status?.name === "activated"
+                            ? "bg-success"
+                            : "bg-danger"
+                        }`}
+                      >
+                        {user.status?.name || user.status}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <Button
+                        variant="primary"
+                        className="m-1 btn btn-icon btn-pills btn-soft-primary"
+                        onClick={() => {
+                          setCurrentUser(user);
+                          setShowDetailsModal(true);
+                        }}
+                      >
+                        <Eye size={18} />
+                      </Button>
+                      <Button
+                        variant="warning"
+                        className="m-1 btn btn-icon btn-pills btn-soft-warning"
+                        onClick={() => {
+                          setCurrentUser({
+                            ...user,
+                            role: user.role?.name || user.role,
+                          });
+                          setShowEditModal(true);
+                        }}
+                      >
+                        <Pencil size={18} />
+                      </Button>
+
+                      <Button
+                        variant="danger"
+                        className="m-1 btn btn-icon btn-pills btn-soft-danger"
+                        onClick={() => handleDeleteUser(user._id)}
+                      >
+                        <Trash size={18} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+
+            <div className="d-flex justify-content-between align-items-center mt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+              >
+                Previous
+              </Button>
+              <span>
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
+                }
+                disabled={currentPage + 1 === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+
           {/* Add User Modal */}
           <Modal
             centered
@@ -326,7 +497,6 @@ q2312
             show={showAddModal}
             onHide={() => setShowAddModal(false)}
           >
-            <Row>asfsadf</Row>
             <Modal.Header closeButton>
               <Modal.Title>Add New User</Modal.Title>
             </Modal.Header>
