@@ -62,13 +62,13 @@ export default function SideBar() {
     <div
       className="vh-100 d-flex flex-column"
       style={{
-        width: collapsed ? "80px" : "250px",
+        width: collapsed ? "180px" : "250px",
         transition: "width 0.3s ease",
       }}
     >
       {/* Sidebar Component */}
-      <Sidebar collapsed={collapsed} collapsedWidth="80px" style={{ flex: 1 }}>
-        <Menu closeOnClick>
+      <Sidebar collapsed={collapsed} collapsedWidth="180px" style={{ flex: 1 }}>
+        <Menu closeOnClick className="p-2">
           {/* User Section with Logo */}
           <div className="d-flex align-items-center p-3">
             <div
@@ -188,7 +188,10 @@ export default function SideBar() {
           </Typography>
 
           {user.role === "Admin" && (
-            <MenuItem icon={<PersonIcon />} component={<Link to="/user" />}>
+            <MenuItem
+              icon={<PersonIcon className="" />}
+              component={<Link to="/user" />}
+            >
               User Management
             </MenuItem>
           )}
