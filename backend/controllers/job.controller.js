@@ -169,7 +169,18 @@ async function deleteJob(req, res, next) {
 
 // Get job by ID
 async function getJobById(req, res, next) {
- 
+  const { jobId } = req.params;
+
+  try {
+    const job = await Job.findById(jobId)
+      .populate("createdBy")
+      .populate("status");
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    res.status(200).json({ job });
+  } catch (err) {
+    next(err);
+  }
 }
 
 
