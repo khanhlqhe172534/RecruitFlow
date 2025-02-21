@@ -4,13 +4,9 @@ const mongoose = require("mongoose");
 const cron = require("node-cron");
 
 // Get all jobs
-async function getAllJob(req, res, next) {
-  
-}
+async function getAllJob(req, res, next) {}
 
-async function getJobList(req, res, next) {
- 
-}
+async function getJobList(req, res, next) {}
 
 // get job by role
 
@@ -46,10 +42,11 @@ async function getJobs(req, res, next) {
 // Add new job
 async function addJob(req, res, next) {
   try {
-
     const waitingStatus = await Status.findById("671c7ab3265bb9e80b7d4726");
     if (!waitingStatus) {
-      return res.status(500).json({ message: "Waiting for approved status not found" });
+      return res
+        .status(500)
+        .json({ message: "Waiting for approved status not found" });
     }
 
     const {
@@ -86,7 +83,10 @@ async function addJob(req, res, next) {
     };
 
     Object.entries(requiredFields).forEach(([key, message]) => {
-      if (!req.body[key] || (Array.isArray(req.body[key]) && req.body[key].length === 0)) {
+      if (
+        !req.body[key] ||
+        (Array.isArray(req.body[key]) && req.body[key].length === 0)
+      ) {
         errors[key] = message;
       }
     });
@@ -100,7 +100,10 @@ async function addJob(req, res, next) {
       errors.end_date = "End Date should be after Start Date";
     }
 
-    if (experience && !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience)) {
+    if (
+      experience &&
+      !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience)
+    ) {
       errors.experience = "Experience should include 'year' or 'month'";
     }
 
@@ -147,25 +150,143 @@ async function addJob(req, res, next) {
   }
 }
 
-
-async function openJob(req, res, next) {
-
-}
+async function openJob(req, res, next) {}
 // Close job
-async function closeJob(req, res, next) {
- 
-}
+async function closeJob(req, res, next) {}
 
 // Update a job
 async function updateJob(req, res, next) {
-  
-  
+  const { jobId } = req.params;
+  const {
+    job_name,
+    salary_min,
+    salary_max,
+    start_date,
+    end_date,
+    levels,
+    skills,
+    working_type,
+    experience,
+    number_of_vacancies,
+    benefits,
+    description,
+    createdBy,
+  } = req.body;
+
+  const errors = {};
+
+  // Basic field validation
+  const requiredFields = {
+    job_name: "Job Title is required",
+    salary_max: "Max Salary is required",
+    salary_min: "Min Salary is required",
+    start_date: "Start Date is required",
+    end_date: "End Date is required",
+    levels: "Level is required",
+    skills: "At least one skill is required",
+    working_type: "Working Type is required",
+    experience: "Experience is required",
+    number_of_vacancies: "Number of Vacancies is required",
+    benefits: "At least one benefit is required",
+  };
+
+  Object.entries(requiredFields).forEach(([key, message]) => {
+    if (
+      !req.body[key] ||
+      (Array.isArray(req.body[key]) && req.body[key].length === 0)
+    ) {
+      errors[key] = message;
+    }
+  });
+
+  // Kiểm tra điều kiện hợp lệ của dữ liệu
+  if (salary_min && salary_max && Number(salary_min) > Number(salary_max)) {
+    errors.salary_max = "Max Salary should be greater than Min Salary";
+  }
+
+  if (start_date && end_date && new Date(start_date) >= new Date(end_date)) {
+    errors.end_date = "End Date should be after Start Date";
+  }
+
+  if (
+    experience &&
+    !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience)
+  ) {
+    errors.experience = "Experience should include 'year' or 'month'";
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (start_date && new Date(start_date) < today) {
+    errors.start_date = "Start Date should be today or later";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    console.log("Validation errors:", errors);
+    return res.status(400).json({ message: "Validation errors", errors });
+  }
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    const waitingStatus = await Status.findById("671c7ab3265bb9e80b7d4726");
+    if (!waitingStatus)
+      return res.status(500).json({ message: "Status not found" });
+
+    if (job.status.toString() !== waitingStatus._id.toString()) {
+      return res.status(403).json({
+        message:
+          "Job can only be updated when status is 'waiting for approved'",
+      });
+    }
+
+    if (
+      !job_name ||
+      !salary_min ||
+      !salary_max ||
+      !start_date ||
+      !end_date ||
+      !levels ||
+      !skills ||
+      !working_type ||
+      !experience ||
+      !number_of_vacancies
+      // !description ||
+      // !createdBy
+    ) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const updatedJob = job.set({
+      job_name,
+      salary_min,
+      salary_max,
+      start_date,
+      end_date,
+      levels,
+      skills,
+      working_type,
+      experience,
+      number_of_vacancies,
+      benefits,
+      description,
+      createdBy,
+      updatedAt: new Date(),
+    });
+
+    await job.save();
+
+    res
+      .status(200)
+      .json({ message: "Job updated successfully", job: updatedJob });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // Delete job
-async function deleteJob(req, res, next) {
-  
-}
+async function deleteJob(req, res, next) {}
 
 // Get job by ID
 async function getJobById(req, res, next) {
@@ -182,7 +303,6 @@ async function getJobById(req, res, next) {
     next(err);
   }
 }
-
 
 const jobController = {
   getAllJob,
