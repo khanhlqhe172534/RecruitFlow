@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+import axios from "axios";
 
 function Login({ setAuth }) {
   const [username, setUsername] = useState("");
@@ -12,50 +12,58 @@ function Login({ setAuth }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-  
+
     try {
       // Get all users
-      const response = await axios.get('http://localhost:9999/user/');
+      const response = await axios.get("http://localhost:9999/user/");
       const users = response.data;
-  
+
+      console.log(users);
       // Find user with matching email and password
       const user = users.find(
         (u) => u.email === username && u.password === password
       );
-  
+
       if (user) {
         // Check if the user is deactivated
-        if (user.status.name === "deactivated" || user.status === "deactivated") {
+        if (
+          user.status.name === "deactivated" ||
+          user.status === "deactivated"
+        ) {
           setError("Your account is deactivated. Please contact support.");
           return;
         }
-  
+
         // Store user info in localStorage
         localStorage.setItem("userId", user._id);
         localStorage.setItem("userRole", user.role.name);
         localStorage.setItem("userEmail", user.email);
         localStorage.setItem("userFullName", user.fullname);
-  
+
         // Set authentication state
         setAuth(true);
-  
+
         // Redirect to dashboard
-        navigate("/job");
+        navigate("/dashboard");
       } else {
         setError("Invalid email or password.");
       }
     } catch (err) {
       if (err.response) {
-        setError("Server error: " + (err.response.data.message || "Something went wrong"));
+        setError(
+          "Server error: " +
+            (err.response.data.message || "Something went wrong")
+        );
       } else if (err.request) {
-        setError("Unable to connect to the server. Please check if the server is running.");
+        setError(
+          "Unable to connect to the server. Please check if the server is running."
+        );
       } else {
         setError("An error occurred. Please try again.");
       }
       console.error("Login error:", err);
     }
   };
-  
 
   return (
     <>
@@ -80,7 +88,8 @@ function Login({ setAuth }) {
                   <hr className="border-primary-subtle mb-4" />
                   <h2 className="h1 mb-4">Interview Management System</h2>
                   <p className="lead mb-5">
-                    Streamline your hiring process with our Interview Management System...
+                    Streamline your hiring process with our Interview Management
+                    System...
                   </p>
                   <div className="text-end">
                     <Button onClick={() => (window.location.href = "/")}>
