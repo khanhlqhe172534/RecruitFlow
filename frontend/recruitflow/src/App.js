@@ -1,3 +1,4 @@
+import Layout from "./components/reuseable/Layout";
 import Dashboard from "./pages/Dashboard";
 import InterviewManagement from "./pages/InterviewManagement";
 import LandingPage from "./pages/LandingPage";
@@ -7,11 +8,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-      </Routes>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/im" element={<InterviewManagement />} />
+        <Route path="/" element={<Layout />}>
+          <Route path="interview" element={<InterviewManagement />} />
+          <Route path="job" element={<Dashboard />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
