@@ -1,4 +1,3 @@
-const Role = require("../models/role.model");
 const Status = require("../models/status.model");
 const User = require("../models/user.model");
 
@@ -93,7 +92,6 @@ async function createUser(req, res, next) {
     next(err);
   }
 }
-
 async function getUserByRole(req, res, next) {
   try {
     const { role } = req.params;
@@ -104,7 +102,7 @@ async function getUserByRole(req, res, next) {
       return res.status(404).json({ message: "Role not found" });
     }
 
-    // Find users with the corresponding role
+    // Find users with the corresponding rolesdfs
     const users = await User.find({ role: roleDoc._id })
       .populate("role", "name")
       .populate("status", "name");
@@ -114,7 +112,6 @@ async function getUserByRole(req, res, next) {
     next(err);
   }
 }
-
 async function getAllUser(req, res, next) {
   try {
     const users = await User.find()
