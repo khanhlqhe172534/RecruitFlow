@@ -1,16 +1,54 @@
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/reuseable/Layout";
 import Dashboard from "./pages/Dashboard";
 import InterviewManagement from "./pages/InterviewManagement";
 import LandingPage from "./pages/LandingPage";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import NoAccess from "./pages/NoAccess";
+
+function ProtectedRoute({ isAuthenticated, children }) {
+  return isAuthenticated ? children : <Navigate to="/no-access" />;
+}
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => JSON.parse(localStorage.getItem("isAuthenticated")) || false
+  );
+
+  useEffect(() => {
+    localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
+  }, [isAuthenticated]);
+
   return (
     <BrowserRouter>
       <Routes>
+        {/* LandingPage is displayed separately and not inside Layout */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
+
+        <Route path="/no-access" element={<NoAccess />} />
+
+        {/* Routes that require Layout */}
         <Route path="/" element={<Layout />}>
-          <Route path="interview" element={<InterviewManagement />} />
-          <Route path="job" element={<Dashboard />} />
+          {/* Protected route for InterviewManagement */}
+          <Route
+            path="interview"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <InterviewManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>
