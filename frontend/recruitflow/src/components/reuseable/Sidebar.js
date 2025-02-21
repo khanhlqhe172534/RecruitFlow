@@ -31,19 +31,26 @@ import {
 export default function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [user, setUser] = useState({ email: "email", role: "User" });
+  const [user, setUser] = useState({
+    email: "email",
+    role: "User",
+    fullName: "No Name",
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail") || "No Email";
     const userRole = localStorage.getItem("userRole") || "User";
-    setUser({ email: userEmail, role: userRole });
+    const userFullName = localStorage.getItem("userFullName") || "No Name";
+    setUser({ email: userEmail, role: userRole, fullName: userFullName });
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userFullName");
+    localStorage.removeItem("isAuthenticated");
     navigate("/login");
   };
 
@@ -124,7 +131,7 @@ export default function SideBar() {
               {!collapsed && (
                 <div className="ms-3">
                   <Typography variant="body1" fontWeight="bold">
-                    {user.email}
+                    {user.fullName}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     {user.role}
@@ -186,7 +193,9 @@ export default function SideBar() {
           >
             General
           </Typography>
-
+          <MenuItem icon={<WorkIcon />} component={<Link to="/dashboard" />}>
+            Dashboard
+          </MenuItem>
           {user.role === "Admin" && (
             <MenuItem
               icon={<PersonIcon className="" />}
