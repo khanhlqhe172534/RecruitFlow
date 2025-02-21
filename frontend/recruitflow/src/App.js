@@ -6,6 +6,7 @@ import InterviewManagement from './pages/InterviewManagement';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import NoAccess from './pages/NoAccess';
+import UserManagement from './pages/UserManagement';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
@@ -62,7 +63,7 @@ function App() {
             }
           />
           <Route
-            path="/user"
+            path="user"
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <UserManagement />
