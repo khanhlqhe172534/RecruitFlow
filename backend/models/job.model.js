@@ -60,6 +60,16 @@ const jobSchema = new Schema({
       // enum: ["Lunch", "Hybrid working", "25-day leave", "travel", "healthcare insurance"], // Checklist options
     },
   ],
+
+  benefitChecked: {
+    type: Boolean,
+    default: false,
+  },
+  salaryChecked: {
+    type: Boolean,
+    default: false,
+  },
+
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
@@ -71,13 +81,11 @@ const jobSchema = new Schema({
   description: {
     type: String,
   },
-  createdAt:
-  {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updatedAt:
-  {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },
