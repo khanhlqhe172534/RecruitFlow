@@ -9,7 +9,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route path="im" element={<InterviewManagement />} />
+          <Route path="interview" element={<InterviewManagement />} />
+          <Route path="job" element={<Dashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

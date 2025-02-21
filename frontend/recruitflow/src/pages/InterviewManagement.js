@@ -69,7 +69,7 @@ function InterviewManagement() {
     <div className="d-flex vh-100">
       {/* <Sidebar /> */}
 
-      <div className="container-fluid p-4 vh-100 bg-light">
+      <div className="container-fluid pt-4 vh-100 bg-light">
         <Calendar
           localizer={localizer}
           events={myEvents}

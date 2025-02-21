@@ -4,7 +4,7 @@ import SideBar from "../components/reuseable/Sidebar";
 function Dashboard() {
   return (
     <div className="d-flex vh-100">
-      <SideBar />
+      {/* <SideBar /> */}
       <div className="container-fluid p-4 overflow-auto vh-100 bg-light">
         content
       </div>
