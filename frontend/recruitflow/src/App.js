@@ -7,6 +7,9 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import NoAccess from './pages/NoAccess';
 import UserManagement from './pages/UserManagement';
+import OfferManagement from './pages/OfferManagement';
+import CandidateManagerment from './pages/CandidateManagement';
+import CandidateManagement from './pages/CandidateManagement';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
@@ -67,6 +70,22 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="offer"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <OfferManagement />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="candidate"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <CandidateManagement />
               </ProtectedRoute>
             }
           />
