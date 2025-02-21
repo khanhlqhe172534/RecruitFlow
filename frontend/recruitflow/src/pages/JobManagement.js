@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal, Button, Form } from "react-bootstrap";
-import SideBar from "../components/reusable/Sidebar";
-import JobBreadcrumb from "../components/Breadcrumbs/JobBreadcrumb";
-import "../style/a.css";
+import "../styles/a.css";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 function JobManagement() {
   const [jobs, setJobs] = useState([]);
@@ -18,6 +18,37 @@ function JobManagement() {
   const [errors, setErrors] = useState({});
 
   const navigate = useNavigate();
+
+  const fetchJobs = useCallback(
+    async (userData) => {
+      try {
+        const params = new URLSearchParams({
+          page,
+          limit,
+          role: userData.role || "",
+          userId: userData.id || "",
+          search,
+          statusFilter,
+          workingType,
+          sort: "updatedAt:desc",
+        });
+  
+        const apiUrl = `http://localhost:9999/job?${params.toString()}`;
+        const response = await fetch(apiUrl);
+  
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        setJobs(data.jobs || []);
+        setTotalJobs(data.totalJobs || 0);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      }
+    },
+    [page, limit, search, statusFilter, workingType]
+  );
 
   useEffect(() => {
     const fetchUserAndJobs = async () => {
@@ -36,45 +67,7 @@ function JobManagement() {
     };
 
     fetchUserAndJobs();
-  }, [search, statusFilter, workingType]);
-
-  const fetchJobs = useCallback(
-    async (userData) => {
-      try {
-        const apiUrl = `http://localhost:9999/job?page=1&limit=${limit}&role=${userData.role}&userId=${userData.id}&search=${search}&statusFilter=${statusFilter}&workingType=${workingType}&sort=updatedAt:desc`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-
-        setJobs(data.jobs);
-        setTotalJobs(data.totalJobs);
-        setPage(1);
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-      }
-    },
-    [limit, search, statusFilter, workingType]
-  );
-
-  const loadMoreJobs = useCallback(
-    async (userData) => {
-      try {
-        const nextPage = page + 1;
-        const apiUrl = `http://localhost:9999/job?page=${nextPage}&limit=${limit}&role=${userData.role}&userId=${userData.id}&search=${search}&statusFilter=${statusFilter}&workingType=${workingType}&sort=updatedAt:desc`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-
-        setJobs((prevJobs) => [...prevJobs, ...data.jobs]);
-        setPage(nextPage);
-      } catch (error) {
-        console.error("Error loading more jobs:", error);
-      }
-    },
-    [page, limit, search, statusFilter, workingType]
-  );
-
-  const handleLoadMore = () => {
-    loadMoreJobs(user);
-  };
+  }, [page, limit, search, statusFilter, workingType]);
 
   const skillOptions = [
     "Java",
@@ -183,14 +176,10 @@ function JobManagement() {
     setPage(1);
   };
 
-  // Handle status filter change and reset page to 1
   const handleStatusFilterChange = (e) => {
-    const newValue = e.target.value;
-    setStatusFilter(newValue);
-    setPage(1);
+    setStatusFilter(e.target.value);
   };
 
-  // Handle working type change and reset page to 1
   const handleWorkingTypeChange = (e) => {
     setWorkingType(e.target.value);
     setPage(1);
@@ -198,29 +187,32 @@ function JobManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <SideBar />
-      <div className="container-fluid p-4 overflow-auto vh-100 bg-light">
-        <JobBreadcrumb />
-
-        <div className="card p-4 rounded shadow border-0 container mt-5">
+      <div className="container p-2 vh-100 bg-light mb-5">
+        <div className="col-md-2"></div>
+        <div
+          className="card p-4 shadow border-0 container mt-5 overflow-auto col-md-10"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           <div className="row mb-4">
-            <div className="col search-bar p-0 d-none d-md-block ms-2">
-              <div id="search" className="menu-search mb-0">
-                <div>
-                  <input
-                    type="text"
-                    className="form-control bg-light border-0 rounded-pill"
-                    placeholder="Search by Title..."
-                    value={search}
-                    onChange={handleSearchChange}
-                  />
+            <div className="col-md-3">
+              <div className="search-bar p-0 d-none d-md-block">
+                <div id="search" className="menu-search mb-0">
+                  <div>
+                    <input
+                      type="text"
+                      className="form-control bg-light border-2 rounded-pill"
+                      placeholder="Search by Title..."
+                      value={search}
+                      onChange={handleSearchChange}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="col-md-3">
               <select
-                className="form-select rounded-pill bg-light border-0"
+                className="form-select rounded-pill bg-light border-2"
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
                 defaultValue="0"
@@ -239,11 +231,12 @@ function JobManagement() {
 
             <div className="col-md-3">
               <select
-                className="form-select rounded-pill bg-light border-0"
+                className="form-select rounded-pill bg-light border-2"
                 value={workingType}
                 onChange={handleWorkingTypeChange}
+                defaultValue="0"
               >
-                <option value="" selected hidden>
+                <option value="" disabled hidden>
                   Working Type
                 </option>
                 <option value="">All</option>
@@ -254,62 +247,41 @@ function JobManagement() {
             <div className="col-md-3 text-end">
               {["Manager", "Admin"].includes(user.role) && (
                 <Button variant="warning" onClick={() => setShowModal(true)}>
-                  + Add New Job
+                  + Request New Job
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="table-responsive" style={{ maxHeight: "75vh" }}>
-            <div className="container">
+          <div className="" style={{ maxHeight: "75vh" }}>
+            <div className="">
               {jobs.map((job) => (
                 <div
                   key={job._id}
                   className="card mb-3 shadow-sm"
                   style={{
-                    borderRadius: "1rem",
-                    borderColor:
-                      job.status.name === "open"
-                        ? "#20b965"
-                        : job.status.name === "waiting for approved"
-                        ? "#f1b561"
-                        : job.status.name === "closed"
-                        ? "#f14668"
-                        : "#f1b561",
-                    backgroundColor:
-                      job.status.name === "open"
-                        ? "#f2fbf6"
-                        : job.status.name === "waiting for approved"
-                        ? "#fdf8ec"
-                        : job.status.name === "closed"
-                        ? "#f8e8eb"
-                        : "#fdf8ec",
+                    border: "2px solid #ddd",
+                    borderRadius: "20px",
+                    transition: "all 0.2s ease-in-out",
+                    backgroundColor: "#fdfdfd",
+                    cursor: "pointer",
                   }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.borderColor = "#68b7ff")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.borderColor = "#ddd")
+                  }
                 >
-                  <div className="card-body">
+                  <div
+                    className="card-body"
+                    onClick={() => navigate(`/job/${job._id}`)}
+                  >
                     <div className="d-flex justify-content-between align-items-start">
                       <div>
-                        <h5
-                          className={`card-title mb-1 ${
-                            job.status.name === "open"
-                              ? "text-success"
-                              : job.status.name === "closed"
-                              ? "text-danger"
-                              : "text-warning"
-                          }`}
-                        >
-                          {job.job_name}
-                        </h5>
+                        <h5 className={`card-title mb-1`}>{job.job_name}</h5>
                       </div>
-                      <span
-                        className={`${
-                          job.status.name === "open"
-                            ? "text-success"
-                            : job.status.name === "closed"
-                            ? "text-danger"
-                            : "text-warning"
-                        } fw-bold`}
-                      >
+                      <span className={`text-muted mt-1`}>
                         ${job.salary_min} - ${job.salary_max}
                       </span>
                     </div>
@@ -318,18 +290,6 @@ function JobManagement() {
                         {formatDate(job.start_date)} -{" "}
                         {formatDate(job.end_date)}
                       </p>
-                      <button
-                        className={`btn ${
-                          job.status.name === "open"
-                            ? "btn-success"
-                            : job.status.name === "closed"
-                            ? "btn-danger"
-                            : "btn-warning"
-                        }`}
-                        onClick={() => navigate(`/job/${job._id}`)} // Navigate to job details
-                      >
-                        View Details
-                      </button>
                     </div>
                     <div className="mt-2">
                       <span className="badge bg-info text-white me-2">
@@ -363,20 +323,237 @@ function JobManagement() {
                   </div>
                 </div>
               ))}
-              {jobs.length < totalJobs && (
-                <div className="text-center mt-4">
-                  <button
-                    onClick={handleLoadMore}
-                    className="btn btn-primary rounded-pill"
-                  >
-                    Load More
-                  </button>
-                </div>
-              )}
+              <div className="d-flex justify-content-center mt-3 pb-3">
+                <Stack spacing={2}>
+                  <Pagination
+                    count={Math.max(1, Math.ceil(totalJobs / limit))}
+                    page={page}
+                    onChange={(event, value) => setPage(value)}
+                    color="primary"
+                    shape="rounded"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        borderRadius: "4px",
+                        minWidth: "36px",
+                        height: "36px",
+                        borderColor: "#64c2f1",
+                      },
+                      "& .MuiPaginationItem-root.Mui-selected": {
+                        backgroundColor: "#64c2f1",
+                        color: "#fff",
+                        borderColor: "#64c2f1",
+                      },
+                      "& .MuiPaginationItem-root:hover": {
+                        backgroundColor: "#b3e3f9",
+                        borderColor: "#64c2f1",
+                      },
+                    }}
+                  />
+                </Stack>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      <Modal show={showModal} onHide={handleCloseModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Request New Job</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <div className="row">
+              {/* Job Title and Experience Row */}
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Job Title</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="job_name"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.job_name}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.job_name}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Experience</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="experience"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.experience}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.experience}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+            </div>
+
+            {/* Min Salary and Max Salary Row */}
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Min Salary</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="salary_min"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.salary_min}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.salary_min}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Max Salary</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="salary_max"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.salary_max}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.salary_max}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+            </div>
+
+            {/* Start Date and End Date Row */}
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="start_date"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.start_date}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.start_date}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="end_date"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.end_date}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.end_date}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+            </div>
+
+            {/* Level Row */}
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Level</Form.Label>
+                  <Form.Select name="levels" onChange={handleInputChange}>
+                    {levelOptions.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Number of vacancies</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="number_of_vacancies"
+                    onChange={handleInputChange}
+                    isInvalid={!!errors.number_of_vacancies}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.number_of_vacancies}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+            </div>
+
+            {/* Skills and Benefits Row */}
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group
+                  className={`mb-3 ${errors.skills ? "is-invalid" : ""}`}
+                >
+                  <Form.Label>Skills</Form.Label>
+                  <div className="row">
+                    {skillOptions.map((skill, index) => (
+                      <div key={skill} className="col-6">
+                        <Form.Check
+                          type="checkbox"
+                          label={skill}
+                          value={skill}
+                          onChange={(e) => handleCheckboxChange(e, "skills")}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {errors.skills && (
+                    <Form.Text className="text-danger">
+                      {errors.skills}
+                    </Form.Text>
+                  )}
+                </Form.Group>
+              </div>
+
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Benefits</Form.Label>
+                  <div className="row">
+                    {benefitOptions.map((benefit, index) => (
+                      <div key={benefit} className="col-6">
+                        <Form.Check
+                          type="checkbox"
+                          label={benefit}
+                          value={benefit}
+                          onChange={(e) => handleCheckboxChange(e, "benefits")}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </Form.Group>
+              </div>
+            </div>
+
+            {/* Description Row */}
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleAddJob}>
+            Save Job
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

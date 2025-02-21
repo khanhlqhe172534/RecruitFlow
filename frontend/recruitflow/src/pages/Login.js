@@ -2,6 +2,7 @@ import { Button } from "@mui/material";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Logo from "../LandingPage-assets/img/logo.png";
 
 function Login({ setAuth }) {
   const [username, setUsername] = useState("");
@@ -79,10 +80,11 @@ function Login({ setAuth }) {
               <div className="d-flex justify-content-center">
                 <div className="col-12 col-xl-9">
                   <img
-                    className="img-fluid rounded mb-4"
+                    className="img-fluid"
                     loading="lazy"
-                    width="245"
-                    height="80"
+                    width="20"
+                    height="20"
+                    src={Logo}
                     alt="Logo"
                   />
                   <hr className="border-primary-subtle mb-4" />

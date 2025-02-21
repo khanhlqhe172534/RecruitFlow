@@ -12,7 +12,7 @@ async function getJobList(req, res, next) {}
 
 async function getJobs(req, res, next) {
   try {
-    const { workingType, search, page = 1, limit = 5 } = req.query;
+    const { workingType, statusFilter, search, page = 1, limit = 5 } = req.query;
 
     let filter = {};
 
@@ -20,9 +20,22 @@ async function getJobs(req, res, next) {
       filter.working_type = workingType;
     }
 
+    if (statusFilter) {
+      if (statusFilter === "opened") {
+        filter.status = "671c7baa265bb9e80b7d4736"; 
+      } else if (statusFilter === "closed") {
+        filter.status = "671c7baa265bb9e80b7d4738"; 
+      } else if (statusFilter === "waiting") {
+        filter.status = "671c7ab3265bb9e80b7d4726"; 
+      }
+    }
+
     if (search) {
       filter.job_name = { $regex: search, $options: "i" };
     }
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
 
     const jobs = await Job.find(filter)
       .populate("createdBy")

@@ -13,7 +13,7 @@ function LandingPage() {
         <div className="container-fluid container-xl d-flex align-items-center justify-content-between">
           <a href="/" className="logo d-flex align-items-center">
             <img src={Logo} alt="logo" />
-            <span>IMS</span>
+            <span>RecruitFlow</span>
           </a>
 
           <nav className="navbar">
@@ -294,7 +294,7 @@ function LandingPage() {
               <div className="col-lg-5 col-md-12 footer-info">
                 <a href="/" className="logo d-flex align-items-center">
                   <img src={Logo} alt="logo" />
-                  <span>IMS</span>
+                  <span>RecruitFlow</span>
                 </a>
                 <p>
                   Cras fermentum odio eu feugiat lide par naso tierra. Justo
