@@ -11,6 +11,7 @@ import OfferManagement from './pages/OfferManagement';
 import CandidateManagerment from './pages/CandidateManagement';
 import CandidateManagement from './pages/CandidateManagement';
 import JobManagement from './pages/JobManagement';
+import JobDetails from './pages/JobDetails';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
@@ -85,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <CandidateManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/:jobId"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <JobDetails />
               </ProtectedRoute>
             }
           />
