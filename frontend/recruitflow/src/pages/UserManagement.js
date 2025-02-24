@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Row,
@@ -8,8 +8,8 @@ import {
   Table,
   Modal,
   Alert,
-} from 'react-bootstrap';
-import { Eye, Pencil, Trash, UserPlus, ChevronsUpDown } from 'lucide-react';
+} from "react-bootstrap";
+import { Eye, Pencil, Trash, UserPlus, ChevronsUpDown } from "lucide-react";
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -19,39 +19,39 @@ function UserManagement() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
   const [alert, setAlert] = useState(null);
-  const [sortColumn, setSortColumn] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortColumn, setSortColumn] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [userToDelete, setUserToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const usersPerPage = 6;
 
   const [newUser, setNewUser] = useState({
-    fullName: '',
-    email: '',
-    dob: '',
-    phoneNumber: '',
-    gender: '',
-    role: '',
-    status: 'activated', // default to activated
+    fullName: "",
+    email: "",
+    dob: "",
+    phoneNumber: "",
+    gender: "",
+    role: "",
+    status: "",
   });
 
   // Fetch users from API
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:9999/user/');
+      const response = await fetch("http://localhost:9999/user/");
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error("Failed to fetch users");
       }
       const data = await response.json();
       setUsers(data);
     } catch (err) {
       setError(err.message);
-      setAlert({ type: 'danger', message: err.message });
+      setAlert({ type: "danger", message: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -69,11 +69,11 @@ function UserManagement() {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const statusId = '671c68e1265bb9e80b7d46e2'; // ID for activated status
-      const response = await fetch('http://localhost:9999/user/create', {
-        method: 'POST',
+      const statusId = "67bc5a667ddc08921b739694"; // ID for activated status
+      const response = await fetch("http://localhost:9999/user/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fullname: newUser.fullName,
@@ -88,23 +88,23 @@ function UserManagement() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create user');
+        throw new Error(errorData.message || "Failed to create user");
       }
 
       await fetchUsers();
-      setAlert({ type: 'success', message: 'User added successfully.' });
+      setAlert({ type: "success", message: "User added successfully." });
       setShowAddModal(false);
       setNewUser({
-        fullName: '',
-        email: '',
-        dob: '',
-        phoneNumber: '',
-        gender: '',
-        role: '',
-        status: 'activated', // Reset to display name
+        fullName: "",
+        email: "",
+        dob: "",
+        phoneNumber: "",
+        gender: "",
+        role: "",
+        status: "activated", // Reset to display name
       });
     } catch (err) {
-      setAlert({ type: 'danger', message: err.message });
+      setAlert({ type: "danger", message: err.message });
     }
   };
 
@@ -114,16 +114,16 @@ function UserManagement() {
       const response = await fetch(
         `http://localhost:9999/user/${currentUser._id}`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             fullname: currentUser.fullname,
             email: currentUser.email,
             phoneNumber: currentUser.phoneNumber,
             gender:
-              currentUser.gender || (currentUser.isMale ? 'Male' : 'Female'),
+              currentUser.gender || (currentUser.isMale ? "Male" : "Female"),
             dob: currentUser.dob,
             status: currentUser.status?._id || currentUser.status,
             role: currentUser.role, // Send role name directly
@@ -133,18 +133,18 @@ function UserManagement() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user');
+        throw new Error(errorData.message || "Failed to update user");
       }
 
       const updatedUser = await response.json();
-      console.log('Updated user:', updatedUser); // For debugging
+      console.log("Updated user:", updatedUser); // For debugging
 
       await fetchUsers(); // Refresh the users list
-      setAlert({ type: 'success', message: 'User updated successfully.' });
+      setAlert({ type: "success", message: "User updated successfully." });
       setShowEditModal(false);
     } catch (err) {
-      console.error('Error updating user:', err);
-      setAlert({ type: 'danger', message: err.message });
+      console.error("Error updating user:", err);
+      setAlert({ type: "danger", message: err.message });
     }
   };
 
@@ -158,34 +158,34 @@ function UserManagement() {
       const response = await fetch(
         `http://localhost:9999/user/${userToDelete}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to delete user');
+        throw new Error("Failed to delete user");
       }
 
       await fetchUsers(); // Refresh the users list
-      setAlert({ type: 'success', message: 'User deleted successfully.' });
+      setAlert({ type: "success", message: "User deleted successfully." });
       setShowDeleteModal(false);
     } catch (err) {
-      setAlert({ type: 'danger', message: err.message });
+      setAlert({ type: "danger", message: err.message });
     }
   };
 
   const handleSort = useCallback(
     (column) => {
-      if (column === 'action') return;
+      if (column === "action") return;
 
       setSortColumn(column);
       setSortOrder((prevOrder) => {
         // If clicking the same column, toggle the order
         if (column === sortColumn) {
-          return prevOrder === 'asc' ? 'desc' : 'asc';
+          return prevOrder === "asc" ? "desc" : "asc";
         }
         // If clicking a new column, default to ascending
-        return 'asc';
+        return "asc";
       });
     },
     [sortColumn]
@@ -199,35 +199,35 @@ function UserManagement() {
         let bValue = b[sortColumn];
 
         // Handle nested objects (like role.name)
-        if (sortColumn === 'role') {
-          aValue = (a.role?.name || a.role || '').toLowerCase();
-          bValue = (b.role?.name || b.role || '').toLowerCase();
+        if (sortColumn === "role") {
+          aValue = (a.role?.name || a.role || "").toLowerCase();
+          bValue = (b.role?.name || b.role || "").toLowerCase();
         }
 
         // Handle nested objects (like status.name)
-        if (sortColumn === 'status') {
-          aValue = (a.status?.name || a.status || '').toLowerCase();
-          bValue = (b.status?.name || b.status || '').toLowerCase();
+        if (sortColumn === "status") {
+          aValue = (a.status?.name || a.status || "").toLowerCase();
+          bValue = (b.status?.name || b.status || "").toLowerCase();
         }
 
         // Handle phone numbers
-        if (sortColumn === 'phoneNumber') {
-          aValue = aValue.replace(/\D/g, '');
-          bValue = bValue.replace(/\D/g, '');
-          return sortOrder === 'asc'
+        if (sortColumn === "phoneNumber") {
+          aValue = aValue.replace(/\D/g, "");
+          bValue = bValue.replace(/\D/g, "");
+          return sortOrder === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
 
         // Handle string comparisons
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return sortOrder === 'asc'
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          return sortOrder === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
 
         // Handle numeric comparisons
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
       });
 
       setUsers(sortedUsers);
@@ -237,7 +237,7 @@ function UserManagement() {
   const filteredUsers = users.filter(
     (user) =>
       user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (roleFilter === 'All' || (user.role?.name || user.role) === roleFilter)
+      (roleFilter === "All" || (user.role?.name || user.role) === roleFilter)
   );
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -251,30 +251,30 @@ function UserManagement() {
     if (!currentUser) return;
 
     // Fetch logged-in user's ID and role from localStorage
-    const loggedInUserId = localStorage.getItem('userId');
-    const loggedInUserRole = localStorage.getItem('userRole');
+    const loggedInUserId = localStorage.getItem("userId");
+    const loggedInUserRole = localStorage.getItem("userRole");
 
     // Prevent admin from deactivating themselves
-    if (currentUser._id === loggedInUserId && loggedInUserRole === 'Admin') {
+    if (currentUser._id === loggedInUserId && loggedInUserRole === "Admin") {
       setAlert({
-        type: 'danger',
-        message: 'You cannot deactivate your own account.',
+        type: "danger",
+        message: "You cannot deactivate your own account.",
       });
       return;
     }
 
     const newStatusId =
-      currentUser.status.name === 'activated'
-        ? '671ecab96110e590a12040cd' // Deactivated ID
-        : '671c68e1265bb9e80b7d46e2'; // Activated ID
+      currentUser.status.name === "activated"
+        ? "67bc5a667ddc08921b73969a" // Deactivated ID
+        : "67bc5a667ddc08921b739694"; // Activated ID
 
     try {
       const response = await fetch(
         `http://localhost:9999/user/status/${currentUser._id}`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ statusId: newStatusId }),
         }
@@ -282,7 +282,7 @@ function UserManagement() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user status');
+        throw new Error(errorData.message || "Failed to update user status");
       }
 
       const updatedUser = await response.json();
@@ -291,15 +291,15 @@ function UserManagement() {
 
       // Set the success alert and close the modal
       setAlert({
-        type: 'success',
+        type: "success",
         message: `User ${
-          updatedUser.status.name === 'activated' ? 'activated' : 'deactivated'
+          updatedUser.status.name === "activated" ? "activated" : "deactivated"
         } successfully.`,
       });
       setShowDetailsModal(false); // Close the modal here
     } catch (err) {
-      console.error('Error updating status:', err);
-      setAlert({ type: 'danger', message: err.message });
+      console.error("Error updating status:", err);
+      setAlert({ type: "danger", message: err.message });
     }
   };
 
@@ -322,17 +322,14 @@ function UserManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <Container
-        fluid
-        className="p-4 vh-100 bg-light"
-      >
+      <Container fluid className="p-4 vh-100 bg-light">
         {alert && (
           <Alert
-            variant={alert.type === 'success' ? 'success' : 'danger'}
+            variant={alert.type === "success" ? "success" : "danger"}
             style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
+              position: "fixed",
+              top: "20px",
+              right: "20px",
               zIndex: 1050,
             }}
           >
@@ -357,58 +354,48 @@ function UserManagement() {
               >
                 <option value="All">All Roles</option>
                 <option value="Interviewer">Interviewer</option>
-                <option value="Recruiter">Recruiter</option>
-                <option value="Accountant">Accountant</option>
-                <option value="Manager">Manager</option>
+                <option value="Recuitment Manager">Recuitment Manager</option>
+                <option value="Payroll Manager">Payroll Manager</option>
+                <option value="Benefit Manager">Benefit Manager</option>
                 <option value="Admin">Admin</option>
               </Form.Select>
             </Col>
-            <Col
-              md={3}
-              className="text-end"
-            >
+            <Col md={3} className="text-end">
               <Button
                 variant="warning"
                 className="rounded-pill"
                 onClick={() => setShowAddModal(true)}
               >
-                <UserPlus
-                  className="pb-1"
-                  size={20}
-                />{' '}
-                Add New User
+                <UserPlus className="pb-1" size={20} /> Add New User
               </Button>
             </Col>
           </Row>
 
-          <Table
-            hover
-            responsive
-          >
+          <Table hover responsive>
             <thead className="table-lighter">
               <tr>
                 {[
-                  'fullname',
-                  'email',
-                  'phoneNumber',
-                  'role',
-                  'status',
-                  'action',
+                  "fullname",
+                  "email",
+                  "phoneNumber",
+                  "role",
+                  "status",
+                  "action",
                 ].map((column) => (
                   <th
                     key={column}
-                    onClick={() => column !== 'action' && handleSort(column)}
+                    onClick={() => column !== "action" && handleSort(column)}
                   >
                     {column.charAt(0).toUpperCase() + column.slice(1)}
-                    {column !== 'action' && (
+                    {column !== "action" && (
                       <ChevronsUpDown
                         size={20}
                         className={`pb-1 ${
                           sortColumn === column
-                            ? sortOrder === 'desc'
-                              ? 'text-primary rotate-180'
-                              : 'text-primary'
-                            : 'text-muted'
+                            ? sortOrder === "desc"
+                              ? "text-primary rotate-180"
+                              : "text-primary"
+                            : "text-muted"
                         }`}
                       />
                     )}
@@ -426,9 +413,9 @@ function UserManagement() {
                   <td>
                     <span
                       className={`px-2 inline-flex text-sm badge rounded-pill ${
-                        user.status?.name === 'activated'
-                          ? 'bg-success'
-                          : 'bg-danger'
+                        user.status?.name === "activated"
+                          ? "bg-success"
+                          : "bg-danger"
                       }`}
                     >
                       {user.status?.name || user.status}
@@ -511,7 +498,7 @@ function UserManagement() {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">
-                      Full Name <span className="text-danger">*</span>{' '}
+                      Full Name <span className="text-danger">*</span>{" "}
                     </Form.Label>
                     <Form.Control
                       type="text"
@@ -601,47 +588,37 @@ function UserManagement() {
                         label="Interviewer"
                         name="role"
                         value="Interviewer"
-                        checked={newUser.role === 'Interviewer'}
+                        checked={newUser.role === "Interviewer"}
                         onChange={handleNewUserChange}
                         required
                       />
                       <Form.Check
                         type="radio"
                         id="roleRecruiter"
-                        label="Recruiter"
+                        label="Recruitment Manager"
                         name="role"
-                        value="Recruiter"
-                        checked={newUser.role === 'Recruiter'}
-                        onChange={handleNewUserChange}
-                        required
-                      />
-                      <Form.Check
-                        type="radio"
-                        id="roleCandidate"
-                        label="Candidate"
-                        name="role"
-                        value="Candidate"
-                        checked={newUser.role === 'Candidate'}
+                        value="Recruitment Manager"
+                        checked={newUser.role === "Recruitment Manager"}
                         onChange={handleNewUserChange}
                         required
                       />
                       <Form.Check
                         type="radio"
                         id="roleManager"
-                        label="Manager"
+                        label="Benefit Manager"
                         name="role"
-                        value="Manager"
-                        checked={newUser.role === 'Manager'}
+                        value="Benefit Manager"
+                        checked={newUser.role === "Benefit Manager"}
                         onChange={handleNewUserChange}
                         required
                       />
                       <Form.Check
                         type="radio"
                         id="roleAccountant"
-                        label="Accountant"
+                        label="Payroll Manager"
                         name="role"
-                        value="Accountant"
-                        checked={newUser.role === 'Accountant'}
+                        value="Payroll Manager"
+                        checked={newUser.role === "Payroll Manager"}
                         onChange={handleNewUserChange}
                         required
                       />
@@ -659,20 +636,6 @@ function UserManagement() {
                   </Form.Group>
                 </Col>
               </Row>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">Status </Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="status"
-                      value={newUser.status} // This will now show "activated"
-                      readOnly
-                      className="bg-light"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
             </Modal.Body>
             <Modal.Footer>
               <Button
@@ -681,10 +644,7 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button
-                variant="warning"
-                type="submit"
-              >
+              <Button variant="warning" type="submit">
                 Add User
               </Button>
             </Modal.Footer>
@@ -707,7 +667,7 @@ function UserManagement() {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">
-                      Full Name <span className="text-danger">*</span>
+                      Full Name 
                     </Form.Label>
                     <Form.Control
                       type="text"
@@ -724,7 +684,7 @@ function UserManagement() {
 
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">
-                      Email <span className="text-danger">*</span>
+                      Email 
                     </Form.Label>
                     <Form.Control
                       type="email"
@@ -735,13 +695,13 @@ function UserManagement() {
                           email: e.target.value,
                         })
                       }
-                      required
+                      disabled
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">
-                      Date of Birth <span className="text-danger">*</span>
+                      Date of Birth
                     </Form.Label>
                     <Form.Control
                       type="date"
@@ -749,8 +709,8 @@ function UserManagement() {
                         currentUser?.dob
                           ? new Date(currentUser.dob)
                               .toISOString()
-                              .split('T')[0]
-                          : ''
+                              .split("T")[0]
+                          : ""
                       }
                       onChange={(e) =>
                         setCurrentUser({
@@ -764,7 +724,7 @@ function UserManagement() {
 
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">
-                      Phone Number <span className="text-danger">*</span>
+                      Phone Number 
                     </Form.Label>
                     <Form.Control
                       type="tel"
@@ -775,7 +735,7 @@ function UserManagement() {
                           phoneNumber: e.target.value,
                         })
                       }
-                      required
+                      disabled
                     />
                   </Form.Group>
                 </Col>
@@ -786,12 +746,12 @@ function UserManagement() {
                     </Form.Label>
                     <div>
                       {[
-                        'Interviewer',
-                        'Recruiter',
-                        'Manager',
-                        'Accountant',
-                        'Candidate',
-                        'Admin',
+                        "Interviewer",
+                        "Recruitment Manager",
+                        "Benefit Manager",
+                        "Payroll Manager",
+                        "Candidate",
+                        "Admin",
                       ].map((roleOption) => (
                         <Form.Check
                           key={roleOption}
@@ -819,10 +779,7 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button
-                variant="warning"
-                type="submit"
-              >
+              <Button variant="warning" type="submit">
                 Edit User
               </Button>
             </Modal.Footer>
@@ -892,7 +849,7 @@ function UserManagement() {
                       value={
                         currentUser?.dob
                           ? new Date(currentUser.dob).toLocaleDateString()
-                          : ''
+                          : ""
                       }
                       readOnly
                     />
@@ -901,7 +858,7 @@ function UserManagement() {
                     <Form.Label className="fw-bold">Gender</Form.Label>
                     <Form.Control
                       type="text"
-                      value={currentUser?.isMale ? 'Male' : 'Female'}
+                      value={currentUser?.isMale ? "Male" : "Female"}
                       readOnly
                     />
                   </Form.Group>
@@ -918,17 +875,17 @@ function UserManagement() {
             </Button>
             <Button
               variant={
-                currentUser?.status?.name === 'activated' ||
-                currentUser?.status === 'activated'
-                  ? 'danger'
-                  : 'success'
+                currentUser?.status?.name === "activated" ||
+                currentUser?.status === "activated"
+                  ? "danger"
+                  : "success"
               }
               onClick={toggleStatus}
             >
-              {currentUser?.status?.name === 'activated' ||
-              currentUser?.status === 'activated'
-                ? 'Deactivate'
-                : 'Activate'}
+              {currentUser?.status?.name === "activated" ||
+              currentUser?.status === "activated"
+                ? "Deactivate"
+                : "Activate"}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -950,10 +907,7 @@ function UserManagement() {
             >
               Cancel
             </Button>
-            <Button
-              variant="danger"
-              onClick={confirmDeleteUser}
-            >
+            <Button variant="danger" onClick={confirmDeleteUser}>
               Delete
             </Button>
           </Modal.Footer>
