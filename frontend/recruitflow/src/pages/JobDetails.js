@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardActions,
   Typography,
   Grid,
   Divider,
@@ -17,12 +16,9 @@ import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import SalaryIcon from "@mui/icons-material/AttachMoney";
-import ExperienceIcon from "@mui/icons-material/Work";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import StatusIcon from "@mui/icons-material/CheckCircleOutline";
 import PersonIcon from "@mui/icons-material/Person";
-import WarningIcon from "@mui/icons-material/Warning";
 
 function JobDetails() {
   const { jobId } = useParams();
@@ -30,9 +26,9 @@ function JobDetails() {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState(null);
   const [updatedJob, setUpdateJob] = useState({});
-  const [open, setOpen] = useState(false);
   const [close, setClose] = useState(false);
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail");
@@ -55,7 +51,7 @@ function JobDetails() {
 
   useEffect(() => {
     fetchJobDetails();
-  }, [jobId]);
+  }, [jobId, refreshTrigger]);
 
   if (!job) return <p>Loading...</p>;
 
@@ -75,13 +71,12 @@ function JobDetails() {
       .filter((line) => line.length > 0);
   };
 
-  // Function to handle changes in input fields
+ 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUpdateJob((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  // Options for select inputs
   const skillOptions = [
     "Java",
     "Nodejs",
@@ -108,7 +103,7 @@ function JobDetails() {
   ];
   const levelOptions = ["Senior", "Junior", "Fresher", "Intern"];
 
-  // Function to handle checkboxes for skills and benefits
+ 
   const handleCheckboxChange = (e, type) => {
     const { value, checked } = e.target;
     setUpdateJob((prevJob) => {
@@ -139,7 +134,6 @@ function JobDetails() {
         return;
       }
 
-      const data = await response.json();
       handleCloseModal();
       fetchJobDetails();
     } catch (error) {
@@ -166,17 +160,34 @@ function JobDetails() {
     }
   };
 
-  const handleOpenJob = async () => {
+  const handleApproval = async (isApproved) => {
     try {
-      const response = await fetch(`http://localhost:9999/job/${jobId}/open`, {
+      let url = "";
+      let updateData = {};
+
+      if (user.role === "Payroll Manager") {
+        url = `http://localhost:9999/job/${job._id}/salary-check`;
+        updateData.salaryChecked = isApproved;
+      } else if (user.role === "Benefit Manager") {
+        url = `http://localhost:9999/job/${job._id}/benefit-check`;
+        updateData.benefitChecked = isApproved;
+      }
+
+      const response = await fetch(url, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
       });
-      const data = await response.json();
-      console.log(data);
-      fetchJobDetails();
-      setOpen(false);
+
+      if (!response.ok) {
+        throw new Error("Failed to update job status");
+      }
+
+      const updatedJob = await response.json();
+      setJob(updatedJob.job);
+      setRefreshTrigger((prev) => !prev);
     } catch (error) {
-      console.error("Error opening job:", error);
+      console.error("Error updating job:", error);
     }
   };
 
@@ -356,7 +367,7 @@ function JobDetails() {
                   </Grid>
 
                   <div className="d-flex mb-3 row">
-                    {user.role === "Manager" &&
+                    {user.role === "Recruitment Manager" &&
                       job.status.name === "waiting for approved" && (
                         <div>
                           <Button
@@ -370,27 +381,34 @@ function JobDetails() {
                         </div>
                       )}
 
-                    {user.role === "Manager" && job.status.name === "open" && (
-                      <div>
-                        <Button
-                          variant="danger"
-                          className="btn btn-danger col-md-2 btn-md float-end"
-                          style={{ borderRadius: "8px" }}
-                          onClick={() => setClose(true)}
-                        >
-                          Close
-                        </Button>
-                      </div>
-                    )}
+                    {user.role === "Recruitment Manager" &&
+                      job.status.name === "open" &&
+                      job.salaryChecked === null &&
+                      job.benefitChecked ===
+                        null(
+                          <div>
+                            <Button
+                              variant="danger"
+                              className="btn btn-danger col-md-2 btn-md float-end"
+                              style={{ borderRadius: "8px" }}
+                              onClick={() => setClose(true)}
+                            >
+                              Close
+                            </Button>
+                          </div>
+                        )}
 
-                    {user.role === "Accountant" &&
+                    {((user.role === "Payroll Manager" &&
+                      job.salaryChecked === null) ||
+                      (user.role === "Benefit Manager" &&
+                        job.benefitChecked === null)) &&
                       job.status.name === "waiting for approved" && (
                         <div>
                           <Button
                             variant="success"
                             className="btn btn-success col-md-2 btn-md float-end"
                             style={{ borderRadius: "8px" }}
-                            onClick={() => setOpen(true)}
+                            onClick={() => handleApproval(true)}
                           >
                             Approve
                           </Button>
@@ -398,7 +416,7 @@ function JobDetails() {
                             variant="danger"
                             className="btn btn-danger col-md-2 btn-md float-end me-2"
                             style={{ borderRadius: "8px" }}
-                            onClick={() => setClose(true)}
+                            onClick={() => handleApproval(false)}
                           >
                             Reject
                           </Button>
@@ -875,23 +893,6 @@ function JobDetails() {
           </Button>
           <Button onClick={handleCloseJob} variant="danger">
             Close Job
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={open} onHide={() => setOpen(true)} style={{ top: "30%" }}>
-        <Modal.Header>
-          <Modal.Title>Open Job</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to open this job? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={() => setOpen(false)} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleOpenJob} variant="success">
-            Open Job
           </Button>
         </Modal.Footer>
       </Modal>

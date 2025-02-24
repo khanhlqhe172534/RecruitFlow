@@ -12,7 +12,14 @@ async function getJobList(req, res, next) {}
 
 async function getJobs(req, res, next) {
   try {
-    const { workingType, statusFilter, search, page = 1, limit = 5 } = req.query;
+    const {
+      role,
+      workingType,
+      statusFilter,
+      search,
+      page = 1,
+      limit = 5,
+    } = req.query;
 
     let filter = {};
 
@@ -20,22 +27,24 @@ async function getJobs(req, res, next) {
       filter.working_type = workingType;
     }
 
+    if (role === "Interviewer") {
+      filter.status = {
+        $in: ["67bc5a667ddc08921b739697", "67bc5a667ddc08921b739698"],
+      };
+    }
+
     if (statusFilter) {
-      if (statusFilter === "opened") {
-        filter.status = "671c7baa265bb9e80b7d4736"; 
-      } else if (statusFilter === "closed") {
-        filter.status = "671c7baa265bb9e80b7d4738"; 
-      } else if (statusFilter === "waiting") {
-        filter.status = "671c7ab3265bb9e80b7d4726"; 
-      }
+      const statusMap = {
+        opened: "67bc5a667ddc08921b739697",
+        closed: "67bc5a667ddc08921b739698",
+        waiting: "67bc5a667ddc08921b739695",
+      };
+      filter.status = statusMap[statusFilter];
     }
 
     if (search) {
       filter.job_name = { $regex: search, $options: "i" };
     }
-
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
 
     const jobs = await Job.find(filter)
       .populate("createdBy")
@@ -55,7 +64,7 @@ async function getJobs(req, res, next) {
 // Add new job
 async function addJob(req, res, next) {
   try {
-    const waitingStatus = await Status.findById("671c7ab3265bb9e80b7d4726");
+    const waitingStatus = await Status.findById("67bc5a667ddc08921b739695");
     if (!waitingStatus) {
       return res
         .status(500)
@@ -80,7 +89,6 @@ async function addJob(req, res, next) {
 
     const errors = {};
 
-    // Kiểm tra trường bắt buộc
     const requiredFields = {
       job_name: "Job Title is required",
       salary_max: "Max Salary is required",
@@ -104,7 +112,6 @@ async function addJob(req, res, next) {
       }
     });
 
-    // Kiểm tra điều kiện hợp lệ của dữ liệu
     if (salary_min && salary_max && Number(salary_min) > Number(salary_max)) {
       errors.salary_max = "Max Salary should be greater than Min Salary";
     }
@@ -146,6 +153,8 @@ async function addJob(req, res, next) {
       description,
       createdBy,
       status: waitingStatus._id,
+      benefitChecked: null,
+      salaryChecked: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -162,10 +171,6 @@ async function addJob(req, res, next) {
     next(err);
   }
 }
-
-async function openJob(req, res, next) {}
-// Close job
-async function closeJob(req, res, next) {}
 
 // Update a job
 async function updateJob(req, res, next) {
@@ -188,7 +193,6 @@ async function updateJob(req, res, next) {
 
   const errors = {};
 
-  // Basic field validation
   const requiredFields = {
     job_name: "Job Title is required",
     salary_max: "Max Salary is required",
@@ -212,7 +216,6 @@ async function updateJob(req, res, next) {
     }
   });
 
-  // Kiểm tra điều kiện hợp lệ của dữ liệu
   if (salary_min && salary_max && Number(salary_min) > Number(salary_max)) {
     errors.salary_max = "Max Salary should be greater than Min Salary";
   }
@@ -243,7 +246,7 @@ async function updateJob(req, res, next) {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    const waitingStatus = await Status.findById("671c7ab3265bb9e80b7d4726");
+    const waitingStatus = await Status.findById("67bc5a667ddc08921b739695");
     if (!waitingStatus)
       return res.status(500).json({ message: "Status not found" });
 
@@ -317,11 +320,92 @@ async function getJobById(req, res, next) {
   }
 }
 
+// Update benefit check status
+async function updateBenefitCheck(req, res, next) {
+  try {
+    const { jobId } = req.params;
+    const { benefitChecked } = req.body;
+
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    job.benefitChecked = benefitChecked;
+
+    await updateJobStatus(job);
+
+    res.status(200).json({ message: "Benefit check updated", job });
+  } catch (error) {
+    next(error);
+  }
+}
+// Update salary check status
+async function updateSalaryCheck (req, res, next) {
+  try {
+    const { jobId } = req.params;
+    const { salaryChecked } = req.body; 
+
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    job.salaryChecked = salaryChecked;
+
+    await updateJobStatus(job);
+
+    res.status(200).json({ message: "Salary check updated", job });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// Update job status when benefit or salary check is updated
+const updateJobStatus = async (job) => {
+  try {
+    if (!job || !job._id) {
+      throw new Error("Invalid job document");
+    }
+
+    const closedStatus = await Status.findOne({ name: "closed" });
+    const openStatus = await Status.findOne({ name: "open" });
+
+    if (job.benefitChecked === false || job.salaryChecked === false) {
+      job.status = closedStatus._id; 
+    } else if (job.benefitChecked === true && job.salaryChecked === true) {
+      job.status = openStatus._id; 
+    }
+
+    await job.save();
+  } catch (error) {
+    console.error("Error updating job status:", error);
+    throw error;
+  }
+};
+
+// Close job
+async function closeJob(req, res, next) {
+  const { jobId } = req.params;
+
+  try {
+    const job = await Job.findById(jobId).populate("status");
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    const closedStatus = await Status.findOne({ name: "closed" });
+
+    job.status = closedStatus._id;
+    await job.save();
+
+    res.status(200).json({ message: "Job status changed to closed", job });
+  } catch (error) {
+    res.status(400).json({ message: "Failed to close job", error });
+  }
+}
+
 const jobController = {
   getAllJob,
   getJobs,
   addJob,
-  openJob,
+  updateBenefitCheck,
+  updateSalaryCheck,
+  updateJobStatus,
   closeJob,
   updateJob,
   deleteJob,
