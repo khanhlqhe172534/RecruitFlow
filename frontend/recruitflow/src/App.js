@@ -10,6 +10,8 @@ import UserManagement from './pages/UserManagement';
 import OfferManagement from './pages/OfferManagement';
 import CandidateManagerment from './pages/CandidateManagement';
 import CandidateManagement from './pages/CandidateManagement';
+import JobManagement from './pages/JobManagement';
+import JobDetails from './pages/JobDetails';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
@@ -17,36 +19,24 @@ function ProtectedRoute({ isAuthenticated, children }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => JSON.parse(localStorage.getItem('isAuthenticated')) || false
+    () => JSON.parse(localStorage.getItem("isAuthenticated")) || false
   );
 
   useEffect(() => {
-    localStorage.setItem('isAuthenticated', JSON.stringify(isAuthenticated));
+    localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
   }, [isAuthenticated]);
 
   return (
     <BrowserRouter>
       <Routes>
         {/* LandingPage is displayed separately and not inside Layout */}
-        <Route
-          path="/"
-          element={<LandingPage />}
-        />
-        <Route
-          path="/login"
-          element={<Login setAuth={setIsAuthenticated} />}
-        />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
 
-        <Route
-          path="/no-access"
-          element={<NoAccess />}
-        />
+        <Route path="/no-access" element={<NoAccess />} />
 
         {/* Routes that require Layout */}
-        <Route
-          path="/"
-          element={<Layout />}
-        >
+        <Route path="/" element={<Layout />}>
           {/* Protected route for InterviewManagement */}
           <Route
             path="interview"
@@ -65,6 +55,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/job"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <JobManagement />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="user"
             element={
@@ -86,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <CandidateManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/:jobId"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <JobDetails />
               </ProtectedRoute>
             }
           />
