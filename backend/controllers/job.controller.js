@@ -6,13 +6,26 @@ const cron = require("node-cron");
 // Get all jobs
 async function getAllJob(req, res, next) {}
 
-async function getJobList(req, res, next) {}
+async function getJobList(req, res, next) {
+  try {
+    const jobs = await Job.find().populate("createdBy").populate("status");
+    res.status(200).json({ jobs });
+  } catch (err) {
+    next(err);
+  }
+}
 
 // get job by role
 
 async function getJobs(req, res, next) {
   try {
-    const { workingType, statusFilter, search, page = 1, limit = 5 } = req.query;
+    const {
+      workingType,
+      statusFilter,
+      search,
+      page = 1,
+      limit = 5,
+    } = req.query;
 
     let filter = {};
 
@@ -22,11 +35,11 @@ async function getJobs(req, res, next) {
 
     if (statusFilter) {
       if (statusFilter === "opened") {
-        filter.status = "671c7baa265bb9e80b7d4736"; 
+        filter.status = "671c7baa265bb9e80b7d4736";
       } else if (statusFilter === "closed") {
-        filter.status = "671c7baa265bb9e80b7d4738"; 
+        filter.status = "671c7baa265bb9e80b7d4738";
       } else if (statusFilter === "waiting") {
-        filter.status = "671c7ab3265bb9e80b7d4726"; 
+        filter.status = "671c7ab3265bb9e80b7d4726";
       }
     }
 

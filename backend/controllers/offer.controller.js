@@ -54,7 +54,7 @@ async function createOffer(req, res, next) {
 
     // Update interview status
     await Interview.findByIdAndUpdate(interview, {
-      status: "6722fb89fdc64b34e3e87e94",
+      status: "67bc5a667ddc08921b73969b", // offered
     });
 
     // Update candidate status if candidate exists
@@ -63,7 +63,7 @@ async function createOffer(req, res, next) {
     );
     if (interviewData?.candidate?._id) {
       await Candidate.findByIdAndUpdate(interviewData.candidate._id, {
-        status: "6722fb89fdc64b34e3e87e94",
+        status: "67bc5a667ddc08921b73969b", //offered
       });
     }
 
@@ -75,7 +75,7 @@ async function createOffer(req, res, next) {
 
         // If vacancies are 0, change job status to 'closed'
         if (job.number_of_vacancies === 0) {
-          job.status = "671c7baa265bb9e80b7d4738";
+          job.status = "67bc5a667ddc08921b739698"; // closed
         }
 
         await job.save();
@@ -126,9 +126,9 @@ const getOfferById = async (req, res, next) => {
 
     // Check if the offer is expired
     if (offerEndDate < currentDate) {
-      offer.status = { _id: "671ecab96110e590a12040cd", name: "Deactivated" };
+      offer.status = { _id: "67bc5a667ddc08921b739698", name: "Close" };
     } else {
-      offer.status = { _id: "671c68e1265bb9e80b7d46e2", name: "Activated" };
+      offer.status = { _id: "67bc5a667ddc08921b739697", name: "Open" };
     }
 
     res.status(200).json(offer);

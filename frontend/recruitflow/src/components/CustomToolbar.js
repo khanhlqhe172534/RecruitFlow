@@ -27,11 +27,13 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
     const userEmail = localStorage.getItem("userEmail");
     const userRole = localStorage.getItem("userRole");
     const userId = localStorage.getItem("userId");
-    console.log(userEmail, userRole, userId);
+    // console.log(userEmail, userRole, userId);
     setUser({ email: userEmail, id: userId, role: userRole });
   }, []);
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setOpen(true);
+  };
   const handleClose = () => {
     setOpen(false);
     setFormData({
@@ -62,8 +64,8 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
           (job) => job.status.name === "open"
         );
         setJobs(openJobs);
-
-        console.log(openJobs); // Log only the open jobs
+        // console.log("open");
+        // console.log(openJobs); // Log only the open jobs
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data.");
@@ -134,7 +136,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         >
           Day
         </button>
-        {user.role === "Recruiter" && (
+        {user.role === "Recruitment Manager" && (
           <button className="btn btn-danger mx-2" onClick={handleOpen}>
             Add New Interview +
           </button>

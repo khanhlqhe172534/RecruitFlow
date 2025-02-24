@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import SideBar from "../components/reusable/Sidebar";
 import { Card, Typography } from "@mui/material";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
@@ -39,7 +38,6 @@ function OfferDetail() {
 
   return (
     <div className="d-flex vh-100">
-      <SideBar />
       <div
         className="container-fluid p-4 vh-100"
         style={{
