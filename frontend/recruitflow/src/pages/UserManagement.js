@@ -21,7 +21,7 @@ function UserManagement() {
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
-  const [alert, setAlert] = useState(null);
+  const [snackbarAlert, setSnackbarAlert] = useState(null);
   const [sortColumn, setSortColumn] = useState("");
   const [sortOrder, setSortOrder] = useState("desc");
   const [userToDelete, setUserToDelete] = useState(null);
@@ -51,7 +51,7 @@ function UserManagement() {
       setUsers(data);
     } catch (err) {
       setError(err.message);
-      setAlert({ type: "danger", message: err.message });
+      setSnackbarAlert({ type: "danger", message: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -65,9 +65,57 @@ function UserManagement() {
     const { name, value } = e.target;
     setNewUser((prevData) => ({ ...prevData, [name]: value }));
   };
+  const validateUserData = (handleType, data) => {
+    // validate email and phone
+    const existingUser = users.find(
+      (c) =>
+        c.email.toLowerCase() === newUser.email ||
+        c.phoneNumber === newUser.phoneNumber
+    );
 
+    if (existingUser && handleType == "add") {
+      return {
+        isValid: false,
+        error: "Email or phone number already exists. Please try again.",
+      };
+    }
+
+    // check full name
+    if (/\d/.test(data.fullname)) {
+      return {
+        isValid: false,
+        error: "Full name cannot contain numbers.",
+      };
+    }
+
+    // check phone has number and "+" optional
+    if (!/^[+]?\d+$/.test(data.phoneNumber)) {
+      return {
+        isValid: false,
+        error: 'Phone number must contain only numbers and "+" (optional).',
+      };
+    }
+
+    if (!/^[+]?\d{10,11}$/.test(data.phoneNumber)) {
+      return {
+        isValid: false,
+        error: "Phone number must be between 10 and 11 digits.",
+      };
+    }
+
+    // if all information is valid
+    return {
+      isValid: true,
+      error: null,
+    };
+  };
   const handleAddUser = async (e) => {
     e.preventDefault();
+    const { isValid, error } = validateUserData("add", newUser);
+    if (!isValid) {
+      alert(error);
+      return;
+    }
     try {
       const statusId = "67bc5a667ddc08921b739694"; // ID for activated status
       const response = await fetch("http://localhost:9999/user/create", {
@@ -92,7 +140,10 @@ function UserManagement() {
       }
 
       await fetchUsers();
-      setAlert({ type: "success", message: "User added successfully." });
+      setSnackbarAlert({
+        type: "success",
+        message: "User added successfully.",
+      });
       setShowAddModal(false);
       setNewUser({
         fullName: "",
@@ -104,12 +155,17 @@ function UserManagement() {
         status: "activated", // Reset to display name
       });
     } catch (err) {
-      setAlert({ type: "danger", message: err.message });
+      setSnackbarAlert({ type: "danger", message: err.message });
     }
   };
 
   const handleEditUser = async (e) => {
     e.preventDefault();
+    const { isValid, error } = validateUserData("edit", currentUser);
+    if (!isValid) {
+      alert(error);
+      return;
+    }
     try {
       const response = await fetch(
         `http://localhost:9999/user/${currentUser._id}`,
@@ -140,11 +196,14 @@ function UserManagement() {
       console.log("Updated user:", updatedUser); // For debugging
 
       await fetchUsers(); // Refresh the users list
-      setAlert({ type: "success", message: "User updated successfully." });
+      setSnackbarAlert({
+        type: "success",
+        message: "User updated successfully.",
+      });
       setShowEditModal(false);
     } catch (err) {
       console.error("Error updating user:", err);
-      setAlert({ type: "danger", message: err.message });
+      setSnackbarAlert({ type: "danger", message: err.message });
     }
   };
 
@@ -167,10 +226,13 @@ function UserManagement() {
       }
 
       await fetchUsers(); // Refresh the users list
-      setAlert({ type: "success", message: "User deleted successfully." });
+      setSnackbarAlert({
+        type: "success",
+        message: "User deleted successfully.",
+      });
       setShowDeleteModal(false);
     } catch (err) {
-      setAlert({ type: "danger", message: err.message });
+      setSnackbarAlert({ type: "danger", message: err.message });
     }
   };
 
@@ -256,7 +318,7 @@ function UserManagement() {
 
     // Prevent admin from deactivating themselves
     if (currentUser._id === loggedInUserId && loggedInUserRole === "Admin") {
-      setAlert({
+      setSnackbarAlert({
         type: "danger",
         message: "You cannot deactivate your own account.",
       });
@@ -290,7 +352,7 @@ function UserManagement() {
       await fetchUsers();
 
       // Set the success alert and close the modal
-      setAlert({
+      setSnackbarAlert({
         type: "success",
         message: `User ${
           updatedUser.status.name === "activated" ? "activated" : "deactivated"
@@ -299,19 +361,19 @@ function UserManagement() {
       setShowDetailsModal(false); // Close the modal here
     } catch (err) {
       console.error("Error updating status:", err);
-      setAlert({ type: "danger", message: err.message });
+      setSnackbarAlert({ type: "danger", message: err.message });
     }
   };
 
   useEffect(() => {
-    if (alert) {
+    if (snackbarAlert) {
       const timer = setTimeout(() => {
-        setAlert(null);
+        setSnackbarAlert(null);
       }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [alert]);
+  }, [snackbarAlert]);
 
   const handleRoleChange = (e) => {
     setCurrentUser({
@@ -322,10 +384,13 @@ function UserManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <Container fluid className="p-4 vh-100 bg-light">
-        {alert && (
+      <Container
+        fluid
+        className="p-4 vh-100 bg-light"
+      >
+        {snackbarAlert && (
           <Alert
-            variant={alert.type === "success" ? "success" : "danger"}
+            variant={snackbarAlert.type === "success" ? "success" : "danger"}
             style={{
               position: "fixed",
               top: "20px",
@@ -333,7 +398,7 @@ function UserManagement() {
               zIndex: 1050,
             }}
           >
-            {alert.message}
+            {snackbarAlert.message}
           </Alert>
         )}
 
@@ -360,18 +425,28 @@ function UserManagement() {
                 <option value="Admin">Admin</option>
               </Form.Select>
             </Col>
-            <Col md={3} className="text-end">
+            <Col
+              md={3}
+              className="text-end"
+            >
               <Button
                 variant="warning"
                 className="rounded-pill"
                 onClick={() => setShowAddModal(true)}
               >
-                <UserPlus className="pb-1" size={20} /> Add New User
+                <UserPlus
+                  className="pb-1"
+                  size={20}
+                />{" "}
+                Add New User
               </Button>
             </Col>
           </Row>
 
-          <Table hover responsive>
+          <Table
+            hover
+            responsive
+          >
             <thead className="table-lighter">
               <tr>
                 {[
@@ -538,6 +613,7 @@ function UserManagement() {
                       value={newUser.dob}
                       onChange={handleNewUserChange}
                       required
+                      max={new Date().toISOString().split("T")[0]}
                     />
                   </Form.Group>
                 </Col>
@@ -644,7 +720,10 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button variant="warning" type="submit">
+              <Button
+                variant="warning"
+                type="submit"
+              >
                 Add User
               </Button>
             </Modal.Footer>
@@ -666,9 +745,7 @@ function UserManagement() {
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">
-                      Full Name 
-                    </Form.Label>
+                    <Form.Label className="fw-bold">Full Name</Form.Label>
                     <Form.Control
                       type="text"
                       value={currentUser?.fullname}
@@ -683,9 +760,7 @@ function UserManagement() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">
-                      Email 
-                    </Form.Label>
+                    <Form.Label className="fw-bold">Email</Form.Label>
                     <Form.Control
                       type="email"
                       value={currentUser?.email}
@@ -700,9 +775,7 @@ function UserManagement() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">
-                      Date of Birth
-                    </Form.Label>
+                    <Form.Label className="fw-bold">Date of Birth</Form.Label>
                     <Form.Control
                       type="date"
                       value={
@@ -723,9 +796,7 @@ function UserManagement() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">
-                      Phone Number 
-                    </Form.Label>
+                    <Form.Label className="fw-bold">Phone Number</Form.Label>
                     <Form.Control
                       type="tel"
                       value={currentUser?.phoneNumber}
@@ -779,7 +850,10 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button variant="warning" type="submit">
+              <Button
+                variant="warning"
+                type="submit"
+              >
                 Edit User
               </Button>
             </Modal.Footer>
@@ -907,7 +981,10 @@ function UserManagement() {
             >
               Cancel
             </Button>
-            <Button variant="danger" onClick={confirmDeleteUser}>
+            <Button
+              variant="danger"
+              onClick={confirmDeleteUser}
+            >
               Delete
             </Button>
           </Modal.Footer>
