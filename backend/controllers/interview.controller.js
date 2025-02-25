@@ -62,7 +62,7 @@ async function createInterview(req, res, next) {
       meeting_link,
       result: "N/A",
       note,
-      status: "671c7baa265bb9e80b7d4736",
+      status: "67bc5a667ddc08921b739697", // open
     });
 
     await interview.save();
@@ -72,13 +72,112 @@ async function createInterview(req, res, next) {
     next(err);
   }
 }
-async function updateInterview(req, res, next) {}
 
-async function getInterviewById(req, res, next) {}
+async function updateInterview(req, res, next) {
+  try {
+    const { id } = req.params;
+    const {
+      interviewer,
+      candidate,
+      job,
+      interview_date,
+      meeting_link,
+      result,
+      note,
+    } = req.body;
 
-async function markAsPass(req, res, next) {}
+    // Validate required fields
+    if (!interviewer || !candidate || !job || !interview_date) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
 
-async function markAsFail(req, res, next) {}
+    // Update the interview document
+    const interview = await Interview.findByIdAndUpdate(
+      id,
+      {
+        interviewer,
+        candidate,
+        job,
+        interview_date,
+        meeting_link,
+        result,
+        note,
+      },
+      { new: true }
+    );
+
+    if (!interview) {
+      return res.status(404).json({ message: "interview not found" });
+    }
+
+    res.status(200).json(interview);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getInterviewById(req, res, next) {
+  try {
+    const { id } = req.params;
+    const interview = await Interview.findById(id)
+      .populate("interviewer")
+      .populate("candidate")
+      .populate("job")
+      .populate("status");
+    if (!interview) {
+      return res.status(404).json({ message: "interview not found" });
+    }
+    res.status(200).json(interview);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function markAsPass(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { feedback } = req.body;
+
+    const interview = await Interview.findById(id);
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    // Append "Pass feedback" to existing note, if any
+    interview.result = "Pass";
+    interview.status = "67bc5a667ddc08921b739699"; // "done"
+    interview.note = feedback;
+
+    await interview.save();
+
+    res.status(200).json(interview);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function markAsFail(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { feedback } = req.body;
+
+    const interview = await Interview.findById(id);
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    // Append "Fail feedback" to existing note, if any
+    interview.result = "Fail";
+    interview.status = "67bc5a667ddc08921b739699"; //"done"
+    interview.note = feedback;
+
+    await interview.save();
+
+    res.status(200).json(interview);
+  } catch (err) {
+    next(err);
+  }
+}
 
 const interviewController = {
   getAllInterview,

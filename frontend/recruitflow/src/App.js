@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/reuseable/Layout';
-import Dashboard from './pages/Dashboard';
-import InterviewManagement from './pages/InterviewManagement';
-import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import NoAccess from './pages/NoAccess';
-import UserManagement from './pages/UserManagement';
-import OfferManagement from './pages/OfferManagement';
-import CandidateManagerment from './pages/CandidateManagement';
-import CandidateManagement from './pages/CandidateManagement';
-import JobManagement from './pages/JobManagement';
-import JobDetails from './pages/JobDetails';
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/reuseable/Layout";
+import Dashboard from "./pages/Dashboard";
+import InterviewManagement from "./pages/InterviewManagement";
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import NoAccess from "./pages/NoAccess";
+import UserManagement from "./pages/UserManagement";
+import OfferManagement from "./pages/OfferManagement";
+import CandidateManagerment from "./pages/CandidateManagement";
+import CandidateManagement from "./pages/CandidateManagement";
+import JobManagement from "./pages/JobManagement";
+import JobDetails from "./pages/JobDetails";
+import InterviewDetail from "./pages/InterviewDetail";
+import OfferDetail from "./pages/OfferDetail";
 
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
@@ -43,6 +45,14 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <InterviewManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/interview/:id"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <InterviewDetail />
               </ProtectedRoute>
             }
           />
@@ -81,7 +91,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-           <Route
+          <Route
+            path="/offer/:id"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <OfferDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="candidate"
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>

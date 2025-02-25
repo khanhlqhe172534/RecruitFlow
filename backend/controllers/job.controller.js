@@ -6,7 +6,14 @@ const cron = require("node-cron");
 // Get all jobs
 async function getAllJob(req, res, next) {}
 
-async function getJobList(req, res, next) {}
+async function getJobList(req, res, next) {
+  try {
+    const jobs = await Job.find().populate("createdBy").populate("status");
+    res.status(200).json({ jobs });
+  } catch (err) {
+    next(err);
+  }
+}
 
 // get job by role
 
@@ -250,10 +257,10 @@ async function updateJob(req, res, next) {
     if (!waitingStatus)
       return res.status(500).json({ message: "Status not found" });
 
-    if (job.status.toString() !== waitingStatus._id.toString()) {
+    if (job.status.toString() !== waitingStatus._id.toString() && job.salaryChecked !== null && job.benefitChecked !== null) {
       return res.status(403).json({
         message:
-          "Job can only be updated when status is 'waiting for approved'",
+          "Job can only be updated when status is 'waiting for approval' and benefit/salary check is not done",
       });
     }
 

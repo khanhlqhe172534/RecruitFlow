@@ -30,11 +30,11 @@ function CandidateManagement() {
     dob: "",
     address: "",
     cv_url: "",
-    status: "671c68e1265bb9e80b7d46e2", // default status
-    role: "671c79b5265bb9e80b7d471a", // default role
+    status: "67bc5a667ddc08921b739694", // default status = activated
+    role: "67bc59b77ddc08921b73968f", // default role = candidate
   });
   const usersPerPage = 6;
-  const RECRUITER_ROLE_ID = "Recruiter";
+  const RECRUITER_ROLE_ID = "Recruitment Manager";
 
   // Get user role info
   useEffect(() => {
@@ -690,7 +690,7 @@ function CandidateManagement() {
                       type="email"
                       name="email"
                       value={currentCandidate?.email}
-                      onChange={handleEditInputChange}
+                      disabled
                     />
                   </Form.Group>
                   <Form.Group className="mb-3">
@@ -732,7 +732,7 @@ function CandidateManagement() {
                       type="tel"
                       name="phoneNumber"
                       value={currentCandidate?.phoneNumber}
-                      onChange={handleEditInputChange}
+                      disabled
                     />
                   </Form.Group>
                   <Form.Group className="mb-3">

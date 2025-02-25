@@ -3,7 +3,10 @@ const Candidate = require("../models/candidate.model");
 // Get all candidate
 async function getAllCandidate(req, res, next) {
   try {
-    const candidates = await Candidate.find({}).populate('status').populate('role').exec();
+    const candidates = await Candidate.find({})
+      .populate("status")
+      .populate("role")
+      .exec();
     if (candidates) {
       res.status(200).json(candidates);
     }
@@ -16,7 +19,10 @@ async function getAllCandidate(req, res, next) {
 async function getOneCandidate(req, res, next) {
   try {
     const candidateId = req.params.id;
-    const candidates = await Candidate.findById(candidateId).populate('status').populate('role').exec();
+    const candidates = await Candidate.findById(candidateId)
+      .populate("status")
+      .populate("role")
+      .exec();
     if (candidates) {
       res.status(200).json(candidates);
     }
@@ -27,14 +33,33 @@ async function getOneCandidate(req, res, next) {
 // Create new candidate
 async function createCandidate(req, res, next) {
   try {
-    const { fullname, email, phoneNumber, isMale, dob, address, cv_url, status, role } = req.body;
-    const newCandidate = new Candidate({ fullname, email, phoneNumber, isMale, dob, address, cv_url, status, role });
-    await newCandidate.save()
-      .then(newDoc => {
-        res.status(201).json(newDoc)
-      })
+    const {
+      fullname,
+      email,
+      phoneNumber,
+      isMale,
+      dob,
+      address,
+      cv_url,
+      status,
+      role,
+    } = req.body;
+    const newCandidate = new Candidate({
+      fullname,
+      email,
+      phoneNumber,
+      isMale,
+      dob,
+      address,
+      cv_url,
+      status,
+      role,
+    });
+    await newCandidate.save().then((newDoc) => {
+      res.status(201).json(newDoc);
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
 }
 
@@ -42,11 +67,11 @@ async function createCandidate(req, res, next) {
 async function updateCandidate(req, res, next) {
   try {
     const { id } = req.params;
-    const updatedCandidate = await Candidate.findByIdAndUpdate(
-      id,
-      req.body,
-      { new: true }
-    ).populate('status').populate('role');
+    const updatedCandidate = await Candidate.findByIdAndUpdate(id, req.body, {
+      new: true,
+    })
+      .populate("status")
+      .populate("role");
 
     if (!updatedCandidate) {
       return res.status(404).json({ message: "Candidate not found" });
