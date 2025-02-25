@@ -9,8 +9,8 @@ function JobManagement() {
   const [jobs, setJobs] = useState([]);
   const [page, setPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
-  const [user, setUser] = useState({ email: "", id: "", role: "" }); // State for user details
+  const [showModal, setShowModal] = useState(false); 
+  const [user, setUser] = useState({ email: "", id: "", role: "" }); 
   const limit = 5;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -26,7 +26,6 @@ function JobManagement() {
           page,
           limit,
           role: userData.role || "",
-          userId: userData.id || "",
           search,
           statusFilter,
           workingType,
@@ -245,7 +244,7 @@ function JobManagement() {
               </select>
             </div>
             <div className="col-md-3 text-end">
-              {["Manager", "Admin"].includes(user.role) && (
+              {["Recruitment Manager", "Admin"].includes(user.role) && (
                 <Button variant="warning" onClick={() => setShowModal(true)}>
                   + Request New Job
                 </Button>
