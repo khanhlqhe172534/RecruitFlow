@@ -66,28 +66,19 @@ function UserManagement() {
     setNewUser((prevData) => ({ ...prevData, [name]: value }));
   };
   const validateUserData = (handleType, data) => {
-    // validate email and phone
-    const existingUser = users.find(
-      (c) =>
-        c.email.toLowerCase() === newUser.email ||
-        c.phoneNumber === newUser.phoneNumber
-    );
-
-    if (existingUser && handleType == "add") {
-      return {
-        isValid: false,
-        error: "Email or phone number already exists. Please try again.",
-      };
-    }
+    console.log(data);
 
     // check full name
-    if (/\d/.test(data.fullname)) {
+    if (
+      !/^(([A-Za-z]+[\-\']?)*([A-Za-z]+)?\s)+([A-Za-z]+[\-\']?)*([A-Za-z]+)?$/.test(
+        handleType == "add" ? data.fullName : data.fullname
+      )
+    ) {
       return {
         isValid: false,
         error: "Full name cannot contain numbers.",
       };
     }
-
     // check phone has number and "+" optional
     if (!/^[+]?\d+$/.test(data.phoneNumber)) {
       return {
@@ -100,6 +91,25 @@ function UserManagement() {
       return {
         isValid: false,
         error: "Phone number must be between 10 and 11 digits.",
+      };
+    }
+    // validate email and phone
+    const existingPhone = users.find(
+      (c) => c.phoneNumber === newUser.phoneNumber
+    );
+    const existingEmail = users.find(
+      (c) => c.email.toLowerCase() === newUser.email
+    );
+    if (existingPhone && handleType == "add") {
+      return {
+        isValid: false,
+        error: "Phone number already exists. Please try again.",
+      };
+    }
+    if (existingEmail && handleType == "add") {
+      return {
+        isValid: false,
+        error: "Email already exists. Please try again.",
       };
     }
 
