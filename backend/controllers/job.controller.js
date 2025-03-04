@@ -257,10 +257,10 @@ async function updateJob(req, res, next) {
     if (!waitingStatus)
       return res.status(500).json({ message: "Status not found" });
 
-    if (job.status.toString() !== waitingStatus._id.toString()) {
+    if (job.status.toString() !== waitingStatus._id.toString() && job.salaryChecked !== null && job.benefitChecked !== null) {
       return res.status(403).json({
         message:
-          "Job can only be updated when status is 'waiting for approved'",
+          "Job can only be updated when status is 'waiting for approval' and benefit/salary check is not done",
       });
     }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   IconButton,
   Avatar,
@@ -14,7 +14,7 @@ import {
   ListItemText,
 } from "@mui/material";
 import {
-  HomeOutlined as HomeIcon,
+  Home as HomeIcon,
   AssignmentOutlined as AssignmentIcon,
   Upcoming as UpcomingIcon,
   Menu as MenuIcon,
@@ -64,25 +64,64 @@ export default function SideBar() {
 
   const open = Boolean(anchorEl);
   const id = open ? "user-menu-popover" : undefined;
-
+  const location = useLocation();
   return (
     <div
       className="vh-100 d-flex flex-column"
       style={{
-        width: collapsed ? "180px" : "250px",
+        width: collapsed ? "180px" : "350px",
         transition: "width 0.3s ease",
       }}
     >
       {/* Sidebar Component */}
-      <Sidebar collapsed={collapsed} collapsedWidth="180px" style={{ flex: 1 }}>
-        <Menu closeOnClick className="p-2">
+      <Sidebar
+        className="w-100"
+        backgroundColor="#FAFAFA"
+        rootStyles={{
+          border: "none",
+          borderRadius: "0px 46px 46px 0px", // Chỉ bo góc bên phải
+          overflow: "hidden",
+          height: "100%",
+          boxShadow: "5px 0px 10px rgba(0, 0, 0, 0.2)", // Đổ bóng bên phải
+          transition: "box-shadow 0.3s ease-in-out", // Hiệu ứng mượt hơn
+        }}
+      >
+        <Menu
+          closeOnClick
+          className="p-2"
+          menuItemStyles={{
+            button: ({ active }) => ({
+              color: active ? "#0f0e13" : "rgba(15, 14, 19, 0.6)", // Lighter text when not selected
+              fontSize: active ? "1.125rem" : "1rem", // 'h6' when active/hovered, 'body1' otherwise
+              fontWeight: active ? "bold" : "normal", // Bold when active
+              borderRadius: "50px", // Rounded button
+              padding: "10px 20px", // Proper spacing
+              transition:
+                "background-color 0.3s ease, color 0.3s ease, font-weight 0.3s ease, font-size 0.3s ease", // Smooth effect
+              backgroundColor: active ? "#E2DFEC" : "transparent", // Background only when active
+              "&:hover": {
+                backgroundColor: "#DBDBF4", // Show background on hover
+                color: "#0f0e13", // Darker text on hover
+                fontSize: "1.125rem", // 'h6' typography on hover
+                fontWeight: "bold", // Bold on hover
+                "& svg": {
+                  color: "#3A3EF9", // Darker icon on hover
+                },
+              },
+            }),
+            icon: ({ active }) => ({
+              color: active ? "#3A3EF9" : "#D5D6FA", // Icon color when active/inactive
+              transition: "color 0.3s ease", // Smooth transition
+            }),
+          }}
+        >
           {/* User Section with Logo */}
-          <div className="d-flex align-items-center p-3">
-            <div
-              className="d-flex justify-content-center align-items-center rounded m-2"
+          <div className="d-flex justify-content-center align-items-center p-3 ">
+            {/* <div
+              className="d-flex justify-content-center align-items-center rounded m-3"
               style={{
-                width: 35,
-                height: 35,
+                width: 55,
+                height: 55,
                 background:
                   "linear-gradient(45deg, rgb(21 87 205), rgb(90 225 255))",
                 color: "white",
@@ -96,14 +135,15 @@ export default function SideBar() {
             {!collapsed && (
               <Typography
                 variant="h6"
-                className="d-flex justify-content-center align-items-center ms-3"
+                className="d-flex justify-content-center align-items-center ms-1"
                 fontWeight={700}
                 color="#0098e5"
               >
                 RecruitFlow
               </Typography>
-            )}
+            )} */}
           </div>
+
           <Typography
             variant="body2"
             fontWeight={600}
@@ -193,58 +233,58 @@ export default function SideBar() {
           >
             General
           </Typography>
-          <MenuItem icon={<WorkIcon />} component={<Link to="/dashboard" />}>
+          <MenuItem
+            icon={<WorkIcon />}
+            component={<Link to="/dashboard" />}
+            active={location.pathname === "/dashboard"}
+            className="mt-1"
+          >
             Dashboard
           </MenuItem>
           {user.role === "Admin" && (
             <MenuItem
-              icon={<PersonIcon className="" />}
+              icon={<PersonIcon />}
               component={<Link to="/user" />}
+              active={location.pathname.startsWith("/user")}
+              className="mt-1"
             >
-              User Management
+              User Listing
             </MenuItem>
           )}
-          <MenuItem icon={<WorkIcon />} component={<Link to="/job" />}>
-            Job Management
+          <MenuItem
+            icon={<WorkIcon />}
+            component={<Link to="/job" />}
+            active={location.pathname.startsWith("/job")}
+            className="mt-1"
+          >
+            Job Listings
           </MenuItem>
           <MenuItem
             icon={<CalendarIcon />}
             component={<Link to="/interview" />}
+            active={location.pathname.startsWith("/interview")}
+            className="mt-1"
           >
-            Interview Management
+            Interviews
           </MenuItem>
-          <MenuItem icon={<OfferIcon />} component={<Link to="/offer" />}>
-            Offer Management
+          <MenuItem
+            icon={<OfferIcon />}
+            component={<Link to="/offer" />}
+            active={location.pathname.startsWith("/offer")}
+            className="mt-1"
+          >
+            Offers List
           </MenuItem>
-          <MenuItem icon={<GroupsIcon />} component={<Link to="/candidate" />}>
-            Candidate Management
+          <MenuItem
+            icon={<GroupsIcon />}
+            component={<Link to="/candidate" />}
+            active={location.pathname.startsWith("/candidate")}
+            className="mt-1"
+          >
+            Candidates
           </MenuItem>
         </Menu>
       </Sidebar>
-
-      {/* Sidebar Footer */}
-      <div
-        style={{
-          padding: "10px",
-          backgroundColor: "#f1f1f1",
-          width: "100%",
-          textAlign: "center",
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          color="textSecondary"
-          sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-        >
-          {collapsed ? (
-            <strong>{user.role}</strong>
-          ) : (
-            <>
-              Logged in as <strong>{user.role || "User"}</strong>
-            </>
-          )}
-        </Typography>
-      </div>
     </div>
   );
 }

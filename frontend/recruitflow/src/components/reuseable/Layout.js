@@ -6,7 +6,7 @@ function Layout() {
   return (
     <div className="d-flex vh-100">
       <SideBar />
-      <div className="container-fluid vh-100 bg-light">
+      <div className="container-fluid vh-100 p-0">
         <Outlet />
       </div>
     </div>

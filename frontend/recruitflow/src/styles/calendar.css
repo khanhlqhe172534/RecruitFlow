@@ -1,0 +1,54 @@
+/* Định dạng phần heading của lịch */
+.rbc-header {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    /* Giảm nhẹ kích thước chữ */
+    padding: 4px !important;
+    color: #6c757d !important;
+}
+
+/* Căn số ngày về góc trên bên trái */
+.rbc-date-cell {
+    text-align: left !important;
+    padding-left: 4px !important;
+    padding-top: 4px !important;
+    font-size: 14px !important;
+    /* Giữ chữ nhỏ gọn hơn */
+}
+
+/* Làm cho ô ngày trắng nhất có thể */
+.rbc-day-bg {
+    background-color: #ffffff !important;
+}
+
+/* Màu xám nhạt cho những ngày đã qua */
+.rbc-day-bg.past-day {
+    background-color: #EFEEF1 !important;
+}
+
+/* Điều chỉnh kích thước lịch */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 80vw;
+    /* Giảm kích thước chiều rộng */
+    max-width: 900px;
+    /* Giữ kích thước tối đa hợp lý */
+    height: auto;
+    max-height: 80vh;
+    /* Giữ lịch không chiếm quá nhiều không gian */
+    overflow: hidden;
+}
+
+/* Thu nhỏ lịch theo tỷ lệ */
+.rbc-calendar {
+    transform: scale(0.95);
+    /* Thu nhỏ lịch còn 85% */
+    transform-origin: top center;
+    /* Căn chỉnh theo chiều dọc */
+    max-width: 100%;
+    /* Đảm bảo không vượt quá vùng chứa */
+}

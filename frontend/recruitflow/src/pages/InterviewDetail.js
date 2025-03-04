@@ -281,12 +281,7 @@ function InterviewDetail() {
 
   return (
     <div className="d-flex vh-100">
-      <div
-        className="container-fluid p-4 vh-100"
-        style={{
-          backgroundImage: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-        }}
-      >
+      <div className="container-fluid p-4 vh-100">
         <div className="row mb-3">
           <div className="col-9">
             {interview.result === "Pass" && (
