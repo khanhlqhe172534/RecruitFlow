@@ -14,7 +14,6 @@ import JobManagement from "./pages/JobManagement";
 import JobDetails from "./pages/JobDetails";
 import InterviewDetail from "./pages/InterviewDetail";
 import OfferDetail from "./pages/OfferDetail";
-
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
 }

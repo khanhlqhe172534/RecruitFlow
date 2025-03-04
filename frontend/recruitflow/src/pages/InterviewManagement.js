@@ -7,7 +7,8 @@ import CustomToolbar from "../components/CustomToolbar"; // Import your custom t
 import { ToastContainer, toast } from "react-toastify"; // Import ToastContainer and toast
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-toastify/dist/ReactToastify.css"; // Import Toast styles
-
+import "../styles/calendar.css";
+import { Typography } from "@mui/material";
 const localizer = momentLocalizer(moment);
 
 function InterviewManagement() {
@@ -39,15 +40,16 @@ function InterviewManagement() {
 
       const events = data.map((interview) => ({
         id: interview._id,
-        title: `${interview.candidate.fullname} - ${
-          interview.job ? interview.job.job_name : "No Job Assigned"
-        }`,
+        title: `${interview.candidate.fullname} - ${moment(
+          interview.interview_date
+        ).format("HH:mm")}`, // Hiển thị tên + giờ phỏng vấn
         start: new Date(interview.interview_date),
         end: new Date(interview.interview_date),
         interview,
       }));
 
       setMyEvents(events);
+      console.log(events);
     } catch (error) {
       console.error("Error fetching interviews:", error);
       toast.error("Failed to load interviews. Please try again.");
@@ -66,25 +68,108 @@ function InterviewManagement() {
   };
 
   return (
-    <div className="d-flex vh-100">
-      {/* <Sidebar /> */}
+    <div className="d-flex vh-100 ">
+      <div className="container-fluid p-3 vh-100 d-flex flex-column">
+        {/* Tiêu đề + Breadcrumbs */}
+        <div
+          className="mb-3"
+          style={{ width: "100%", maxWidth: "100vw", margin: "0 auto" }}
+        >
+          <Typography
+            className=" ms-5"
+            sx={{ fontSize: "24px", fontWeight: "bold" }}
+          >
+            Calendar
+          </Typography>
+        </div>
 
-      <div className="container-fluid pt-4 vh-100 bg-light">
-        <Calendar
-          localizer={localizer}
-          events={myEvents}
-          startAccessor="start"
-          endAccessor="end"
-          onSelectEvent={handleSelectEvent}
-          components={{
-            toolbar: (props) => (
-              <CustomToolbar
-                {...props}
-                onFetchInterviews={fetchInterviews} // Pass the fetch function
-              />
-            ),
-          }}
-        />
+        {/* Lịch mở rộng full màn hình */}
+        <div className="flex-grow-1 d-flex justify-content-center vh-100">
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "95vw",
+              height: "92vh",
+              minHeight: "600px",
+            }}
+          >
+            <Calendar
+              localizer={localizer}
+              events={myEvents}
+              startAccessor="start"
+              endAccessor="end"
+              onSelectEvent={handleSelectEvent}
+              style={{
+                fontSize: "14px",
+                height: "100%",
+                borderRadius: "12px",
+                overflow: "hidden",
+              }}
+              eventPropGetter={(event) => ({
+                style: {
+                  backgroundColor:
+                    event.interview.status.name === "offered"
+                      ? "#C7E6C7"
+                      : "#D6E4FF",
+                  color:
+                    event.interview.status.name === "offered"
+                      ? "#28a745"
+                      : "#215AEE",
+                  borderRadius: "8px",
+                  padding: "5px",
+                  border: `2px solid ${
+                    event.interview.status.name === "offered"
+                      ? "#28a745"
+                      : "#215AEE"
+                  }`,
+                },
+              })}
+              components={{
+                event: ({ event }) => (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "2px 8px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        textAlign: "left",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        flex: 1,
+                      }}
+                    >
+                      {event.interview.candidate.fullname}
+                    </span>
+                    <span
+                      style={{
+                        textAlign: "right",
+                        fontWeight: "bold",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      {moment(event.start).format("HH:mm")}
+                    </span>
+                  </div>
+                ),
+                toolbar: (props) => (
+                  <CustomToolbar
+                    {...props}
+                    onFetchInterviews={fetchInterviews}
+                  />
+                ),
+              }}
+              dayPropGetter={(date) => {
+                const isPast = moment(date).isBefore(moment(), "day");
+                return { className: isPast ? "past-day" : "" };
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ToastContainer for notifications */}

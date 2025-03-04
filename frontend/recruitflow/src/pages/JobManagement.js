@@ -207,13 +207,12 @@ function JobManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <div className="container-fluid p-2 vh-100 bg-light mb-5">
-        <div className="col-md-2"></div>
+      <div className="container-fluid vh-100 vh-100 p-4 d-flex justify-content-center align-items-center ">
         <div
-          className="card p-4 shadow border-0 container mt-5 overflow-auto col-md-10"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="card  p-4 shadow border-0 container-fluid  w-100 col-md-10"
+          style={{ scrollbarWidth: "none" }}
         >
-          <div className="row mb-4">
+          <div className="row  mb-4">
             <div className="col-md-3">
               <div className="search-bar p-0 d-none d-md-block">
                 <div id="search" className="menu-search mb-0">
@@ -273,7 +272,7 @@ function JobManagement() {
             </div>
           </div>
 
-          <div className="" style={{ maxHeight: "75vh" }}>
+          <div className="vh-100 overflow-auto" style={{ maxHeight: "75vh" }}>
             <div className="">
               {jobs.map((job) => (
                 <div
