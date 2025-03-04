@@ -103,12 +103,14 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         <button
           onClick={() => onNavigate("PREV")}
           className="btn btn-secondary mx-2"
+          style={{ color: "#EFEEF1" }}
         >
           Back
         </button>
         <button
           onClick={() => onNavigate("NEXT")}
           className="btn btn-secondary"
+          style={{ color: "#EFEEF1" }}
         >
           Next
         </button>

@@ -10,5 +10,6 @@ offerRouter.post("/", offerController.createOffer);
 offerRouter.get("/:id", offerController.getOfferById);
 offerRouter.put("/:id", offerController.updateOfferById);
 offerRouter.delete("/:id", offerController.deleteOfferById);
+offerRouter.put("/:id/cancel", offerController.cancelOffer);
 
 module.exports = offerRouter;

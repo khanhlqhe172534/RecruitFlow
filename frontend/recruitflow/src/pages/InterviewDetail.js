@@ -1,39 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import ButtonBootstrap from "react-bootstrap/Button";
-
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
+import TabPanel from "@mui/lab/TabPanel";
 import {
-  Box,
-  Button,
-  Card,
-  Grid,
   Typography,
   TextField,
   Divider,
   MenuItem,
+  Breadcrumbs,
+  Link,
+  Box,
+  Tab,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import Modal from "react-bootstrap/Modal";
 import axios from "axios";
-
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import HomeIcon from "@mui/icons-material/Home";
 import CheckIcon from "@mui/icons-material/Check";
 import DoNotDisturbIcon from "@mui/icons-material/DoNotDisturb";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import PhoneInTalkOutlinedIcon from "@mui/icons-material/PhoneInTalkOutlined";
-import MarkEmailUnreadOutlinedIcon from "@mui/icons-material/MarkEmailUnreadOutlined";
-import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
-import CakeOutlinedIcon from "@mui/icons-material/CakeOutlined";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+
 import { ToastContainer, toast } from "react-toastify"; // Import ToastContainer and toast
 import "react-toastify/dist/ReactToastify.css";
 
-import {
-  AccessTime,
-  Link,
-  Person,
-  Email,
-  Phone,
-  Description,
-} from "@mui/icons-material";
+import { AccessTime } from "@mui/icons-material";
 import InterviewJob from "../components/InterviewJob";
 import InterviewInformation from "../components/InterviewInformation";
 import InterviewerInformation from "../components/InterviewerInformation";
@@ -60,6 +53,12 @@ function InterviewDetail() {
     salary: "",
     createdBy: "", // Initialize createdBy as an empty string
   });
+  const navigate = useNavigate();
+  // tab change hook
+  const [tabValue, setTabValue] = useState("1");
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
   // Load user info from localStorage when the component mounts
   useEffect(() => {
@@ -117,7 +116,7 @@ function InterviewDetail() {
       }
     };
     fetchData();
-  }, []);
+  }, [openPass, openFail]);
 
   const handleCloseUpdateModal = () => {
     setOpenUpdate(false);
@@ -181,21 +180,19 @@ function InterviewDetail() {
 
   // Submit new offer to the backend
   const handleSubmitOffer = async () => {
-    const { offerType, offerFrom, offerTo, salary } = offerData;
+    const { offerType, offerFrom, offerTo, salary, interview } = offerData;
 
-    // Validate all fields are filled
-    if (!offerType || !offerFrom || !offerTo || !salary) {
+    // Validate all required fields
+    if (!offerType || !offerFrom || !offerTo || !salary || !interview) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Check if Start Date is before End Date
     if (new Date(offerFrom) >= new Date(offerTo)) {
       toast.error("Start Date must be before End Date.");
       return;
     }
 
-    // Check if Salary is within the job's salary range
     if (salary < job.salary_min || salary > job.salary_max) {
       toast.error(
         `Salary must be between $${job.salary_min} and $${job.salary_max}.`
@@ -203,12 +200,19 @@ function InterviewDetail() {
       return;
     }
 
+    // Ensure `createdBy` is included
+    const newOffer = {
+      ...offerData,
+      createdBy: user.id, // Ensure user ID is added
+    };
+
     try {
-      await axios.post("http://localhost:9999/offer", offerData);
-      setOpenOffer(false); // Close modal upon success
+      await axios.post("http://localhost:9999/offer", newOffer);
+      setOpenOffer(false); // Close modal
       toast.success("Offer created successfully!");
+      navigate("/offer"); // Ensure `useNavigate()` is used correctly
     } catch (error) {
-      console.error("Error creating new offer:", error);
+      console.error("Error creating new offer:", error.response?.data || error);
       toast.error("Failed to create offer.");
     }
   };
@@ -251,7 +255,7 @@ function InterviewDetail() {
         feedback: passFeedback,
       });
       handleClosePassModal();
-      window.location.reload();
+      navigate("/interview");
     } catch (error) {
       console.error("Error updating interview status to pass:", error);
     }
@@ -269,7 +273,7 @@ function InterviewDetail() {
         { feedback: failFeedback } // Send feedback as JSON object
       );
       handleCloseFailModal();
-      window.location.reload();
+      navigate("/interview");
     } catch (error) {
       console.error("Error updating interview status to fail:", error);
     }
@@ -281,7 +285,62 @@ function InterviewDetail() {
 
   return (
     <div className="d-flex vh-100">
-      <div className="container-fluid p-4 vh-100">
+      <div className="container p-4 vh-100">
+        <div>
+          <Breadcrumbs
+            separator={
+              <NavigateNextIcon fontSize="small" sx={{ color: "#b0b0b0" }} />
+            }
+            aria-label="breadcrumb"
+          >
+            <Link
+              underline="none"
+              key="1"
+              color="inherit"
+              href="/dashboard"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                color: "#555",
+                fontSize: "14px",
+                fontWeight: 500,
+                "&:hover": { color: "#000" },
+              }}
+            >
+              <HomeIcon fontSize="small" />
+            </Link>
+
+            <Link
+              underline="none"
+              key="2"
+              color="inherit"
+              href="/interview"
+              sx={{
+                color: "#555",
+                fontSize: "14px",
+                fontWeight: 600,
+                "&:hover": { color: "#000" },
+              }}
+            >
+              Interviews
+            </Link>
+
+            <Typography
+              key="3"
+              sx={{
+                color: "#215AEE",
+                fontSize: "14px",
+                fontWeight: 600,
+                backgroundColor: "#f7f7f7",
+                padding: "4px 8px",
+                borderRadius: "6px",
+              }}
+            >
+              Details
+            </Typography>
+          </Breadcrumbs>
+        </div>
         <div className="row mb-3">
           <div className="col-9">
             {interview.result === "Pass" && (
@@ -321,6 +380,7 @@ function InterviewDetail() {
                   </Modal.Header>
                   <Modal.Body>
                     <TextField
+                      select
                       label="Offer Type"
                       name="offerType"
                       value={offerData.offerType}
@@ -328,7 +388,32 @@ function InterviewDetail() {
                       fullWidth
                       required
                       className="mb-3"
-                    />
+                    >
+                      <MenuItem value="Full-Time Employment">
+                        Full-Time Employment
+                      </MenuItem>
+                      <MenuItem value="Part-Time Employment">
+                        Part-Time Employment
+                      </MenuItem>
+                      <MenuItem value="Fixed-Term Contract">
+                        Fixed-Term Contract
+                      </MenuItem>
+                      <MenuItem value="Freelance Contract">
+                        Freelance Contract
+                      </MenuItem>
+                      <MenuItem value="Contract-to-Hire">
+                        Contract-to-Hire
+                      </MenuItem>
+                      <MenuItem value="OutsourcingContract">
+                        Outsourcing Contract
+                      </MenuItem>
+                      <MenuItem value="Retainer Agreement">
+                        Retainer Agreement
+                      </MenuItem>
+                      <MenuItem value="Open-Source Contributor">
+                        Open-Source Contributor
+                      </MenuItem>
+                    </TextField>
                     <TextField
                       type="datetime-local"
                       label="Offer From"
@@ -612,27 +697,76 @@ function InterviewDetail() {
         </div>
 
         <div className="row">
-          {/* interview information */}
-          <div className="col">
-            <InterviewInformation interview={interview} />
-          </div>
-          {/* job information */}
-          <div className="col">
-            <InterviewJob job={job} />
-          </div>
-          <div className="col">
-            {/* interviewer information */}
-            <div className="row">
-              <InterviewerInformation interviewer={interviewer} />
-            </div>
-            {/* Candidate Information */}
-            <div className="row mt-3">
-              <InterviewCandidate
-                candidate={candidate}
-                formattedDob={formattedDob}
-              />
-            </div>
-          </div>
+          <Box sx={{ width: "100%", typography: "body1" }}>
+            <TabContext value={tabValue}>
+              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <TabList
+                  onChange={handleTabChange}
+                  aria-label="lab API tabs example"
+                  sx={{ display: "flex", width: "100%" }} // Đảm bảo TabList chiếm toàn bộ chiều ngang
+                >
+                  <Tab
+                    label="Candidate"
+                    value="1"
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textTransform: "none",
+                      flex: 1,
+                    }}
+                  />
+                  <Tab
+                    label="Interview"
+                    value="2"
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textTransform: "none",
+                      flex: 1,
+                    }}
+                  />
+                  <Tab
+                    label="Job"
+                    value="3"
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textTransform: "none",
+                      flex: 1,
+                    }}
+                  />
+                  <Tab
+                    label="Interviewer"
+                    value="4"
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textTransform: "none",
+                      flex: 1,
+                    }}
+                  />
+                </TabList>
+              </Box>
+
+              <TabPanel value="1">
+                {" "}
+                <InterviewCandidate
+                  candidate={candidate}
+                  formattedDob={formattedDob}
+                />
+              </TabPanel>
+              <TabPanel value="2">
+                {" "}
+                <InterviewInformation interview={interview} />
+              </TabPanel>
+              <TabPanel value="3">
+                <InterviewerInformation interviewer={interviewer} />
+              </TabPanel>
+              <TabPanel value="4">
+                <InterviewJob job={job} />
+              </TabPanel>
+            </TabContext>
+          </Box>
         </div>
         <ToastContainer position="top-right" autoClose={5000} />
       </div>
