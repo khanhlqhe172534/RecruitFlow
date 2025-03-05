@@ -8,7 +8,9 @@ import { ToastContainer, toast } from "react-toastify"; // Import ToastContainer
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-toastify/dist/ReactToastify.css"; // Import Toast styles
 import "../styles/calendar.css";
-import { Typography } from "@mui/material";
+import { Breadcrumbs, Link, Typography } from "@mui/material";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import HomeIcon from "@mui/icons-material/Home";
 const localizer = momentLocalizer(moment);
 
 function InterviewManagement() {
@@ -75,12 +77,60 @@ function InterviewManagement() {
           className="mb-3"
           style={{ width: "100%", maxWidth: "100vw", margin: "0 auto" }}
         >
-          <Typography
-            className=" ms-5"
-            sx={{ fontSize: "24px", fontWeight: "bold" }}
-          >
-            Calendar
-          </Typography>
+          <div className="ms-5 mb-3">
+            <Breadcrumbs
+              separator={
+                <NavigateNextIcon fontSize="small" sx={{ color: "#b0b0b0" }} />
+              }
+              aria-label="breadcrumb"
+            >
+              <Link
+                underline="none"
+                key="1"
+                color="inherit"
+                href="/dashboard"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  color: "#555",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  "&:hover": { color: "#000" },
+                }}
+              >
+                <HomeIcon fontSize="small" />
+              </Link>
+
+              <Link
+                underline="none"
+                key="2"
+                color="inherit"
+                sx={{
+                  color: "#555",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  "&:hover": { color: "#000" },
+                }}
+              >
+                Interviews
+              </Link>
+
+              <Typography
+                key="3"
+                sx={{
+                  color: "#215AEE",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  backgroundColor: "#f7f7f7",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                }}
+              >
+                Calendar
+              </Typography>
+            </Breadcrumbs>
+          </div>
         </div>
 
         {/* Lịch mở rộng full màn hình */}
@@ -105,25 +155,38 @@ function InterviewManagement() {
                 borderRadius: "12px",
                 overflow: "hidden",
               }}
-              eventPropGetter={(event) => ({
-                style: {
-                  backgroundColor:
-                    event.interview.status.name === "offered"
-                      ? "#C7E6C7"
-                      : "#D6E4FF",
-                  color:
-                    event.interview.status.name === "offered"
-                      ? "#28a745"
-                      : "#215AEE",
-                  borderRadius: "8px",
-                  padding: "5px",
-                  border: `2px solid ${
-                    event.interview.status.name === "offered"
-                      ? "#28a745"
-                      : "#215AEE"
-                  }`,
-                },
-              })}
+              eventPropGetter={(event) => {
+                let bgColor = "#D6E4FF"; // Mặc định xanh dương
+                let textColor = "#215AEE";
+                let borderColor = "#215AEE";
+
+                if (
+                  event.interview.status.name === "offered" ||
+                  (event.interview.status.name === "done" &&
+                    event.interview.result === "Pass")
+                ) {
+                  bgColor = "#C7E6C7";
+                  textColor = "#28a745";
+                  borderColor = "#28a745";
+                } else if (
+                  event.interview.status.name === "cancel" ||
+                  event.interview.result === "Fail"
+                ) {
+                  bgColor = "#F8D7DA"; // Màu nền đỏ nhạt
+                  textColor = "#DC3545"; // Màu chữ đỏ đậm
+                  borderColor = "#DC3545"; // Viền đỏ
+                }
+
+                return {
+                  style: {
+                    backgroundColor: bgColor,
+                    color: textColor,
+                    borderRadius: "8px",
+                    padding: "5px",
+                    border: `2px solid ${borderColor}`,
+                  },
+                };
+              }}
               components={{
                 event: ({ event }) => (
                   <div

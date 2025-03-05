@@ -1,5 +1,7 @@
 const Interview = require("../models/interview.model");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+
 // get all categories
 async function getAllInterview(req, res, next) {
   try {
@@ -66,11 +68,97 @@ async function createInterview(req, res, next) {
     });
 
     await interview.save();
-
+    try {
+      await sendCandidateInterviewInvitation(interview);
+    } catch (emailError) {
+      console.error("Failed to send interview invitation email:", emailError);
+      // Log the error but don't block the interview creation
+    }
     res.status(201).json(interview);
   } catch (err) {
     next(err);
   }
+}
+
+async function sendCandidateInterviewInvitation(interview) {
+  // Populate necessary fields if not already populated
+  await interview.populate("candidate interviewer job");
+
+  // Validate candidate email
+  if (!interview.candidate?.email) {
+    throw new Error("No email found for candidate");
+  }
+
+  // Create email transporter (ensure this is configured in your email service)
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  // Prepare email content
+  const emailContent = {
+    from: {
+      name: "HR Recruitment Team",
+      address: process.env.EMAIL_USER,
+    },
+    to: interview.candidate.email,
+    subject: "Interview Invitation",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Interview Invitation</h2>
+        <p>Dear ${interview.candidate.fullname || "Candidate"},</p>
+        
+        <p>We are pleased to invite you to an interview for the position of <strong>${
+          interview.job?.title || "Open Position"
+        }</strong>.</p>
+        
+        <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px;">
+          <h3>Interview Details:</h3>
+          <ul>
+            <li><strong>Date:</strong> ${new Date(
+              interview.interview_date
+            ).toLocaleString()}</li>
+            <li><strong>Interviewer:</strong> ${
+              interview.interviewer?.fullname || "HR Representative"
+            }</li>
+            ${
+              interview.meeting_link
+                ? `<li><strong>Meeting Link:</strong> <a href="${interview.meeting_link}">Join Interview</a></li>`
+                : ""
+            }
+          </ul>
+        </div>
+        
+        ${
+          interview.note
+            ? `
+        <div style="margin-top: 15px;">
+          <strong>Additional Notes:</strong>
+          <p>${interview.note}</p>
+        </div>
+        `
+            : ""
+        }
+        
+        <p>Please confirm your attendance by replying to this email or contacting our HR team.</p>
+        
+        <p>Best regards,<br>HR Recruitment Team</p>
+      </div>
+    `,
+  };
+
+  // Send email
+  const info = await transporter.sendMail(emailContent);
+  console.log(
+    `Interview invitation email sent to ${interview.candidate.email}. MessageId: ${info.messageId}`
+  );
+
+  return info;
 }
 
 async function updateInterview(req, res, next) {
@@ -138,17 +226,34 @@ async function markAsPass(req, res, next) {
     const { id } = req.params;
     const { feedback } = req.body;
 
-    const interview = await Interview.findById(id);
+    // Find and populate the interview with candidate and job details
+    const interview = await Interview.findById(id)
+      .populate("candidate")
+      .populate("job");
+
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
 
-    // Append "Pass feedback" to existing note, if any
+    // Validate candidate email
+    if (!interview.candidate?.email) {
+      return res.status(400).json({ message: "No candidate email found" });
+    }
+
+    // Update interview status
     interview.result = "Pass";
     interview.status = "67bc5a667ddc08921b739699"; // "done"
     interview.note = feedback;
 
     await interview.save();
+
+    // Send pass notification email
+    try {
+      await sendPassNotificationEmail(interview);
+    } catch (emailError) {
+      console.error("Failed to send pass notification email:", emailError);
+      // Log the error but don't block the status update
+    }
 
     res.status(200).json(interview);
   } catch (err) {
@@ -156,27 +261,175 @@ async function markAsPass(req, res, next) {
   }
 }
 
+// Email sending function
+async function sendPassNotificationEmail(interview) {
+  // Create email transporter
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  // Prepare email content
+  const emailContent = {
+    from: {
+      name: "HR Recruitment Team",
+      address: process.env.EMAIL_USER,
+    },
+    to: interview.candidate.email,
+    subject: "Congratulations! Interview Result",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Interview Result</h2>
+        <p>Dear ${interview.candidate.fullname || "Candidate"},</p>
+        
+        <div style="background-color: #e6f3e6; padding: 20px; border-radius: 10px; border: 1px solid #4CAF50;">
+          <h3 style="color: #4CAF50;">Congratulations! 🎉</h3>
+          <p>We are pleased to inform you that you have <strong>PASSED</strong> the interview for the position of <strong>${
+            interview.job?.title || "the role"
+          }</strong>.</p>
+        </div>
+        
+        ${
+          interview.note
+            ? `
+        <div style="margin-top: 15px;">
+          <strong>Interviewer's Feedback:</strong>
+          <p style="background-color: #f4f4f4; padding: 10px; border-radius: 5px;">
+            ${interview.note}
+          </p>
+        </div>
+        `
+            : ""
+        }
+        
+        <p>Next steps will be communicated to you shortly. Thank you for your interest in our company.</p>
+        
+        <p>Best regards,<br>HR Recruitment Team</p>
+      </div>
+    `,
+  };
+
+  // Send email
+  const info = await transporter.sendMail(emailContent);
+  console.log(
+    `Pass notification email sent to ${interview.candidate.email}. MessageId: ${info.messageId}`
+  );
+
+  return info;
+}
+
 async function markAsFail(req, res, next) {
   try {
     const { id } = req.params;
     const { feedback } = req.body;
 
-    const interview = await Interview.findById(id);
+    // Find and populate the interview with candidate and job details
+    const interview = await Interview.findById(id)
+      .populate("candidate")
+      .populate("job");
+
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
 
-    // Append "Fail feedback" to existing note, if any
+    // Validate candidate email
+    if (!interview.candidate?.email) {
+      return res.status(400).json({ message: "No candidate email found" });
+    }
+
+    // Update interview status
     interview.result = "Fail";
-    interview.status = "67bc5a667ddc08921b739699"; //"done"
+    interview.status = "67bc5a667ddc08921b739699"; // "done"
     interview.note = feedback;
 
     await interview.save();
+
+    // Send fail notification email
+    try {
+      await sendFailNotificationEmail(interview);
+    } catch (emailError) {
+      console.error("Failed to send fail notification email:", emailError);
+      // Log the error but don't block the status update
+    }
 
     res.status(200).json(interview);
   } catch (err) {
     next(err);
   }
+}
+
+async function sendFailNotificationEmail(interview) {
+  // Create email transporter
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  // Prepare email content
+  const emailContent = {
+    from: {
+      name: "HR Recruitment Team",
+      address: process.env.EMAIL_USER,
+    },
+    to: interview.candidate.email,
+    subject: "Interview Result Update",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Interview Result</h2>
+        <p>Dear ${interview.candidate.fullname || "Candidate"},</p>
+        
+        <div style="background-color: #f8e6e6; padding: 20px; border-radius: 10px; border: 1px solid #FF6347;">
+          <h3 style="color: #FF6347;">Interview Result Notification</h3>
+          <p>We regret to inform you that you were not selected to proceed to the next stage for the position of <strong>${
+            interview.job?.title || "the role"
+          }</strong>.</p>
+        </div>
+        
+        ${
+          interview.note
+            ? `
+        <div style="margin-top: 15px;">
+          <strong>Feedback:</strong>
+          <p style="background-color: #f4f4f4; padding: 10px; border-radius: 5px;">
+            ${interview.note}
+          </p>
+        </div>
+        `
+            : ""
+        }
+        
+        <div style="margin-top: 20px; background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+          <h4>We Appreciate Your Effort</h4>
+          <p>Thank you for taking the time to interview with us. We encourage you to continue developing your skills and exploring opportunities that align with your career goals.</p>
+          <p>We appreciate your interest in our company and wish you the best in your future endeavors.</p>
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
+          If you have any questions about the interview process, please feel free to contact our HR department.
+        </p>
+        
+        <p>Best regards,<br>HR Recruitment Team</p>
+      </div>
+    `,
+  };
+
+  // Send email
+  const info = await transporter.sendMail(emailContent);
+  console.log(
+    `Fail notification email sent to ${interview.candidate.email}. MessageId: ${info.messageId}`
+  );
+
+  return info;
 }
 
 const interviewController = {

@@ -10,11 +10,21 @@
 /* Căn số ngày về góc trên bên trái */
 .rbc-date-cell {
     text-align: left !important;
-    padding-left: 4px !important;
-    padding-top: 4px !important;
+    padding-left: 10px !important;
+    padding-top: 10px !important;
     font-size: 14px !important;
-    /* Giữ chữ nhỏ gọn hơn */
+    /* Tăng độ dày của chữ */
 }
+
+
+.rbc-date-cell .rbc-button-link {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    /* Đậm hơn */
+    color: inherit !important;
+    /* Giữ màu sắc mặc định */
+}
+
 
 /* Làm cho ô ngày trắng nhất có thể */
 .rbc-day-bg {
