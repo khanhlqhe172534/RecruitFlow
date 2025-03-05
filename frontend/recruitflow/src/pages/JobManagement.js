@@ -255,14 +255,14 @@ function JobManagement() {
   };
 
   return (
-    <div className="d-flex flex-column min-vh-100">
+    <div className="d-flex flex-column ">
       <div
-        className="container-fluid flex-grow-1 px-4"
+        className="container-fluid px-4"
         style={{ border: "" }}
       >
         <div className="row col-md-12">
           <div
-            className="p-4 border-0 container-fluid w-100"
+            className="p-4 border-0 container-fluid"
             style={{ scrollbarWidth: "none" }}
           >
             <div className="row">
@@ -326,9 +326,9 @@ function JobManagement() {
                   </div>
                 </div>
                 <div
-                  className="vh-100 overflow-auto"
+                  className="overflow-auto"
                   style={{
-                    maxHeight: "calc(75vh - 100px)",
+                    maxHeight: "calc(85vh - 200px)",
                     msOverflowStyle: "none",
                     scrollbarWidth: "none",
                   }}
@@ -373,7 +373,7 @@ function JobManagement() {
                               <h5 className="card-title mb-1">
                                 {job.job_name}
                               </h5>
-                              <span className="text-muted mt-1">
+                              <span className="text-bold mt-1">
                                 ${job.salary_min} - ${job.salary_max}
                               </span>
                             </div>
