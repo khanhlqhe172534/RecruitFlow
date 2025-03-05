@@ -1,5 +1,7 @@
 const Interview = require("../models/interview.model");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+
 // get all categories
 async function getAllInterview(req, res, next) {
   try {
@@ -66,11 +68,97 @@ async function createInterview(req, res, next) {
     });
 
     await interview.save();
-
+    try {
+      await sendCandidateInterviewInvitation(interview);
+    } catch (emailError) {
+      console.error("Failed to send interview invitation email:", emailError);
+      // Log the error but don't block the interview creation
+    }
     res.status(201).json(interview);
   } catch (err) {
     next(err);
   }
+}
+
+async function sendCandidateInterviewInvitation(interview) {
+  // Populate necessary fields if not already populated
+  await interview.populate("candidate interviewer job");
+
+  // Validate candidate email
+  if (!interview.candidate?.email) {
+    throw new Error("No email found for candidate");
+  }
+
+  // Create email transporter (ensure this is configured in your email service)
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  // Prepare email content
+  const emailContent = {
+    from: {
+      name: "HR Recruitment Team",
+      address: process.env.EMAIL_USER,
+    },
+    to: interview.candidate.email,
+    subject: "Interview Invitation",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Interview Invitation</h2>
+        <p>Dear ${interview.candidate.fullname || "Candidate"},</p>
+        
+        <p>We are pleased to invite you to an interview for the position of <strong>${
+          interview.job?.title || "Open Position"
+        }</strong>.</p>
+        
+        <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px;">
+          <h3>Interview Details:</h3>
+          <ul>
+            <li><strong>Date:</strong> ${new Date(
+              interview.interview_date
+            ).toLocaleString()}</li>
+            <li><strong>Interviewer:</strong> ${
+              interview.interviewer?.fullname || "HR Representative"
+            }</li>
+            ${
+              interview.meeting_link
+                ? `<li><strong>Meeting Link:</strong> <a href="${interview.meeting_link}">Join Interview</a></li>`
+                : ""
+            }
+          </ul>
+        </div>
+        
+        ${
+          interview.note
+            ? `
+        <div style="margin-top: 15px;">
+          <strong>Additional Notes:</strong>
+          <p>${interview.note}</p>
+        </div>
+        `
+            : ""
+        }
+        
+        <p>Please confirm your attendance by replying to this email or contacting our HR team.</p>
+        
+        <p>Best regards,<br>HR Recruitment Team</p>
+      </div>
+    `,
+  };
+
+  // Send email
+  const info = await transporter.sendMail(emailContent);
+  console.log(
+    `Interview invitation email sent to ${interview.candidate.email}. MessageId: ${info.messageId}`
+  );
+
+  return info;
 }
 
 async function updateInterview(req, res, next) {
