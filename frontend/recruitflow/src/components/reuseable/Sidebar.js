@@ -42,11 +42,14 @@ export default function SideBar() {
     const userEmail = localStorage.getItem("userEmail") || "No Email";
     const userRole = localStorage.getItem("userRole") || "User";
     const userFullName = localStorage.getItem("userFullName") || "No Name";
-    setUser({ email: userEmail, role: userRole, fullName: userFullName });
+    setUser({
+      email: userEmail,
+      role: userRole,
+      fullName: userFullName,
+    });
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("userId");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userFullName");
@@ -241,7 +244,7 @@ export default function SideBar() {
             General
           </Typography>
           <MenuItem
-            icon={<WorkIcon />}
+            icon={<HomeIcon />}
             component={<Link to="/dashboard" />}
             active={location.pathname === "/dashboard"}
             className="mt-1"

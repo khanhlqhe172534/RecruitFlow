@@ -2,94 +2,100 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Status = require("./status.model");
 
-const jobSchema = new Schema({
-  job_name: {
-    type: String,
-    required: true,
-  },
-  salary_max: {
-    type: Number,
-    required: true,
-  },
-  salary_min: {
-    type: Number,
-    required: true,
-  },
-  start_date: {
-    type: Date,
-    required: true,
-  },
-  end_date: {
-    type: Date,
-    required: true,
-  },
-  levels: {
-    //junior, fresher, senior
-    type: String,
-    // enum: ["Junior", "Fresher", "Senior"], // Select options
-    required: true,
-  },
-  skills: [
-    {
-      //java, python
+const jobSchema = new Schema(
+  {
+    job_name: {
       type: String,
-      // enum: ["Java", "C++", ".Net", "NodeJs", "Business Analysis", "Communication"], // Checklist options
       required: true,
     },
-  ],
-  working_type: {
-    //fulltime, parttime
-    type: String,
-    // enum: ["Fulltime", "Parttime"], // Select options
-    required: true,
-  },
-  experience: {
-    //1 year, 2 years
-    type: String,
-    required: true,
-  },
-  // number of needed employees
-  number_of_vacancies: {
-    type: Number,
-    required: true,
-  },
-  benefits: [
-    {
-      //13th-month salary, 12 days of annual paid leaveFlexible working time, from Monday to Friday;....
-      type: String,
-      // enum: ["Lunch", "Hybrid working", "25-day leave", "travel", "healthcare insurance"], // Checklist options
+    salary_max: {
+      type: Number,
+      required: true,
     },
-  ],
+    salary_min: {
+      type: Number,
+      required: true,
+    },
+    start_date: {
+      type: Date,
+      required: true,
+    },
+    end_date: {
+      type: Date,
+      required: true,
+    },
+    levels: {
+      //junior, fresher, senior
+      type: String,
+      // enum: ["Junior", "Fresher", "Senior"], // Select options
+      required: true,
+    },
+    skills: [
+      {
+        //java, python
+        type: String,
+        // enum: ["Java", "C++", ".Net", "NodeJs", "Business Analysis", "Communication"], // Checklist options
+        required: true,
+      },
+    ],
+    working_type: {
+      //fulltime, parttime
+      type: String,
+      // enum: ["Fulltime", "Parttime"], // Select options
+      required: true,
+    },
+    experience: {
+      //1 year, 2 years
+      type: String,
+      required: true,
+    },
+    // number of needed employees
+    number_of_vacancies: {
+      type: Number,
+      required: true,
+    },
+    benefits: [
+      {
+        //13th-month salary, 12 days of annual paid leaveFlexible working time, from Monday to Friday;....
+        type: String,
+        // enum: ["Lunch", "Hybrid working", "25-day leave", "travel", "healthcare insurance"], // Checklist options
+      },
+    ],
 
-  benefitChecked: {
-    type: Boolean,
-    default: false,
-  },
-  salaryChecked: {
-    type: Boolean,
-    default: false,
-  },
+    benefitChecked: {
+      type: Boolean,
+      default: false,
+    },
+    salaryChecked: {
+      type: Boolean,
+      default: false,
+    },
 
-  createdBy: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    status: {
+      type: Schema.Types.ObjectId,
+      ref: "Status",
+    },
+    description: {
+      type: String,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    fullAt: {
+      type: Date,
+    },
   },
-  status: {
-    type: Schema.Types.ObjectId,
-    ref: "Status",
-  },
-  description: {
-    type: String,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { timestamps: true }
+);
 
 jobSchema.pre("save", async function (next) {
   const currentDate = new Date();
