@@ -66,8 +66,6 @@ function UserManagement() {
     setNewUser((prevData) => ({ ...prevData, [name]: value }));
   };
   const validateUserData = (handleType, data) => {
-    console.log(data);
-
     // check full name
     if (
       !/^(([A-Za-z]+[\-\']?)*([A-Za-z]+)?\s)+([A-Za-z]+[\-\']?)*([A-Za-z]+)?$/.test(
