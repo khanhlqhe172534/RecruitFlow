@@ -12,6 +12,8 @@ const {
 } = require("./routes");
 const Db = require("./models");
 
+// Import the reminder service
+const reminderService = require("./utils/scheduleReminders"); // Adjust path as needed
 
 require("dotenv").config();
 
@@ -35,6 +37,14 @@ app.use("/job", jobRouter);
 app.use("/offer", offerRouter);
 app.use("/user", userRouter);
 app.use("/stats", statsRouter);
+
+// Optional: Add a health check route for the reminder service
+app.get("/reminder-service/status", (req, res) => {
+  res.json({
+    status: "running",
+    message: "Interview reminder service is active",
+  });
+});
 
 app.use((req, res, next) => {
   next(createHttpError(404, "Not Found"));
@@ -60,9 +70,18 @@ app.listen(PORT, HOST, async () => {
     await Db.connectDB();
     console.log("Connected to the database successfully!");
 
-    
+    // Initialize reminder service after database connection
+    try {
+      reminderService.initializeReminders();
+      console.log("Interview reminder service initialized successfully");
+    } catch (reminderError) {
+      console.error("Failed to initialize reminder service:", reminderError);
+      // Optionally, you might want to continue running the server
+    }
   } catch (error) {
     console.error("Failed to initialize server:", error);
     process.exit(1);
   }
 });
+
+module.exports = app;
