@@ -82,11 +82,8 @@ async function createOffer(req, res, next) {
 
     if (interviewData.job?._id) {
       const job = await Job.findById(interviewData.job._id);
-      if (job) {
-        job.number_of_vacancies = Math.max(0, job.number_of_vacancies - 1);
-        if (job.number_of_vacancies === 0) {
-          job.status = CLOSED_STATUS_ID;
-        }
+      if (job && job.number_of_vacancies === 0) {
+        job.status = CLOSED_STATUS_ID; // Chỉ đóng job nếu số lượng tuyển = 0
         updateQueries.push(job.save());
       }
     }
@@ -426,12 +423,12 @@ async function cancelOffer(req, res, next) {
 async function acceptOffer(req, res, next) {
   try {
     const { id } = req.params;
-    const { userId } = req.body; // Người thực hiện cancel
+    const { userId } = req.body; // Người thực hiện accept
 
-    // Tìm offer và populate thông tin phỏng vấn
+    // Tìm offer và populate thông tin phỏng vấn + job liên quan
     const offer = await Offer.findById(id).populate({
       path: "interview",
-      populate: { path: "candidate" }, // Lấy thông tin ứng viên từ phỏng vấn
+      populate: { path: "candidate job" }, // Lấy thông tin ứng viên và job
     });
 
     if (!offer) {
@@ -439,10 +436,26 @@ async function acceptOffer(req, res, next) {
     }
 
     // Cập nhật trạng thái offer thành "Accepted"
-    offer.status = "67c7f361e825bf941d636e07"; // accept status ID
+    offer.status = "67c7f361e825bf941d636e07"; // Accept status ID
     offer.updatedBy = userId;
 
     const updateQueries = [offer.save()]; // Lưu offer trước
+
+    // Nếu có job liên quan, cập nhật số lượng tuyển
+    if (offer.interview?.job?._id) {
+      const job = await Job.findById(offer.interview.job._id);
+
+      if (job) {
+        job.vacancies = Math.max(0, job.vacancies - 1); // Giảm số lượng cần tuyển đi 1
+
+        // Nếu không còn vị trí tuyển dụng, cập nhật trạng thái job thành "Closed"
+        if (job.vacancies === 0) {
+          job.status = "67bc5a667ddc08921b739698"; // Closed status ID
+        }
+
+        updateQueries.push(job.save());
+      }
+    }
 
     // Thực hiện cập nhật song song
     await Promise.all(updateQueries);
@@ -450,9 +463,9 @@ async function acceptOffer(req, res, next) {
     // Gửi email xác nhận offer
     await sendOfferAcceptanceEmail(offer);
 
-    res.status(200).json({ message: "Offer cancelled successfully" });
+    res.status(200).json({ message: "Offer accepted successfully" });
   } catch (err) {
-    console.error("Error canceling offer:", err);
+    console.error("Error accepting offer:", err);
     res.status(500).json({ message: "Internal server error." });
   }
 }
@@ -556,7 +569,6 @@ async function rejectOffer(req, res, next) {
     res.status(500).json({ message: "Internal server error." });
   }
 }
-
 
 async function sendOfferRejectionEmail(offer) {
   // Kiểm tra thông tin ứng viên
