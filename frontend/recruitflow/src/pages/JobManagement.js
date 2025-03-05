@@ -255,7 +255,7 @@ function JobManagement() {
   };
 
   return (
-    <div className="d-flex flex-column ">
+    <div className="d-flex flex-column bg-light ">
       <div
         className="container-fluid px-4"
         style={{ border: "" }}
