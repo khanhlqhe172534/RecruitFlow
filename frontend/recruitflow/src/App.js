@@ -14,6 +14,8 @@ import JobManagement from "./pages/JobManagement";
 import JobDetails from "./pages/JobDetails";
 import InterviewDetail from "./pages/InterviewDetail";
 import OfferDetail from "./pages/OfferDetail";
+import ResetPassword from "./pages/ResetPassword";
+import EditProfile from "./pages/EditProfile";
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
 }
@@ -31,13 +33,29 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* LandingPage is displayed separately and not inside Layout */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
+        <Route
+          path="/login"
+          element={<Login setAuth={setIsAuthenticated} />}
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
 
-        <Route path="/no-access" element={<NoAccess />} />
+        <Route
+          path="/no-access"
+          element={<NoAccess />}
+        />
 
         {/* Routes that require Layout */}
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={<Layout />}
+        >
           {/* Protected route for InterviewManagement */}
           <Route
             path="interview"
@@ -61,6 +79,14 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <EditProfile />
               </ProtectedRoute>
             }
           />

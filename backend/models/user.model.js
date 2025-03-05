@@ -1,3 +1,5 @@
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
@@ -33,9 +35,19 @@ const userSchema = new Schema({
     ref: "Role",
   },
 });
-
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  console.log(this.password);
+  this.password = await bcrypt.hash(this.password, saltRounds);
+  console.log(this.password);
+  next();
+});
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
-
-

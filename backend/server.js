@@ -8,6 +8,7 @@ const {
   jobRouter,
   offerRouter,
   userRouter,
+  statsRouter
 } = require("./routes");
 const Db = require("./models");
 
@@ -35,6 +36,7 @@ app.use("/interview", interviewRouter);
 app.use("/job", jobRouter);
 app.use("/offer", offerRouter);
 app.use("/user", userRouter);
+app.use("/stats", statsRouter);
 
 // Optional: Add a health check route for the reminder service
 app.get("/reminder-service/status", (req, res) => {

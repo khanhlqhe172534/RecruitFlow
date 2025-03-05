@@ -16,14 +16,11 @@ function Login({ setAuth }) {
 
     try {
       // Get all users
-      const response = await axios.get("http://localhost:9999/user/");
-      const users = response.data;
-
-      console.log(users);
-      // Find user with matching email and password
-      const user = users.find(
-        (u) => u.email === username && u.password === password
-      );
+      const response = await axios.post("http://localhost:9999/user/login", {
+        email: username,
+        password: password,
+      });
+      const user = response.data.user;
 
       if (user) {
         // Check if the user is deactivated
@@ -40,6 +37,7 @@ function Login({ setAuth }) {
         localStorage.setItem("userRole", user.role.name);
         localStorage.setItem("userEmail", user.email);
         localStorage.setItem("userFullName", user.fullname);
+        localStorage.setItem("token", response.data.token);
 
         // Set authentication state
         setAuth(true);
@@ -118,13 +116,17 @@ function Login({ setAuth }) {
                       <div className="mb-4">
                         <h3>Sign in</h3>
                         <p>
-                          Forgotten your password? <a href="/#">Reset it.</a>
+                          Forgotten your password?{" "}
+                          <a href="/reset-password">Reset it.</a>
                         </p>
                       </div>
                     </div>
                   </div>
                   {error && <p style={{ color: "red" }}>{error}</p>}
-                  <form autoComplete="off" onSubmit={handleLogin}>
+                  <form
+                    autoComplete="off"
+                    onSubmit={handleLogin}
+                  >
                     <div className="row gy-3 overflow-hidden">
                       <div className="col-12">
                         <div className="form-floating mb-3">
@@ -138,7 +140,10 @@ function Login({ setAuth }) {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                           />
-                          <label htmlFor="email" className="form-label">
+                          <label
+                            htmlFor="email"
+                            className="form-label"
+                          >
                             Email
                           </label>
                         </div>
@@ -155,7 +160,10 @@ function Login({ setAuth }) {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                           />
-                          <label htmlFor="password" className="form-label">
+                          <label
+                            htmlFor="password"
+                            className="form-label"
+                          >
                             Password
                           </label>
                         </div>
