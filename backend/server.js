@@ -8,6 +8,7 @@ const {
   jobRouter,
   offerRouter,
   userRouter,
+  statsRouter
 } = require("./routes");
 const Db = require("./models");
 
@@ -33,6 +34,7 @@ app.use("/interview", interviewRouter);
 app.use("/job", jobRouter);
 app.use("/offer", offerRouter);
 app.use("/user", userRouter);
+app.use("/stats", statsRouter);
 
 app.use((req, res, next) => {
   next(createHttpError(404, "Not Found"));
