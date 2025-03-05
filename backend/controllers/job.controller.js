@@ -2,6 +2,9 @@ const Job = require("../models/job.model");
 const Status = require("../models/status.model");
 const mongoose = require("mongoose");
 const cron = require("node-cron");
+const nodemailer = require("nodemailer");
+const User = require("../models/user.model");
+require("dotenv").config();
 
 // Get all jobs
 async function getAllJob(req, res, next) {}
@@ -199,6 +202,16 @@ async function addJob(req, res, next) {
     const newJob = new Job(jobData);
     await newJob.save();
 
+    const managers = await User.find({
+      role: { $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"] },
+    }).select("email");
+
+    const recipientEmails = managers.map((user) => user.email);
+
+    if (recipientEmails.length > 0) {
+      sendJobNotificationEmail(recipientEmails, newJob);
+    }
+
     res.status(201).json({
       message: "Job created and set to 'waiting for approval'",
       job: newJob,
@@ -206,6 +219,47 @@ async function addJob(req, res, next) {
   } catch (err) {
     console.error("Error in addJob:", err);
     next(err);
+  }
+}
+
+async function sendJobNotificationEmail(recipients, job) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: '"Job Management System" <your-email@gmail.com>',
+    to: recipients.join(","),
+    subject: `New Job Approval Request: ${job.job_name}`,
+    html: `
+      <h2>New Job Approval Request</h2>
+      <p>A new job has been created and is awaiting approval.</p>
+      <h3>Job Details:</h3>
+      <ul>
+        <li><strong>Job Name:</strong> ${job.job_name}</li>
+        <li><strong>Salary:</strong> ${job.salary_min} - ${job.salary_max}</li>
+        <li><strong>Start Date:</strong> ${new Date(job.start_date).toLocaleString()}</li>
+        <li><strong>End Date:</strong> ${new Date(job.end_date).toLocaleString()}</li>
+        <li><strong>Level:</strong> ${job.levels}</li>
+        <li><strong>Skills Required:</strong> ${job.skills.join(", ")}</li>
+        <li><strong>Working Type:</strong> ${job.working_type}</li>
+        <li><strong>Experience:</strong> ${job.experience}</li>
+        <li><strong>Number of Vacancies:</strong> ${job.number_of_vacancies}</li>
+        <li><strong>Benefits:</strong> ${job.benefits.join(", ")}</li>
+      </ul>
+      <p>Please review and approve this job.</p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Job notification email sent successfully");
+  } catch (error) {
+    console.error("Error sending email:", error);
   }
 }
 

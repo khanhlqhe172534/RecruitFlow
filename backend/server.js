@@ -13,6 +13,7 @@ const Db = require("./models");
 
 // Import the reminder service
 const reminderService = require("./utils/scheduleReminders"); // Adjust path as needed
+require("./utils/autoCloseJob"); // Adjust path as needed
 
 require("dotenv").config();
 
