@@ -361,7 +361,7 @@ function InterviewDetail() {
           </div>
           {/* Show "Create New Offer" Button if Result is "Pass" */}
           {interview.result === "Pass" &&
-            user.role === "Interviewer" &&
+            user.role === "Recruitment Manager" &&
             candidate.status === "67bc5a667ddc08921b739694" && // activated
             job.status === "67bc5a667ddc08921b739697" && ( // open
               <div className="col-3 ms-1">

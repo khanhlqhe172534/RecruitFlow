@@ -20,6 +20,8 @@ function OfferDetail() {
   const navigate = useNavigate();
   const [openModalCancel, setOpenModalCancel] = useState(false);
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
+  const [openModelAccept, setOpenModelAccept] = useState(false);
+  const [openModelReject, setOpenModelReject] = useState(false);
   const [user, setUser] = useState({ email: "", id: "", role: "" });
   const [offer, setOffer] = useState(null);
   const { id } = useParams(); // Assuming ID comes from the URL
@@ -49,7 +51,7 @@ function OfferDetail() {
     };
 
     fetchOffer();
-  }, [id, openModalCancel, openModalUpdate]); // Only runs when ID changes
+  }, [id, openModalCancel, openModalUpdate, openModelAccept, openModelReject]); // Only runs when ID changes
 
   // Cancel offer
   const handleOpenModalCancel = () => {
@@ -118,7 +120,55 @@ function OfferDetail() {
       toast.error("Failed to update offer. Please try again.");
     }
   };
+  // Accept offer
+  const handleOpenModelAccept = () => {
+    setOpenModelAccept(true);
+  };
 
+  const handleCloseModelAccept = () => {
+    setOpenModelAccept(false);
+  };
+
+  const handleAcceptOffer = async () => {
+    try {
+      const response = await axios.put(
+        `http://localhost:9999/offer/${id}/accept`,
+        {
+          userId: user.id, // Gửi ID của người cancel
+        }
+      );
+
+      // console.log("Offer canceled successfully:", response.data);
+      toast.success("Offer accept successfully");
+      setOpenModelAccept(false); // Đóng modal
+    } catch (error) {
+      console.error("Error canceling offer:", error);
+    }
+  };
+  // Reject offer
+  const handleOpenModelReject = () => {
+    setOpenModelReject(true);
+  };
+
+  const handleCloseModelReject = () => {
+    setOpenModelReject(false);
+  };
+  const handleRejectOffer = async () => {
+    try {
+      const response = await axios.put(
+        `http://localhost:9999/offer/${id}/reject`,
+        {
+          userId: user.id, // Gửi ID của người cancel
+        }
+      );
+
+      // console.log("Offer canceled successfully:", response.data);
+      toast.success("Offer canceled successfully");
+      setOpenModelReject(false); // Đóng modal
+    } catch (error) {
+      console.error("Error canceling offer:", error);
+    }
+  };
   if (!offer) return <p>Loading offer details...</p>;
 
   const formatDate = (dateString) => {
@@ -163,7 +213,7 @@ function OfferDetail() {
           </div>
           <div className="col-1"></div>
           <div className="col-1">
-            {offer.status?.name === "Open" && (
+            {offer.status?.name === "waiting for approved" && (
               <button
                 className="btn btn-primary w-100"
                 onClick={handleOpenModalUpdate}
@@ -440,7 +490,106 @@ function OfferDetail() {
             </div>
           </div>
         </Card>
+        {offer.status?.name === "waiting for approved" && (
+          <div className="row">
+            <div className="col-1">
+              <button
+                className="btn btn-success w-100"
+                onClick={handleOpenModelAccept}
+              >
+                Accept
+              </button>
+              <Modal
+                show={openModelAccept}
+                onHide={handleCloseModelAccept}
+                centered
+              >
+                <Modal.Body>
+                  <div className="text-center p-4">
+                    <DoNotDisturbIcon
+                      className="text-success"
+                      style={{ fontSize: 64 }}
+                    />
+                    <p className="h3 mt-3">Hang on a sec!</p>
+                    <p>
+                      Confirm to Accept this offer? <br />
+                      Confirm your choice by clicking "Yes".
+                      <br />
+                      This action <strong>cannot be undone</strong>.
+                    </p>
 
+                    <div className="row">
+                      <div className="col-6">
+                        <button
+                          className="btn btn-success w-100 rounded-4"
+                          onClick={handleAcceptOffer}
+                        >
+                          Yes
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-outline-success w-100 rounded-4"
+                          onClick={handleCloseModelAccept}
+                        >
+                          Let Me Rethink
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </Modal.Body>
+              </Modal>
+            </div>
+            <div className="col-1">
+              <button
+                className="btn btn-danger w-100"
+                onClick={handleOpenModelReject}
+              >
+                Reject
+              </button>
+              <Modal
+                show={openModelReject}
+                onHide={handleCloseModelReject}
+                centered
+              >
+                <Modal.Body>
+                  <div className="text-center p-4">
+                    <DoNotDisturbIcon
+                      className="text-danger"
+                      style={{ fontSize: 64 }}
+                    />
+                    <p className="h3 mt-3">Hang on a sec!</p>
+                    <p>
+                      Confirm to REJECT this offer? <br />
+                      Confirm your choice by clicking "Yes".
+                      <br />
+                      This action <strong>cannot be undone</strong>.
+                    </p>
+
+                    <div className="row">
+                      <div className="col-6">
+                        <button
+                          className="btn btn-danger w-100 rounded-4"
+                          onClick={handleRejectOffer}
+                        >
+                          Yes
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-outline-danger w-100 rounded-4"
+                          onClick={handleCloseModelReject}
+                        >
+                          Let Me Rethink
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </Modal.Body>
+              </Modal>
+            </div>
+          </div>
+        )}
         {/* Toast Notifications */}
         <ToastContainer />
       </div>
