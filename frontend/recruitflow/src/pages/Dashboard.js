@@ -155,34 +155,34 @@ const RecruitmentDashboard = () => {
 
       <Grid container spacing={3}>
         {/* Biểu đồ số lượng ứng viên theo tháng */}
-        <Grid item xs={12} md={6}>
-          <Paper className="p-3 shadow" style={{ height: "350px", padding: "20px" }}>
+        <Grid item xs={12} md={6} lg={6}>
+          <Paper className="p-3 shadow" style={{ height: "350px", maxWidth: "550px", margin: "auto" }}>
             <Typography variant="h6" align="center">📌 Số lượng ứng viên theo tháng</Typography>
-            <Bar data={candidateChartData} options={{ responsive: true, maintainAspectRatio: false }} />
+            <Bar style={{padding: "20px"}} data={candidateChartData} options={{ responsive: true, maintainAspectRatio: false }} />
           </Paper>
         </Grid>
 
         {/* Biểu đồ số lượng ứng viên theo trạng thái */}
-        <Grid item xs={12} md={6}>
-          <Paper className="p-3 shadow" style={{ height: "350px", padding: "20px" }}>
+        <Grid item xs={12} md={6} lg={6}>
+          <Paper className="p-3 shadow" style={{ height: "350px", maxWidth: "550px", margin: "auto" }}>
             <Typography variant="h6" align="center">📌 Số lượng ứng viên theo trạng thái</Typography>
-            <Doughnut data={candidateStatusChartData} options={doughnutOptions} />
+            <Doughnut style={{padding: "20px"}} data={candidateStatusChartData} options={doughnutOptions} />
           </Paper>
         </Grid>
 
         {/* Biểu đồ thời gian trung bình tuyển dụng */}
-        <Grid item xs={12} md={6}>
-          <Paper className="p-3 shadow" style={{ height: "350px", padding: "20px" }}>
+        <Grid item xs={12} md={6} lg={6}>
+          <Paper className="p-3 shadow" style={{ height: "350px", maxWidth: "550px", margin: "auto" }}>
             <Typography variant="h6" align="center">📌 Thời gian trung bình tuyển dụng</Typography>
             <Line data={hiringTimeChartData} />
           </Paper>
         </Grid>
 
         {/* Biểu đồ tỷ lệ trạng thái Offer */}
-        <Grid item xs={12} md={6}>
-          <Paper className="p-3 shadow" style={{ height: "350px", padding: "20px" }}>
+        <Grid item xs={12} md={6} lg={6}>
+          <Paper className="p-3 shadow" style={{ height: "350px", maxWidth: "550px", margin: "auto" }}>
             <Typography variant="h6" align="center">📌 Tỷ lệ trạng thái Offer</Typography>
-            <Bar data={stackedBarChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }} />
+            <Bar style={{padding: "20px"}} data={stackedBarChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }} />
           </Paper>
         </Grid>
       </Grid>
