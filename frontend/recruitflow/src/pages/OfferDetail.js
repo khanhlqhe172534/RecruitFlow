@@ -213,14 +213,15 @@ function OfferDetail() {
           </div>
           <div className="col-1"></div>
           <div className="col-1">
-            {offer.status?.name === "waiting for approved" && (
-              <button
-                className="btn btn-primary w-100"
-                onClick={handleOpenModalUpdate}
-              >
-                Update
-              </button>
-            )}
+            {offer.status?.name === "waiting for approved" &&
+              user?.role === "Recuitment Manager" && (
+                <button
+                  className="btn btn-primary w-100"
+                  onClick={handleOpenModalUpdate}
+                >
+                  Update
+                </button>
+              )}
             <Modal
               show={openModalUpdate}
               onHide={handleCloseModalUpdate}
@@ -306,15 +307,16 @@ function OfferDetail() {
             </Modal>
           </div>
           <div className="col-1">
-            {offer.status?.name === "Open" && (
-              <button
-                className="btn btn-danger"
-                style={{ float: "right" }}
-                onClick={handleOpenModalCancel}
-              >
-                Cancel
-              </button>
-            )}
+            {offer.status?.name === "Open" &&
+              user?.role === "Recuitment Manager" && (
+                <button
+                  className="btn btn-danger"
+                  style={{ float: "right" }}
+                  onClick={handleOpenModalCancel}
+                >
+                  Cancel
+                </button>
+              )}
 
             <Modal
               show={openModalCancel}
@@ -490,106 +492,107 @@ function OfferDetail() {
             </div>
           </div>
         </Card>
-        {offer.status?.name === "waiting for approved" && (
-          <div className="row">
-            <div className="col-1">
-              <button
-                className="btn btn-success w-100"
-                onClick={handleOpenModelAccept}
-              >
-                Accept
-              </button>
-              <Modal
-                show={openModelAccept}
-                onHide={handleCloseModelAccept}
-                centered
-              >
-                <Modal.Body>
-                  <div className="text-center p-4">
-                    <DoNotDisturbIcon
-                      className="text-success"
-                      style={{ fontSize: 64 }}
-                    />
-                    <p className="h3 mt-3">Hang on a sec!</p>
-                    <p>
-                      Confirm to Accept this offer? <br />
-                      Confirm your choice by clicking "Yes".
-                      <br />
-                      This action <strong>cannot be undone</strong>.
-                    </p>
+        {offer.status?.name === "waiting for approved" &&
+          user?.role === "Recuitment Manager" && (
+            <div className="row">
+              <div className="col-1">
+                <button
+                  className="btn btn-success w-100"
+                  onClick={handleOpenModelAccept}
+                >
+                  Accept
+                </button>
+                <Modal
+                  show={openModelAccept}
+                  onHide={handleCloseModelAccept}
+                  centered
+                >
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <DoNotDisturbIcon
+                        className="text-success"
+                        style={{ fontSize: 64 }}
+                      />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        Confirm to Accept this offer? <br />
+                        Confirm your choice by clicking "Yes".
+                        <br />
+                        This action <strong>cannot be undone</strong>.
+                      </p>
 
-                    <div className="row">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-success w-100 rounded-4"
-                          onClick={handleAcceptOffer}
-                        >
-                          Yes
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-outline-success w-100 rounded-4"
-                          onClick={handleCloseModelAccept}
-                        >
-                          Let Me Rethink
-                        </button>
+                      <div className="row">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-success w-100 rounded-4"
+                            onClick={handleAcceptOffer}
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-success w-100 rounded-4"
+                            onClick={handleCloseModelAccept}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Modal.Body>
-              </Modal>
-            </div>
-            <div className="col-1">
-              <button
-                className="btn btn-danger w-100"
-                onClick={handleOpenModelReject}
-              >
-                Reject
-              </button>
-              <Modal
-                show={openModelReject}
-                onHide={handleCloseModelReject}
-                centered
-              >
-                <Modal.Body>
-                  <div className="text-center p-4">
-                    <DoNotDisturbIcon
-                      className="text-danger"
-                      style={{ fontSize: 64 }}
-                    />
-                    <p className="h3 mt-3">Hang on a sec!</p>
-                    <p>
-                      Confirm to REJECT this offer? <br />
-                      Confirm your choice by clicking "Yes".
-                      <br />
-                      This action <strong>cannot be undone</strong>.
-                    </p>
+                  </Modal.Body>
+                </Modal>
+              </div>
+              <div className="col-1">
+                <button
+                  className="btn btn-danger w-100"
+                  onClick={handleOpenModelReject}
+                >
+                  Reject
+                </button>
+                <Modal
+                  show={openModelReject}
+                  onHide={handleCloseModelReject}
+                  centered
+                >
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <DoNotDisturbIcon
+                        className="text-danger"
+                        style={{ fontSize: 64 }}
+                      />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        Confirm to REJECT this offer? <br />
+                        Confirm your choice by clicking "Yes".
+                        <br />
+                        This action <strong>cannot be undone</strong>.
+                      </p>
 
-                    <div className="row">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-danger w-100 rounded-4"
-                          onClick={handleRejectOffer}
-                        >
-                          Yes
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-outline-danger w-100 rounded-4"
-                          onClick={handleCloseModelReject}
-                        >
-                          Let Me Rethink
-                        </button>
+                      <div className="row">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-danger w-100 rounded-4"
+                            onClick={handleRejectOffer}
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-danger w-100 rounded-4"
+                            onClick={handleCloseModelReject}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Modal.Body>
-              </Modal>
+                  </Modal.Body>
+                </Modal>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         {/* Toast Notifications */}
         <ToastContainer />
       </div>
