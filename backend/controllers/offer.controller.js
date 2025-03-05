@@ -537,22 +537,26 @@ async function rejectOffer(req, res, next) {
       );
     }
 
-    // Xóa offer khỏi database
-    updateQueries.push(Offer.findByIdAndDelete(id));
+    // Cập nhật trạng thái của offer thành "Rejected"
+    offer.status = "67c7f374e825bf941d636e09"; // Rejected status ID
+    offer.updatedBy = userId;
+    updateQueries.push(offer.save());
 
     // Thực hiện cập nhật song song
     await Promise.all(updateQueries);
+
     // Gửi email thông báo reject
     await sendOfferRejectionEmail(offer);
 
     res
       .status(200)
-      .json({ message: "Offer rejected and deleted successfully" });
+      .json({ message: "Offer rejected and updated successfully" });
   } catch (err) {
     console.error("Error rejecting offer:", err);
     res.status(500).json({ message: "Internal server error." });
   }
 }
+
 
 async function sendOfferRejectionEmail(offer) {
   // Kiểm tra thông tin ứng viên
