@@ -63,7 +63,7 @@ const RecruitmentDashboard = () => {
     data.map((item) => `${item.year}-${item.month.toString().padStart(2, "0")}`);
 
   const statusLabels = [
-    "activated",
+    "reject",
     "accept",
     "open",
     "closed",
@@ -149,7 +149,7 @@ const RecruitmentDashboard = () => {
 
   return (
     <Container maxWidth="xl">
-      <Typography variant="h4" align="center" gutterBottom>
+      <Typography variant="h4" align="center" gutterBottom className="mt-3 mb-5"> 
         📊 Recruitment Dashboard
       </Typography>
 
