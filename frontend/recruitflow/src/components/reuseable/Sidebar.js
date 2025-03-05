@@ -54,6 +54,7 @@ export default function SideBar() {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userFullName");
     localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -173,10 +174,16 @@ export default function SideBar() {
 
               {!collapsed && (
                 <div className="ms-3">
-                  <Typography variant="body1" fontWeight="bold">
+                  <Typography
+                    variant="body1"
+                    fontWeight="bold"
+                  >
                     {user.fullName}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                  >
                     {user.role}
                   </Typography>
                 </div>
@@ -195,7 +202,7 @@ export default function SideBar() {
             <nav aria-label="User account actions">
               <List>
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton onClick={() => navigate("/profile")}>
                     <ListItemIcon>
                       <EditIcon />
                     </ListItemIcon>
