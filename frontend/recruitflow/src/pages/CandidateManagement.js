@@ -33,6 +33,8 @@ function CandidateManagement() {
     status: "67bc5a667ddc08921b739694", // default status = activated
     role: "67bc59b77ddc08921b73968f", // default role = candidate
   });
+  const [errors, setErrors] = useState({});
+
   const usersPerPage = 6;
   const RECRUITER_ROLE_ID = "Recruitment Manager";
 
@@ -145,66 +147,58 @@ function CandidateManagement() {
   };
 
   //Validate
-  const validateCandidateData = (data) => {
-    // validate email and phone
-    const existingCandidate = candidate.find(
-      (c) =>
-        c.email.toLowerCase() === newCandidateData.email ||
-        c.phoneNumber === newCandidateData.phoneNumber
+  const validateCandidateData = (data, isEdit = false) => {
+    let newErrors = {};
+  
+    // Check for duplicate email
+    const existingEmailCandidate = candidate.find(
+      (c) => c.email.toLowerCase() === data.email.toLowerCase() && (!isEdit || c._id !== data._id)
     );
-
-    if (existingCandidate) {
-      return {
-        isValid: false,
-        error: "Email or phone number already exists. Please try again.",
-      };
+    if (existingEmailCandidate) {
+      newErrors.email = "Email already exists.";
     }
-
-    // check full name
+  
+    // Check for duplicate phone number
+    const existingPhoneCandidate = candidate.find(
+      (c) => c.phoneNumber === data.phoneNumber && (!isEdit || c._id !== data._id)
+    );
+    if (existingPhoneCandidate) {
+      newErrors.phoneNumber = "Phone number already exists.";
+    }
+  
+    // Check full name
     if (/\d/.test(data.fullname)) {
-      return {
-        isValid: false,
-        error: "Full name cannot contain numbers.",
-      };
+      newErrors.fullname = "Full name cannot contain numbers.";
     }
-
-    // check phone has number and "+" optional
-    if (!/^[+]?\d+$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: 'Phone number must contain only numbers and "+" (optional).',
-      };
+  
+    // Check phone number format
+    if (!/^[+]?[0-9]{10,11}$/.test(data.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be between 10 and 11 digits.";
     }
-
-    if (!/^[+]?\d{10,11}$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: "Phone number must be between 10 and 11 digits.",
-      };
+  
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return false;
     }
-
-    // if all information is valid
-    return {
-      isValid: true,
-      error: null,
-    };
+  
+    setErrors({});
+    return true;
   };
+  
 
-  // Handle form submission
   const handleAddCandidate = (e) => {
     e.preventDefault();
-
+    setErrors({});
+  
     if (!hasRecruiterPermission) {
       alert("You don't have permission to add candidates");
       return;
     }
-    const { isValid, error } = validateCandidateData(newCandidateData);
-
-    if (!isValid) {
-      alert(error);
+  
+    if (!validateCandidateData(newCandidateData)) {
       return;
     }
-    // Send data to backend
+  
     fetch(`http://localhost:9999/candidate/create`, {
       method: "POST",
       headers: {
@@ -214,7 +208,6 @@ function CandidateManagement() {
     })
       .then((res) => res.json())
       .then((data) => {
-        // Refresh the candidate list
         setCandidate([...candidate, data]);
         setShowAddModal(false);
         window.location.reload();
@@ -227,73 +220,33 @@ function CandidateManagement() {
     setCurrentCandidate({ ...currentCandidate, [name]: value });
   };
   //Validate
+
+
   const validateEditData = (data) => {
-    // validate email and phone
-    const existingCandidate = candidate.find(
-      (c) =>
-        c.email.toLowerCase() === currentCandidate.email ||
-        c.phoneNumber === currentCandidate.phoneNumber
-    );
-
-    if (existingCandidate) {
-      return {
-        isValid: false,
-        error: "Email or phone number already exists. Please try again.",
-      };
-    }
-
-    // check full name
-    if (/\d/.test(data.fullname)) {
-      return {
-        isValid: false,
-        error: "Full name cannot contain numbers.",
-      };
-    }
-
-    // check phone has number and "+" optional
-    if (!/^[+]?\d+$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: 'Phone number must contain only numbers and "+" (optional).',
-      };
-    }
-
-    if (!/^[+]?\d{10,11}$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: "Phone number must be between 10 and 11 digits.",
-      };
-    }
-
-    // if all information is valid
-    return {
-      isValid: true,
-      error: null,
-    };
+    return validateCandidateData(data, true);
   };
   const handleEditCandidate = (e) => {
     e.preventDefault();
+    setErrors({});
+  
     if (!hasRecruiterPermission) {
       alert("You don't have permission to edit candidates");
       return;
     }
-    const { isValid, error } = validateEditData(currentCandidate);
-
-    if (!isValid) {
-      alert(error);
+  
+    if (!validateEditData(currentCandidate)) {
       return;
     }
-    // request to backend
+  
     fetch(`http://localhost:9999/candidate/update/${currentCandidate._id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(currentCandidate), // data is updated
+      body: JSON.stringify(currentCandidate),
     })
       .then((res) => res.json())
       .then((data) => {
-        // Update list when the data is updated success
         const updatedCandidates = candidate.map((c) =>
           c._id === data._id ? data : c
         );
@@ -301,6 +254,17 @@ function CandidateManagement() {
         setShowEditModal(false);
       })
       .catch((err) => console.log(err));
+  };
+  
+  const handleOpenAddModal = () => {
+    setErrors({});
+    setShowAddModal(true);
+  };
+  
+  const handleOpenEditModal = (candidate) => {
+    setErrors({});
+    setCurrentCandidate(candidate);
+    setShowEditModal(true);
   };
 
   return (
@@ -323,7 +287,7 @@ function CandidateManagement() {
                 <Button
                   variant="warning"
                   className="rounded-pill"
-                  onClick={() => setShowAddModal(true)}
+                  onClick={handleOpenAddModal}
                 >
                   <UserPlus className="pb-1" size={20} /> Add Candidate
                 </Button>
@@ -398,7 +362,7 @@ function CandidateManagement() {
                           className="m-1 btn btn-icon btn-pills btn-soft-warning"
                           onClick={() => {
                             setCurrentCandidate(c);
-                            setShowEditModal(true);
+                            handleOpenEditModal(c);
                           }}
                         >
                           <Pencil size={18} />
@@ -474,6 +438,7 @@ function CandidateManagement() {
                       value={newCandidateData.email}
                       onChange={handleInputChange}
                     />
+                    {errors.email && <div className="text-danger">{errors.email}</div>}
                   </Form.Group>
                 </Col>
               </Row>
@@ -524,6 +489,7 @@ function CandidateManagement() {
                       value={newCandidateData.phoneNumber}
                       onChange={handleInputChange}
                     />
+                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -690,8 +656,10 @@ function CandidateManagement() {
                       type="email"
                       name="email"
                       value={currentCandidate?.email}
-                      disabled
+                      onChange={handleEditInputChange}
+
                     />
+                    {errors.email && <div className="text-danger">{errors.email}</div>}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Date of Birth</Form.Label>
@@ -732,8 +700,10 @@ function CandidateManagement() {
                       type="tel"
                       name="phoneNumber"
                       value={currentCandidate?.phoneNumber}
-                      disabled
+                      onChange={handleEditInputChange}
+
                     />
+                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Gender</Form.Label>

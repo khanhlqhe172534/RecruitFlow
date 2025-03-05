@@ -137,7 +137,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
           Day
         </button>
         {user.role === "Recruitment Manager" && (
-          <button className="btn btn-danger mx-2" onClick={handleOpen}>
+          <button className="btn btn-primary mx-2" onClick={handleOpen}>
             Add New Interview +
           </button>
         )}

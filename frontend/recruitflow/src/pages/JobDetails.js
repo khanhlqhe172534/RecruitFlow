@@ -1,13 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Grid,
-  Divider,
-} from "@mui/material";
+import { Card, CardContent, Typography, Grid, Divider } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
 
@@ -17,12 +10,11 @@ import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import SalaryIcon from "@mui/icons-material/AttachMoney";
-import ExperienceIcon from "@mui/icons-material/Work";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import StatusIcon from "@mui/icons-material/CheckCircleOutline";
 import PersonIcon from "@mui/icons-material/Person";
-import WarningIcon from "@mui/icons-material/Warning";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import { ToastContainer, toast } from "react-toastify";
 
 function JobDetails() {
   const { jobId } = useParams();
@@ -30,9 +22,11 @@ function JobDetails() {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState(null);
   const [updatedJob, setUpdateJob] = useState({});
-  const [open, setOpen] = useState(false);
   const [close, setClose] = useState(false);
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
+  const [rejectModal, setRejectModal] = useState(false);
+  const [approveModal, setApproveModal] = useState(false);
 
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail");
@@ -55,7 +49,7 @@ function JobDetails() {
 
   useEffect(() => {
     fetchJobDetails();
-  }, [jobId]);
+  }, [jobId, refreshTrigger]);
 
   if (!job) return <p>Loading...</p>;
 
@@ -75,13 +69,11 @@ function JobDetails() {
       .filter((line) => line.length > 0);
   };
 
-  // Function to handle changes in input fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUpdateJob((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  // Options for select inputs
   const skillOptions = [
     "Java",
     "Nodejs",
@@ -108,7 +100,6 @@ function JobDetails() {
   ];
   const levelOptions = ["Senior", "Junior", "Fresher", "Intern"];
 
-  // Function to handle checkboxes for skills and benefits
   const handleCheckboxChange = (e, type) => {
     const { value, checked } = e.target;
     setUpdateJob((prevJob) => {
@@ -139,11 +130,12 @@ function JobDetails() {
         return;
       }
 
-      const data = await response.json();
       handleCloseModal();
       fetchJobDetails();
+      toast.success("Job updated successfully");
     } catch (error) {
       console.error("Error updating job:", error);
+      toast.error("Failed to update job. Please try again.");
     }
   };
 
@@ -166,17 +158,36 @@ function JobDetails() {
     }
   };
 
-  const handleOpenJob = async () => {
+  const handleApproval = async (isApproved) => {
     try {
-      const response = await fetch(`http://localhost:9999/job/${jobId}/open`, {
+      let url = "";
+      let updateData = {};
+
+      if (user.role === "Payroll Manager") {
+        url = `http://localhost:9999/job/${job._id}/salary-check`;
+        updateData.salaryChecked = isApproved;
+      } else if (user.role === "Benefit Manager") {
+        url = `http://localhost:9999/job/${job._id}/benefit-check`;
+        updateData.benefitChecked = isApproved;
+      }
+
+      const response = await fetch(url, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
       });
-      const data = await response.json();
-      console.log(data);
-      fetchJobDetails();
-      setOpen(false);
+
+      if (!response.ok) {
+        throw new Error("Failed to update job status");
+      }
+
+      const updatedJob = await response.json();
+      setJob(updatedJob.job);
+      setRefreshTrigger((prev) => !prev);
+      setApproveModal(false);
+      setRejectModal(false);
     } catch (error) {
-      console.error("Error opening job:", error);
+      console.error("Error updating job:", error);
     }
   };
 
@@ -354,14 +365,109 @@ function JobDetails() {
                       </Card>
                     </Grid>
                   </Grid>
+                  <Grid container spacing={2} className="mt-3">
+                    <Grid item xs={6}>
+                      <Card
+                        variant="outlined"
+                        sx={{
+                          borderRadius: "10px",
+                          padding: "8px",
+                          borderColor: "#e0e0e0",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <VerifiedIcon
+                            sx={{
+                              fontSize: "30px",
+                              color: job.salaryChecked
+                                ? "#4caf50"
+                                : job.salaryChecked === false
+                                ? "#f44336"
+                                : "#ff9800",
+                              marginRight: "8px",
+                            }}
+                          />
+                          <div>
+                            <Typography variant="body2">
+                              <strong>Salary Checked:</strong>
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              style={{
+                                color: job.salaryChecked
+                                  ? "#4caf50"
+                                  : job.salaryChecked === false
+                                  ? "#f44336"
+                                  : "#ff9800",
+                              }}
+                            >
+                              {job.salaryChecked
+                                ? "Approved"
+                                : job.salaryChecked === false
+                                ? "Rejected"
+                                : "Pending"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </Card>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Card
+                        variant="outlined"
+                        sx={{
+                          borderRadius: "10px",
+                          padding: "8px",
+                          borderColor: "#e0e0e0",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <VerifiedIcon
+                            sx={{
+                              fontSize: "30px",
+                              color: job.benefitChecked
+                                ? "#4caf50"
+                                : job.benefitChecked === false
+                                ? "#f44336"
+                                : "#ff9800",
+                              marginRight: "8px",
+                            }}
+                          />
+                          <div>
+                            <Typography variant="body2">
+                              <strong>Benefit Checked:</strong>
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              style={{
+                                color: job.benefitChecked
+                                  ? "#4caf50"
+                                  : job.benefitChecked === false
+                                  ? "#f44336"
+                                  : "#ff9800",
+                              }}
+                            >
+                              {job.benefitChecked
+                                ? "Approved"
+                                : job.benefitChecked === false
+                                ? "Rejected"
+                                : "Pending"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </Card>
+                    </Grid>
+                  </Grid>
 
                   <div className="d-flex mb-3 row">
-                    {user.role === "Manager" &&
-                      job.status.name === "waiting for approved" && (
+                    {user.role === "Recruitment Manager" &&
+                      job.status.name === "waiting for approved" &&
+                      job.salaryChecked == null &&
+                      job.benefitChecked == null && (
                         <div>
                           <Button
                             variant="success"
-                            className="btn btn-info col-md-2 btn-md float-end"
+                            className="btn btn-info col-md-2 btn-md float-end mt-4"
                             style={{ borderRadius: "8px" }}
                             onClick={() => setShowModal(true)}
                           >
@@ -370,40 +476,43 @@ function JobDetails() {
                         </div>
                       )}
 
-                    {user.role === "Manager" && job.status.name === "open" && (
-                      <div>
-                        <Button
-                          variant="danger"
-                          className="btn btn-danger col-md-2 btn-md float-end"
-                          style={{ borderRadius: "8px" }}
-                          onClick={() => setClose(true)}
-                        >
-                          Close
-                        </Button>
-                      </div>
-                    )}
-
-                    {user.role === "Accountant" &&
-                      job.status.name === "waiting for approved" && (
+                    {user.role === "Recruitment Manager" &&
+                      job.status.name === "open" && (
                         <div>
                           <Button
-                            variant="success"
-                            className="btn btn-success col-md-2 btn-md float-end"
-                            style={{ borderRadius: "8px" }}
-                            onClick={() => setOpen(true)}
-                          >
-                            Approve
-                          </Button>
-                          <Button
                             variant="danger"
-                            className="btn btn-danger col-md-2 btn-md float-end me-2"
+                            className="btn btn-danger col-md-2 btn-md float-end mt-4"
                             style={{ borderRadius: "8px" }}
                             onClick={() => setClose(true)}
                           >
-                            Reject
+                            Close
                           </Button>
                         </div>
                       )}
+
+                    {((user.role === "Payroll Manager" &&
+                      job.salaryChecked === null) ||
+                      (user.role === "Benefit Manager" &&
+                        job.benefitChecked === null)) && (
+                      <div>
+                        <Button
+                          variant="success"
+                          className="btn btn-success col-md-2 btn-md float-end mt-4"
+                          style={{ borderRadius: "8px" }}
+                          onClick={() => setApproveModal(true)}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="danger"
+                          className="btn btn-danger col-md-2 btn-md float-end me-2 mt-4"
+                          style={{ borderRadius: "8px" }}
+                          onClick={() => setRejectModal(true)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -879,22 +988,58 @@ function JobDetails() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={open} onHide={() => setOpen(true)} style={{ top: "30%" }}>
+      <Modal
+        show={rejectModal}
+        onHide={() => setRejectModal(false)}
+        style={{ top: "30%" }}
+      >
         <Modal.Header>
-          <Modal.Title>Open Job</Modal.Title>
+          <Modal.Title>Reject</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to open this job? This action cannot be undone.
+          Are you sure you want to perform this action? This action cannot be
+          undone.
         </Modal.Body>
         <Modal.Footer>
-          <Button onClick={() => setOpen(false)} variant="secondary">
+          <Button onClick={() => setRejectModal(false)} variant="secondary">
             Cancel
           </Button>
-          <Button onClick={handleOpenJob} variant="success">
-            Open Job
+          <Button onClick={() => handleApproval(false)} variant="danger">
+            Confirm
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal
+        show={approveModal}
+        onHide={() => setApproveModal(false)}
+        style={{ top: "30%" }}
+      >
+        <Modal.Header>
+          <Modal.Title>Approve</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to perform this action? This action cannot be
+          undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={() => setApproveModal(false)} variant="secondary">
+            Cancel
+          </Button>
+          <Button onClick={() => handleApproval(true)} variant="success">
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

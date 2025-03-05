@@ -4,13 +4,14 @@ import { Modal, Button, Form } from "react-bootstrap";
 import "../styles/a.css";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import { ToastContainer, toast } from "react-toastify";
 
 function JobManagement() {
   const [jobs, setJobs] = useState([]);
   const [page, setPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
-  const [user, setUser] = useState({ email: "", id: "", role: "" }); // State for user details
+  const [showModal, setShowModal] = useState(false);
+  const [user, setUser] = useState({ email: "", id: "", role: "" });
   const limit = 5;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -26,20 +27,19 @@ function JobManagement() {
           page,
           limit,
           role: userData.role || "",
-          userId: userData.id || "",
           search,
           statusFilter,
           workingType,
           sort: "updatedAt:desc",
         });
-  
+
         const apiUrl = `http://localhost:9999/job?${params.toString()}`;
         const response = await fetch(apiUrl);
-  
+
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
         }
-  
+
         const data = await response.json();
         setJobs(data.jobs || []);
         setTotalJobs(data.totalJobs || 0);
@@ -81,6 +81,24 @@ function JobManagement() {
     "Go",
     "Rust",
   ];
+
+  const skillImages = {
+    Java: "https://upload.wikimedia.org/wikipedia/en/3/30/Java_programming_language_logo.svg",
+    Nodejs:
+      "https://upload.wikimedia.org/wikipedia/commons/d/d9/Node.js_logo.svg",
+    "C++":
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/C_Programming_Language.svg",
+    ".Net":
+      "https://upload.wikimedia.org/wikipedia/commons/e/ee/.NET_Core_Logo.svg",
+    Python:
+      "https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg",
+    JavaScript:
+      "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png",
+    PHP: "https://upload.wikimedia.org/wikipedia/commons/2/27/PHP-logo.svg",
+    Ruby: "https://upload.wikimedia.org/wikipedia/commons/7/73/Ruby_logo.svg",
+    Go: "https://upload.wikimedia.org/wikipedia/commons/0/05/Go_Logo_Blue.svg",
+    Rust: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Rust_programming_language_black_logo.svg",
+  };
 
   const benefitOptions = [
     "13th-month salary",
@@ -161,8 +179,10 @@ function JobManagement() {
       setJobs((prevJobs) => [data.job, ...prevJobs]);
       await fetchJobs(user, page);
       handleCloseModal();
+      toast.success("Job added successfully!");
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to add job. Please try again.");
     }
   };
 
@@ -187,13 +207,12 @@ function JobManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <div className="container p-2 vh-100 bg-light mb-5">
-        <div className="col-md-2"></div>
+      <div className="container-fluid vh-100 vh-100 p-4 d-flex justify-content-center align-items-center ">
         <div
-          className="card p-4 shadow border-0 container mt-5 overflow-auto col-md-10"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="card  p-4 shadow border-0 container-fluid  w-100 col-md-10"
+          style={{ scrollbarWidth: "none" }}
         >
-          <div className="row mb-4">
+          <div className="row  mb-4">
             <div className="col-md-3">
               <div className="search-bar p-0 d-none d-md-block">
                 <div id="search" className="menu-search mb-0">
@@ -245,7 +264,7 @@ function JobManagement() {
               </select>
             </div>
             <div className="col-md-3 text-end">
-              {["Manager", "Admin"].includes(user.role) && (
+              {["Recruitment Manager", "Admin"].includes(user.role) && (
                 <Button variant="warning" onClick={() => setShowModal(true)}>
                   + Request New Job
                 </Button>
@@ -253,7 +272,7 @@ function JobManagement() {
             </div>
           </div>
 
-          <div className="" style={{ maxHeight: "75vh" }}>
+          <div className="vh-100 overflow-auto" style={{ maxHeight: "75vh" }}>
             <div className="">
               {jobs.map((job) => (
                 <div
@@ -277,48 +296,99 @@ function JobManagement() {
                     className="card-body"
                     onClick={() => navigate(`/job/${job._id}`)}
                   >
-                    <div className="d-flex justify-content-between align-items-start">
-                      <div>
-                        <h5 className={`card-title mb-1`}>{job.job_name}</h5>
+                    <div className="d-flex">
+                      <img
+                        className="me-3"
+                        src={skillImages[job.skills[0]]}
+                        alt={job.skills[0]}
+                        style={{
+                          width: 100,
+                          height: 100,
+                          marginRight: 10,
+                          objectFit: "fill",
+                          borderRadius: "5px",
+                        }}
+                      />
+                      <div className="w-100">
+                        <div className="d-flex justify-content-between align-items-start">
+                          <h5 className="card-title mb-1">{job.job_name}</h5>
+                          <span className="text-muted mt-1">
+                            ${job.salary_min} - ${job.salary_max}
+                          </span>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-start">
+                          <p className="card-subtitle text-muted ">
+                            {formatDate(job.start_date)} -{" "}
+                            {formatDate(job.end_date)}
+                          </p>
+                          <span
+                            className="fw-bold"
+                            style={{ fontSize: "0.95rem" }}
+                          >
+                            Salary:&nbsp;
+                            <span
+                              className={`${
+                                job.salaryChecked === true
+                                  ? "text-success"
+                                  : job.salaryChecked === false
+                                  ? "text-danger"
+                                  : "text-warning"
+                              } fw-bold`}
+                            >
+                              {job.salaryChecked === true
+                                ? "Approved"
+                                : job.salaryChecked === false
+                                ? "Rejected"
+                                : "Pending"}
+                            </span>
+                            &nbsp;- Benefit:&nbsp;
+                            <span
+                              className={`${
+                                job.benefitChecked === true
+                                  ? "text-success"
+                                  : job.benefitChecked === false
+                                  ? "text-danger"
+                                  : "text-warning"
+                              } fw-bold`}
+                            >
+                              {job.benefitChecked === true
+                                ? "Approved"
+                                : job.benefitChecked === false
+                                ? "Rejected"
+                                : "Pending"}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <span className="badge bg-info text-white me-2">
+                            {formatWorkingType(job.working_type)}
+                          </span>
+                          <span className="badge bg-info text-white me-2">
+                            {job.experience}
+                          </span>
+                          <span className="badge bg-info text-white me-2">
+                            Vacancies: {job.number_of_vacancies}
+                          </span>
+                          <span
+                            className={`badge text-white ${
+                              job.status.name === "closed"
+                                ? "bg-danger"
+                                : job.status.name === "open"
+                                ? "bg-success"
+                                : "bg-warning"
+                            }`}
+                          >
+                            {job.status.name === "open"
+                              ? "Opened"
+                              : job.status.name === "closed"
+                              ? "Closed"
+                              : "Waiting"}
+                          </span>
+                          <small className="text-muted float-end">
+                            {job.skills.join(", ")}
+                          </small>
+                        </div>
                       </div>
-                      <span className={`text-muted mt-1`}>
-                        ${job.salary_min} - ${job.salary_max}
-                      </span>
-                    </div>
-                    <div className="d-flex justify-content-between align-items-start">
-                      <p className="card-subtitle text-muted ">
-                        {formatDate(job.start_date)} -{" "}
-                        {formatDate(job.end_date)}
-                      </p>
-                    </div>
-                    <div className="mt-2">
-                      <span className="badge bg-info text-white me-2">
-                        {formatWorkingType(job.working_type)}
-                      </span>
-                      <span className="badge bg-info text-white me-2">
-                        {job.experience}
-                      </span>
-                      <span className="badge bg-info text-white me-2">
-                        Vacancies: {job.number_of_vacancies}
-                      </span>
-                      <span
-                        className={`badge text-white ${
-                          job.status.name === "closed"
-                            ? "bg-danger"
-                            : job.status.name === "open"
-                            ? "bg-success"
-                            : "bg-warning"
-                        }`}
-                      >
-                        {job.status.name === "open"
-                          ? "Opened"
-                          : job.status.name === "closed"
-                          ? "Closed"
-                          : "Waiting"}
-                      </span>
-                      <small className="text-muted float-end">
-                        {job.skills.join(", ")}
-                      </small>
                     </div>
                   </div>
                 </div>
@@ -554,6 +624,15 @@ function JobManagement() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }
