@@ -448,10 +448,12 @@ async function acceptOffer(req, res, next) {
       if (job) {
         job.vacancies = Math.max(0, job.vacancies - 1); // Giảm số lượng cần tuyển đi 1
 
-        // Nếu không còn vị trí tuyển dụng, cập nhật trạng thái job thành "Closed"
+        // Nếu không còn vị trí tuyển dụng, cập nhật trạng thái job thành "Closed" và cập nhật thời gian cho fullAt
         if (job.vacancies === 0) {
           job.status = "67bc5a667ddc08921b739698"; // Closed status ID
+          job.fullAt = new Date();
         }
+        
 
         updateQueries.push(job.save());
       }
