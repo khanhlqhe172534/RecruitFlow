@@ -4,7 +4,7 @@ const statsController = require("../controllers/stats.controller");
 
 router.get("/candidate-trend", statsController.getCandidateTrend);
 router.get("/avg-hiring-time-trend", statsController.getAvgHiringTimeTrend);
-router.get("/offer-acceptance-trend", statsController.getOfferAcceptanceTrend);
+router.get("/offer-status-trend", statsController.getOfferStatusTrend);
 router.get("/candidate-status", statsController.getCandidateStatusStats);
 
 module.exports = router;
