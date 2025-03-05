@@ -24,6 +24,8 @@ async function getJobs(req, res, next) {
       workingType,
       statusFilter,
       search,
+      levelFilter,
+      experienceFilter,
       page = 1,
       limit = 5,
     } = req.query;
@@ -31,7 +33,7 @@ async function getJobs(req, res, next) {
     let filter = {};
 
     if (workingType) {
-      filter.working_type = workingType;
+      filter.working_type = { $in: workingType.split(",") }; 
     }
 
     if (role === "Interviewer") {
@@ -46,12 +48,40 @@ async function getJobs(req, res, next) {
         closed: "67bc5a667ddc08921b739698",
         waiting: "67bc5a667ddc08921b739695",
       };
-      filter.status = statusMap[statusFilter];
+      const statusIds = statusFilter.split(",").map((status) => statusMap[status]);
+      filter.status = { $in: statusIds }; 
     }
 
     if (search) {
       filter.job_name = { $regex: search, $options: "i" };
     }
+
+    if (levelFilter) {
+      filter.levels = { $in: levelFilter.split(",") };
+    }
+
+    if (experienceFilter) {
+      const experienceValues = experienceFilter.split(",");
+      const orConditions = []; 
+    
+      experienceValues.forEach((value) => {
+        if (value === "1year") {
+          orConditions.push({ experience: { $regex: /(?:\d+ months?)(?! years?)/i } });
+        } else if (value === "13years") {
+          orConditions.push({ experience: "1 year" });
+          orConditions.push({ experience: "2 years" });
+          orConditions.push({ experience: "3 years" });
+        } else if (value === "3years") {
+          orConditions.push({ experience: { $regex: /^(?!1 year|2 years|3 years)\d+ years$/i } });
+        }
+      });
+    
+      if (orConditions.length > 0) {
+        filter.$or = orConditions; 
+      }
+    }
+
+    console.log("Filter:", filter);
 
     const jobs = await Job.find(filter)
       .populate("createdBy")
@@ -257,7 +287,11 @@ async function updateJob(req, res, next) {
     if (!waitingStatus)
       return res.status(500).json({ message: "Status not found" });
 
-    if (job.status.toString() !== waitingStatus._id.toString() && job.salaryChecked !== null && job.benefitChecked !== null) {
+    if (
+      job.status.toString() !== waitingStatus._id.toString() &&
+      job.salaryChecked !== null &&
+      job.benefitChecked !== null
+    ) {
       return res.status(403).json({
         message:
           "Job can only be updated when status is 'waiting for approval' and benefit/salary check is not done",
@@ -346,10 +380,10 @@ async function updateBenefitCheck(req, res, next) {
   }
 }
 // Update salary check status
-async function updateSalaryCheck (req, res, next) {
+async function updateSalaryCheck(req, res, next) {
   try {
     const { jobId } = req.params;
-    const { salaryChecked } = req.body; 
+    const { salaryChecked } = req.body;
 
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
@@ -375,9 +409,9 @@ const updateJobStatus = async (job) => {
     const openStatus = await Status.findOne({ name: "open" });
 
     if (job.benefitChecked === false || job.salaryChecked === false) {
-      job.status = closedStatus._id; 
+      job.status = closedStatus._id;
     } else if (job.benefitChecked === true && job.salaryChecked === true) {
-      job.status = openStatus._id; 
+      job.status = openStatus._id;
     }
 
     await job.save();
