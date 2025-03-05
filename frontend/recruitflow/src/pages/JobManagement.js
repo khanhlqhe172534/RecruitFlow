@@ -5,6 +5,7 @@ import "../styles/a.css";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import { ToastContainer, toast } from "react-toastify";
+import SearchIcon from '@mui/icons-material/Search';
 
 function JobManagement() {
   const [jobs, setJobs] = useState([]);
@@ -14,22 +15,28 @@ function JobManagement() {
   const [user, setUser] = useState({ email: "", id: "", role: "" });
   const limit = 5;
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [workingType, setWorkingType] = useState("");
+  const [statusFilter, setStatusFilter] = useState([]);
+  const [workingType, setWorkingType] = useState([]);
   const [errors, setErrors] = useState({});
+  const [levelFilter, setLevelFilter] = useState([]);
+  const [experienceFilter, setExperienceFilter] = useState([]);
 
   const navigate = useNavigate();
 
   const fetchJobs = useCallback(
     async (userData) => {
       try {
+        console.log("levelFilter:", levelFilter);
+        console.log("experienceFilter:", experienceFilter);
         const params = new URLSearchParams({
           page,
           limit,
           role: userData.role || "",
           search,
-          statusFilter,
-          workingType,
+          statusFilter: statusFilter.join(","),
+          workingType: workingType.join(","),
+          levelFilter: levelFilter.join(","),
+          experienceFilter: experienceFilter.join(","),
           sort: "updatedAt:desc",
         });
 
@@ -47,7 +54,15 @@ function JobManagement() {
         console.error("Error fetching jobs:", error);
       }
     },
-    [page, limit, search, statusFilter, workingType]
+    [
+      page,
+      limit,
+      search,
+      statusFilter,
+      workingType,
+      levelFilter,
+      experienceFilter,
+    ]
   );
 
   useEffect(() => {
@@ -67,7 +82,15 @@ function JobManagement() {
     };
 
     fetchUserAndJobs();
-  }, [page, limit, search, statusFilter, workingType]);
+  }, [
+    page,
+    limit,
+    search,
+    statusFilter,
+    workingType,
+    levelFilter,
+    experienceFilter,
+  ]);
 
   const skillOptions = [
     "Java",
@@ -191,235 +214,488 @@ function JobManagement() {
     setErrors({});
   };
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+  };
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
+    );
+  };
+
+  const handleWorkingTypeChange = (value) => {
+    setWorkingType((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
+    );
     setPage(1);
   };
 
-  const handleStatusFilterChange = (e) => {
-    setStatusFilter(e.target.value);
+  const handleLevelFilterChange = (value) => {
+    setLevelFilter((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
+    );
+    setPage(1);
   };
 
-  const handleWorkingTypeChange = (e) => {
-    setWorkingType(e.target.value);
-    setPage(1);
+  const handleExperienceFilterChange = (value) => {
+    setExperienceFilter((prev) => {
+      if (prev.includes(value)) {
+        return prev.filter((item) => item !== value);
+      } else {
+        return [...prev, value];
+      }
+    });
   };
 
   return (
-    <div className="d-flex vh-100">
-      <div className="container-fluid vh-100 vh-100 p-4 d-flex justify-content-center align-items-center ">
-        <div
-          className="card  p-4 shadow border-0 container-fluid  w-100 col-md-10"
-          style={{ scrollbarWidth: "none" }}
-        >
-          <div className="row  mb-4">
-            <div className="col-md-3">
-              <div className="search-bar p-0 d-none d-md-block">
-                <div id="search" className="menu-search mb-0">
-                  <div>
-                    <input
-                      type="text"
-                      className="form-control bg-light border-2 rounded-pill"
-                      placeholder="Search by Title..."
-                      value={search}
-                      onChange={handleSearchChange}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-md-3">
-              <select
-                className="form-select rounded-pill bg-light border-2"
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-                defaultValue="0"
-              >
-                <option value="" disabled hidden>
-                  Status
-                </option>
-                <option value="">All</option>
-                {user.role !== "Recruiter" && user.role !== "Interviewer" && (
-                  <option value="waiting">Waiting</option>
-                )}
-                <option value="opened">Opened</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-
-            <div className="col-md-3">
-              <select
-                className="form-select rounded-pill bg-light border-2"
-                value={workingType}
-                onChange={handleWorkingTypeChange}
-                defaultValue="0"
-              >
-                <option value="" disabled hidden>
-                  Working Type
-                </option>
-                <option value="">All</option>
-                <option value="Fulltime">Full-Time</option>
-                <option value="Parttime">Part-Time</option>
-              </select>
-            </div>
-            <div className="col-md-3 text-end">
-              {["Recruitment Manager", "Admin"].includes(user.role) && (
-                <Button variant="warning" onClick={() => setShowModal(true)}>
-                  + Request New Job
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="vh-100 overflow-auto" style={{ maxHeight: "75vh" }}>
-            <div className="">
-              {jobs.map((job) => (
+    <div className="d-flex flex-column bg-light ">
+      <div
+        className="container-fluid px-4"
+        style={{ border: "" }}
+      >
+        <div className="row col-md-12">
+          <div
+            className="p-4 border-0 container-fluid"
+            style={{ scrollbarWidth: "none" }}
+          >
+            <div className="row">
+              <div className="col-md-9">
                 <div
-                  key={job._id}
-                  className="card mb-3 shadow-sm"
+                  className="card mb-3 shadow-sm mt-4"
                   style={{
                     border: "2px solid #ddd",
                     borderRadius: "20px",
                     transition: "all 0.2s ease-in-out",
                     backgroundColor: "#fdfdfd",
-                    cursor: "pointer",
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.borderColor = "#68b7ff")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.borderColor = "#ddd")
-                  }
                 >
-                  <div
-                    className="card-body"
-                    onClick={() => navigate(`/job/${job._id}`)}
-                  >
-                    <div className="d-flex">
-                      <img
-                        className="me-3"
-                        src={skillImages[job.skills[0]]}
-                        alt={job.skills[0]}
-                        style={{
-                          width: 100,
-                          height: 100,
-                          marginRight: 10,
-                          objectFit: "fill",
-                          borderRadius: "5px",
-                        }}
-                      />
-                      <div className="w-100">
-                        <div className="d-flex justify-content-between align-items-start">
-                          <h5 className="card-title mb-1">{job.job_name}</h5>
-                          <span className="text-muted mt-1">
-                            ${job.salary_min} - ${job.salary_max}
-                          </span>
-                        </div>
-                        <div className="d-flex justify-content-between align-items-start">
-                          <p className="card-subtitle text-muted ">
-                            {formatDate(job.start_date)} -{" "}
-                            {formatDate(job.end_date)}
-                          </p>
-                          <span
-                            className="fw-bold"
-                            style={{ fontSize: "0.95rem" }}
-                          >
-                            Salary:&nbsp;
-                            <span
-                              className={`${
-                                job.salaryChecked === true
-                                  ? "text-success"
-                                  : job.salaryChecked === false
-                                  ? "text-danger"
-                                  : "text-warning"
-                              } fw-bold`}
-                            >
-                              {job.salaryChecked === true
-                                ? "Approved"
-                                : job.salaryChecked === false
-                                ? "Rejected"
-                                : "Pending"}
-                            </span>
-                            &nbsp;- Benefit:&nbsp;
-                            <span
-                              className={`${
-                                job.benefitChecked === true
-                                  ? "text-success"
-                                  : job.benefitChecked === false
-                                  ? "text-danger"
-                                  : "text-warning"
-                              } fw-bold`}
-                            >
-                              {job.benefitChecked === true
-                                ? "Approved"
-                                : job.benefitChecked === false
-                                ? "Rejected"
-                                : "Pending"}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <span className="badge bg-info text-white me-2">
-                            {formatWorkingType(job.working_type)}
-                          </span>
-                          <span className="badge bg-info text-white me-2">
-                            {job.experience}
-                          </span>
-                          <span className="badge bg-info text-white me-2">
-                            Vacancies: {job.number_of_vacancies}
-                          </span>
-                          <span
-                            className={`badge text-white ${
-                              job.status.name === "closed"
-                                ? "bg-danger"
-                                : job.status.name === "open"
-                                ? "bg-success"
-                                : "bg-warning"
-                            }`}
-                          >
-                            {job.status.name === "open"
-                              ? "Opened"
-                              : job.status.name === "closed"
-                              ? "Closed"
-                              : "Waiting"}
-                          </span>
-                          <small className="text-muted float-end">
-                            {job.skills.join(", ")}
-                          </small>
+                  <div className="card-body">
+                    <div className="row align-items-center">
+                      <div className="col-md-12 mb-2">
+                        <h4 className="mb-1">Search Job</h4>{" "}
+                      </div>
+                      <div className="col-md-9">
+                        <div className="search-bar">
+                          <div id="search" className="menu-search mb-0">
+                            <div className="position-relative">
+                              <input
+                                type="text"
+                                className="form-control bg-light border-2 rounded-pill ps-5"
+                                placeholder="Search by Title..."
+                                value={search}
+                                onChange={handleSearchChange}
+                              />
+                              <i
+                                className="fas fa-search position-absolute top-50 translate-middle-y ms-3"
+                                style={{ color: "#888" }}
+                              ></i>{" "}
+                              <SearchIcon className="position-absolute top-50 translate-middle-y ms-3" style={{ color: "#888" }} />
+                            </div>
+                          </div>
                         </div>
                       </div>
+                      <div className="col-md-3 text-end">
+                        {["Recruitment Manager", "Admin"].includes(
+                          user.role
+                        ) && (
+                          <Button
+                            variant="warning"
+                            size="md"
+                            onClick={() => setShowModal(true)}
+                          >
+                            + Request New Job
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="mt-2 bg-opacity-50 p-2 rounded text-center"
+                      style={{ backgroundColor: "#f3fafc" }}
+                    >
+                      <small style={{ color: "#64c2f1" }}>
+                        {totalJobs} jobs found
+                      </small>
                     </div>
                   </div>
                 </div>
-              ))}
-              <div className="d-flex justify-content-center mt-3 pb-3">
-                <Stack spacing={2}>
-                  <Pagination
-                    count={Math.max(1, Math.ceil(totalJobs / limit))}
-                    page={page}
-                    onChange={(event, value) => setPage(value)}
-                    color="primary"
-                    shape="rounded"
-                    sx={{
-                      "& .MuiPaginationItem-root": {
-                        borderRadius: "4px",
-                        minWidth: "36px",
-                        height: "36px",
-                        borderColor: "#64c2f1",
-                      },
-                      "& .MuiPaginationItem-root.Mui-selected": {
-                        backgroundColor: "#64c2f1",
-                        color: "#fff",
-                        borderColor: "#64c2f1",
-                      },
-                      "& .MuiPaginationItem-root:hover": {
-                        backgroundColor: "#b3e3f9",
-                        borderColor: "#64c2f1",
-                      },
-                    }}
-                  />
-                </Stack>
+                <div
+                  className="overflow-auto"
+                  style={{
+                    maxHeight: "calc(85vh - 200px)",
+                    msOverflowStyle: "none",
+                    scrollbarWidth: "none",
+                  }}
+                >
+                  {jobs.map((job) => (
+                    <div
+                      key={job._id}
+                      className="card mb-3 shadow-sm"
+                      style={{
+                        border: "2px solid #ddd",
+                        borderRadius: "10px",
+                        transition: "all 0.2s ease-in-out",
+                        backgroundColor: "#fdfdfd",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.borderColor = "#68b7ff")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.borderColor = "#ddd")
+                      }
+                    >
+                      <div
+                        className="card-body"
+                        onClick={() => navigate(`/job/${job._id}`)}
+                      >
+                        <div className="d-flex">
+                          <img
+                            className="me-3"
+                            src={skillImages[job.skills[0]]}
+                            alt={job.skills[0]}
+                            style={{
+                              width: 100,
+                              height: 100,
+                              marginRight: 10,
+                              objectFit: "fill",
+                              borderRadius: "5px",
+                            }}
+                          />
+                          <div className="w-100">
+                            <div className="d-flex justify-content-between align-items-start">
+                              <h5 className="card-title mb-1">
+                                {job.job_name}
+                              </h5>
+                              <span className="text-bold mt-1">
+                                ${job.salary_min} - ${job.salary_max}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-start">
+                              <p className="card-subtitle text-muted ">
+                                {formatDate(job.start_date)} -{" "}
+                                {formatDate(job.end_date)}
+                              </p>
+                              <span
+                                className="fw-bold"
+                                style={{ fontSize: "0.95rem" }}
+                              >
+                                Salary:&nbsp;
+                                <span
+                                  className={`${
+                                    job.salaryChecked === true
+                                      ? "text-success"
+                                      : job.salaryChecked === false
+                                      ? "text-danger"
+                                      : "text-warning"
+                                  } fw-bold`}
+                                >
+                                  {job.salaryChecked === true
+                                    ? "Approved"
+                                    : job.salaryChecked === false
+                                    ? "Rejected"
+                                    : "Pending"}
+                                </span>
+                                &nbsp;- Benefit:&nbsp;
+                                <span
+                                  className={`${
+                                    job.benefitChecked === true
+                                      ? "text-success"
+                                      : job.benefitChecked === false
+                                      ? "text-danger"
+                                      : "text-warning"
+                                  } fw-bold`}
+                                >
+                                  {job.benefitChecked === true
+                                    ? "Approved"
+                                    : job.benefitChecked === false
+                                    ? "Rejected"
+                                    : "Pending"}
+                                </span>
+                              </span>
+                            </div>
+                            <div className="mt-2">
+                              <span className="badge bg-info text-white me-2">
+                                {formatWorkingType(job.working_type)}
+                              </span>
+                              <span className="badge bg-info text-white me-2">
+                                {job.experience}
+                              </span>
+                              <span className="badge bg-info text-white me-2">
+                                Vacancies: {job.number_of_vacancies}
+                              </span>
+                              <span
+                                className={`badge text-white ${
+                                  job.status.name === "closed"
+                                    ? "bg-danger"
+                                    : job.status.name === "open"
+                                    ? "bg-success"
+                                    : "bg-warning"
+                                }`}
+                              >
+                                {job.status.name === "open"
+                                  ? "Opened"
+                                  : job.status.name === "closed"
+                                  ? "Closed"
+                                  : "Waiting"}
+                              </span>
+                              <small className="text-muted float-end">
+                                {job.skills.join(", ")}
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="d-flex justify-content-center mt-3 pb-3">
+                  <Stack spacing={2}>
+                    <Pagination
+                      count={Math.max(1, Math.ceil(totalJobs / limit))}
+                      page={page}
+                      onChange={(event, value) => setPage(value)}
+                      color="primary"
+                      shape="rounded"
+                      sx={{
+                        "& .MuiPaginationItem-root": {
+                          borderRadius: "4px",
+                          minWidth: "36px",
+                          height: "36px",
+                          borderColor: "#64c2f1",
+                        },
+                        "& .MuiPaginationItem-root.Mui-selected": {
+                          backgroundColor: "#64c2f1",
+                          color: "#fff",
+                          borderColor: "#64c2f1",
+                        },
+                        "& .MuiPaginationItem-root:hover": {
+                          backgroundColor: "#b3e3f9",
+                          borderColor: "#64c2f1",
+                        },
+                      }}
+                    />
+                  </Stack>
+                </div>
+              </div>
+              <div className="col-md-3 mt-4">
+                <div className="card mb-3 shadow-sm bg-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h5 className="mb-0">Job Filter</h5>
+                      <p
+                        onClick={() => {
+                          setStatusFilter([]);
+                          setWorkingType([]);
+                          setLevelFilter([]);
+                          setExperienceFilter([]);
+                        }}
+                        className="mb-0 fs-6"
+                        style={{ color: "#64c2f1", cursor: "pointer" }}
+                      >
+                        Clear All
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="card mb-3 shadow-sm bg-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-2">Status</h6>
+                      <p
+                        onClick={() => {
+                          setStatusFilter([]);
+                        }}
+                        className="mb-2"
+                        style={{ color: "#64c2f1", cursor: "pointer" }}
+                      >
+                        Clear
+                      </p>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="waiting"
+                        checked={statusFilter.includes("waiting")}
+                        onChange={() => handleStatusFilterChange("waiting")}
+                      />
+                      <label className="form-check-label">Waiting</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="opened"
+                        checked={statusFilter.includes("opened")}
+                        onChange={() => handleStatusFilterChange("opened")}
+                      />
+                      <label className="form-check-label">Opened</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="closed"
+                        checked={statusFilter.includes("closed")}
+                        onChange={() => handleStatusFilterChange("closed")}
+                      />
+                      <label className="form-check-label">Closed</label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Working Type Filter */}
+                <div className="card mb-3 shadow-sm bg-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-2">Working Type</h6>
+                      <p
+                        onClick={() => {
+                          setWorkingType([]);
+                        }}
+                        className="mb-2"
+                        style={{ color: "#64c2f1", cursor: "pointer" }}
+                      >
+                        Clear
+                      </p>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Fulltime"
+                        checked={workingType.includes("Fulltime")}
+                        onChange={() => handleWorkingTypeChange("Fulltime")}
+                      />
+                      <label className="form-check-label">Full-Time</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Parttime"
+                        checked={workingType.includes("Parttime")}
+                        onChange={() => handleWorkingTypeChange("Parttime")}
+                      />
+                      <label className="form-check-label">Part-Time</label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Experience Filter */}
+                <div className="card mb-3 shadow-sm bg-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-2">Experience</h6>
+                      <p
+                        onClick={() => {
+                          setExperienceFilter([]);
+                        }}
+                        className="mb-2"
+                        style={{ color: "#64c2f1", cursor: "pointer" }}
+                      >
+                        Clear
+                      </p>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="1year"
+                        checked={experienceFilter.includes("1year")}
+                        onChange={() => handleExperienceFilterChange("1year")}
+                      />
+                      <label className="form-check-label">&lt; 1 year</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="13years"
+                        checked={experienceFilter.includes("13years")}
+                        onChange={() => handleExperienceFilterChange("13years")}
+                      />
+                      <label className="form-check-label">1-3 years</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="3years"
+                        checked={experienceFilter.includes("3years")}
+                        onChange={() => handleExperienceFilterChange("3years")}
+                      />
+                      <label className="form-check-label">&gt; 3 years</label>
+                    </div>
+                  </div>
+                </div>
+                {/* Level Filter */}
+                <div className="card mb-3 shadow-sm bg-white">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-2">Level</h6>
+                      <p
+                        onClick={() => {
+                          setLevelFilter([]);
+                        }}
+                        className="mb-2"
+                        style={{ color: "#64c2f1", cursor: "pointer" }}
+                      >
+                        Clear
+                      </p>
+                    </div>
+
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Senior"
+                        checked={levelFilter.includes("Senior")}
+                        onChange={() => handleLevelFilterChange("Senior")}
+                      />
+                      <label className="form-check-label">Senior</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Junior"
+                        checked={levelFilter.includes("Junior")}
+                        onChange={() => handleLevelFilterChange("Junior")}
+                      />
+                      <label className="form-check-label">Junior</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Fresher"
+                        checked={levelFilter.includes("Fresher")}
+                        onChange={() => handleLevelFilterChange("Fresher")}
+                      />
+                      <label className="form-check-label">Fresher</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        value="Intern"
+                        checked={levelFilter.includes("Intern")}
+                        onChange={() => handleLevelFilterChange("Intern")}
+                      />
+                      <label className="form-check-label">Intern</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
