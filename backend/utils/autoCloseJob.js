@@ -58,8 +58,8 @@ async function sendEndDateReminderEmail(job) {
 cron.schedule("0 7 * * *", async () => {
   try {
     console.log("Checking jobs for end date reminders...");
-
     const closedStatus = await Status.findOne({ name: "closed" });
+    console.log("Closed status:", closedStatus);
     if (!closedStatus) {
       console.error("Closed status not found");
       return;
