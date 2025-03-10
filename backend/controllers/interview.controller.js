@@ -50,12 +50,77 @@ async function createInterview(req, res, next) {
     const { interviewer, candidate, job, interview_date, meeting_link, note } =
       req.body;
 
-    // // Validate required fields
-    // if (!interviewer || !candidate || !job || !interview_date) {
-    //   return res.status(400).json({ message: "All fields are required." });
-    // }
+    // 1. Validate required fields
+    if (!interviewer || !candidate || !job || !interview_date) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
 
-    // Create a new interview document
+    // 2. Validate interview date (cannot be in the past)
+    const interviewDateTime = new Date(interview_date);
+    if (interviewDateTime < new Date()) {
+      return res
+        .status(400)
+        .json({ message: "Interview date cannot be in the past." });
+    }
+
+    // 3. Validate each interview lasts 2 hours
+    const interviewEndTime = new Date(
+      interviewDateTime.getTime() + 2 * 60 * 60 * 1000
+    );
+
+    // 4. Check for interviewer schedule conflict (must be 2 hours apart)
+    const twoHoursBefore = new Date(
+      interviewDateTime.getTime() - 2 * 60 * 60 * 1000
+    );
+    const twoHoursAfter = interviewEndTime;
+
+    const existingInterview = await Interview.findOne({
+      interviewer,
+      interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
+      status: { $ne: "67bc5a667ddc08921b739696" }, // Exclude interviews with "cancel" status id
+    });
+
+    if (existingInterview) {
+      return res.status(400).json({
+        message: "Interviewer already has an interview during this time.",
+      });
+    }
+
+    // 5. Check that a candidate cannot have another interview for the same job if they already have an "open" interview for the same job
+    const existingCandidateInterview = await Interview.findOne({
+      candidate,
+      job,
+      status: { $in: ["67bc5a667ddc08921b739697"] }, // open
+    });
+
+    if (existingCandidateInterview) {
+      return res.status(400).json({
+        message: "Candidate already has an interview for this job.",
+      });
+    }
+
+    // 6. Check that the candidate's interviews are spaced at least 2 hours apart
+    const twoHoursBeforeCandidate = new Date(
+      interviewDateTime.getTime() - 2 * 60 * 60 * 1000
+    );
+    const twoHoursAfterCandidate = interviewEndTime;
+
+    const candidateExistingInterview = await Interview.findOne({
+      candidate,
+      interview_date: {
+        $gte: twoHoursBeforeCandidate,
+        $lte: twoHoursAfterCandidate,
+      },
+    });
+
+    if (candidateExistingInterview) {
+      return res.status(400).json({
+        message:
+          "Candidate already has an interview scheduled within 2 hours of this time.",
+      });
+    }
+
+    // 7. Create the interview
     const interview = new Interview({
       interviewer,
       candidate,
@@ -68,12 +133,14 @@ async function createInterview(req, res, next) {
     });
 
     await interview.save();
+
+    // 8. Send email invitation (log error but do not block request)
     try {
       await sendCandidateInterviewInvitation(interview);
     } catch (emailError) {
       console.error("Failed to send interview invitation email:", emailError);
-      // Log the error but don't block the interview creation
     }
+
     res.status(201).json(interview);
   } catch (err) {
     next(err);
@@ -179,6 +246,7 @@ async function updateInterview(req, res, next) {
       return res.status(404).json({ message: "Interview not found" });
     }
 
+    // Kiểm tra nếu có thay đổi thời gian phỏng vấn
     if (interview_date) {
       const newInterviewDate = new Date(interview_date);
       const now = new Date();
@@ -190,37 +258,110 @@ async function updateInterview(req, res, next) {
           .json({ message: "Interview date cannot be in the past." });
       }
 
-      // Kiểm tra trùng lịch với các cuộc phỏng vấn khác
-      const twoHours = 2 * 60 * 60 * 1000; // 2 giờ tính bằng milliseconds
+      // Kiểm tra trùng lịch với các cuộc phỏng vấn khác của người phỏng vấn (excludes canceled interviews)
+      const twoHours = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
       const existingInterview = await Interview.findOne({
         interviewer: interview.interviewer,
-        _id: { $ne: id }, // Không tính cuộc phỏng vấn hiện tại
+        _id: { $ne: id }, // Exclude the current interview
         interview_date: {
           $gte: new Date(newInterviewDate.getTime() - twoHours),
           $lte: new Date(newInterviewDate.getTime() + twoHours),
         },
+        status: { $ne: "cancel" }, // Exclude interviews with "cancel" status
       });
 
       if (existingInterview) {
-        return res
-          .status(400)
-          .json({
-            message: "Interviewer already has an interview during this time.",
-          });
+        return res.status(400).json({
+          message: "Interviewer already has an interview during this time.",
+        });
       }
 
+      // Kiểm tra ứng viên đã có cuộc phỏng vấn nào với công việc này chưa (trạng thái "open" không cho phép)
+      const existingCandidateInterview = await Interview.findOne({
+        candidate: interview.candidate,
+        job: interview.job,
+        status: { $in: ["67bc5a667ddc08921b739697"] }, // open
+      });
+
+      if (existingCandidateInterview) {
+        return res.status(400).json({
+          message: "Candidate already has an interview for this job.",
+        });
+      }
+
+      // Kiểm tra các cuộc phỏng vấn của ứng viên cách nhau ít nhất 2 tiếng
+      const twoHoursBeforeCandidate = new Date(
+        newInterviewDate.getTime() - 2 * 60 * 60 * 1000
+      );
+      const twoHoursAfterCandidate = new Date(
+        newInterviewDate.getTime() + 2 * 60 * 60 * 1000
+      );
+
+      const candidateExistingInterview = await Interview.findOne({
+        candidate: interview.candidate,
+        interview_date: {
+          $gte: twoHoursBeforeCandidate,
+          $lte: twoHoursAfterCandidate,
+        },
+      });
+
+      if (candidateExistingInterview) {
+        return res.status(400).json({
+          message:
+            "Candidate already has an interview scheduled within 2 hours of this time.",
+        });
+      }
+
+      // Cập nhật thời gian phỏng vấn
       interview.interview_date = newInterviewDate;
     }
 
+    // Cập nhật meeting link nếu có
     if (meeting_link) {
       interview.meeting_link = meeting_link;
     }
 
+    // Save the updated interview
     await interview.save();
+
+    // Send email notification to the candidate with updated details
+    try {
+      await sendUpdateEmail(interview); // Send updated interview details to the candidate
+    } catch (emailError) {
+      console.error("Failed to send interview update email:", emailError);
+    }
+
     res.status(200).json(interview);
   } catch (err) {
     next(err);
   }
+}
+
+async function sendUpdateEmail(interview) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail", // or another email service like 'smtp.mailtrap.io'
+    auth: {
+      user: process.env.EMAIL_USER, // Your email address
+      pass: process.env.EMAIL_PASS, // Your email password or app-specific password
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: interview.candidate.email, // Candidate's email
+    subject: "Your Interview Has Been Rescheduled",
+    text: `Dear ${
+      interview.candidate.fullname
+    },\n\nWe would like to inform you that your interview for the position of ${
+      interview.job.title
+    } has been rescheduled.\n\nNew Interview Date: ${new Date(
+      interview.interview_date
+    ).toLocaleString()}\nMeeting Link: ${
+      interview.meeting_link
+    }\n\nPlease make sure to join the interview at the updated time.\n\nBest regards,\nYour Interview Team`,
+  };
+
+  await transporter.sendMail(mailOptions);
 }
 
 async function getInterviewById(req, res, next) {
@@ -457,18 +598,17 @@ async function cancelInterview(req, res, next) {
     const { userId } = req.body; // Người thực hiện cancel
 
     // Tìm offer và populate thông tin phỏng vấn
-    const interview = await Interview.findById(id).populate({
-      path: "interview",
-    });
+    const interview = await Interview.findById(id)
+      .populate("candidate")
+      .populate("status");
 
     if (!interview) {
       return res.status(404).json({ message: "Offer not found" });
     }
 
-    // Cập nhật trạng thái offer thành "Canceled"
     interview.status = "67bc5a667ddc08921b739696"; // Canceled status ID
 
-    const updateQueries = [interview.save()]; // Lưu offer trước
+    const updateQueries = [interview.save()];
 
     // Thực hiện cập nhật song song
     await Promise.all(updateQueries);
@@ -492,19 +632,71 @@ async function cancelInterview(req, res, next) {
   }
 
   async function sendInterviewCancellationEmail(candidateEmail, interview) {
-    const subject = "Interview Cancellation Notice";
-    const text = `Dear Candidate,
-  
-  We regret to inform you that your interview scheduled on ${new Date(
-    interview.interview_date
-  ).toLocaleString()} has been canceled.
-  
-  If you have any questions, please contact us.
-  
-  Best regards,
-  HR Team`;
+    if (!candidateEmail) {
+      console.error("Invalid candidate email. Email not sent.");
+      return;
+    }
 
-    await sendEmail(candidateEmail, subject, text);
+    try {
+      // Create email transporter
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      // Prepare email content
+      const jobTitle = interview.job?.title || "the role";
+      const candidateName = interview.candidate?.fullname || "Candidate";
+      const interviewDate = new Date(interview.interview_date).toLocaleString();
+
+      const emailContent = {
+        from: {
+          name: "HR Recruitment Team",
+          address: process.env.EMAIL_USER,
+        },
+        to: candidateEmail,
+        subject: "Interview Cancellation Notice",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Interview Cancellation</h2>
+            <p>Dear ${candidateName},</p>
+            
+            <div style="background-color: #f8e6e6; padding: 20px; border-radius: 10px; border: 1px solid #FF6347;">
+              <h3 style="color: #FF6347;">Interview Cancellation Notice</h3>
+              <p>We regret to inform you that your interview for the position of <strong>${jobTitle}</strong>, 
+              originally scheduled on <strong>${interviewDate}</strong>, has been canceled.</p>
+            </div>
+  
+            <div style="margin-top: 20px; background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+              <h4>We Apologize for Any Inconvenience</h4>
+              <p>We understand this may be disappointing and apologize for any inconvenience caused. 
+              If you have any questions regarding this cancellation, please feel free to contact our HR department.</p>
+            </div>
+  
+            <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
+              Thank you for your time and interest in our company. We hope to connect with you in the future.
+            </p>
+            
+            <p>Best regards,<br>HR Recruitment Team</p>
+          </div>
+        `,
+      };
+
+      // Send email
+      const info = await transporter.sendMail(emailContent);
+      console.log(
+        `Cancellation email sent to ${candidateEmail}. MessageId: ${info.messageId}`
+      );
+
+      return info;
+    } catch (error) {
+      console.error("Failed to send cancellation email:", error);
+    }
   }
 }
 

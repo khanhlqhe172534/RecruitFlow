@@ -163,7 +163,7 @@ function InterviewDetail() {
   // Fetch interview details from backend
   useEffect(() => {
     fetchInterviewDetails();
-  }, [id, openCancel]);
+  }, [id, openCancel, openUpdate]);
 
   const handleSubmit = async () => {
     try {
@@ -322,10 +322,6 @@ function InterviewDetail() {
   };
 
   const handleCancelInterview = async () => {
-    if (!failFeedback) {
-      // Optionally set an error state or show a message to the user
-      return;
-    }
     try {
       await axios.put(`http://localhost:9999/interview/${id}/cancel`);
       handleCloseCancel();
@@ -637,6 +633,7 @@ function InterviewDetail() {
           )}
           {/* Show "Update" Buttons if Result is "N/A" and role = "Recruiter" */}
           {interview.result === "N/A" &&
+            interview.status == "open" &&
             user.role === "Recruitment Manager" && (
               <div className="col-3 ms-1">
                 <button
@@ -702,54 +699,56 @@ function InterviewDetail() {
                 </Modal>
               </div>
             )}
+          {interview.result === "N/A" &&
+            interview.status == "open" &&
+            user.role === "Recruitment Manager" && (
+              <div className="col-3 ms-1">
+                <button
+                  type="button"
+                  className="btn btn-secondary ms-2"
+                  onClick={handleOpenCancel}
+                >
+                  Cancel
+                </button>
+                <Modal show={openCancel} onHide={handleCloseCancel} centered>
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <DoNotDisturbIcon
+                        className="text-danger"
+                        style={{ fontSize: 64 }}
+                      />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        Confirm to Cancel this Interview? <br />
+                        Confirm your choice by clicking "Yes".
+                        <br />
+                        This action <strong>cannot be undone</strong>.
+                      </p>
 
-          <div className="col-3 ms-1">
-            <button
-              type="button"
-              className="btn btn-secondary ms-2"
-              onClick={handleOpenCancel}
-            >
-              Cancel
-            </button>
-            <Modal show={openCancel} onHide={handleCloseCancel} centered>
-              <Modal.Body>
-                <div className="text-center p-4">
-                  <DoNotDisturbIcon
-                    className="text-danger"
-                    style={{ fontSize: 64 }}
-                  />
-                  <p className="h3 mt-3">Hang on a sec!</p>
-                  <p>
-                    Confirm to Cancel this Interview? <br />
-                    Confirm your choice by clicking "Yes".
-                    <br />
-                    This action <strong>cannot be undone</strong>.
-                  </p>
-
-                  <div className="row">
-                    <div className="col-6">
-                      <button
-                        className="btn btn-danger w-100 rounded-4"
-                        onClick={handleCancelInterview}
-                      >
-                        Yes
-                      </button>
+                      <div className="row">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-danger w-100 rounded-4"
+                            onClick={handleCancelInterview}
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-danger w-100 rounded-4"
+                            onClick={handleCloseCancel}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="col-6">
-                      <button
-                        className="btn btn-outline-danger w-100 rounded-4"
-                        onClick={handleCloseCancel}
-                      >
-                        Let Me Rethink
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Modal.Body>
-            </Modal>
-          </div>
+                  </Modal.Body>
+                </Modal>
+              </div>
+            )}
         </div>
-
         <div className="row">
           <Box sx={{ width: "100%", typography: "body1" }}>
             <TabContext value={tabValue}>
