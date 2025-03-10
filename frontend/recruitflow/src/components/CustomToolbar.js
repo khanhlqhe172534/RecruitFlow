@@ -83,13 +83,31 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
 
   const handleSubmit = async () => {
     try {
+      const interviewDate = new Date(formData.interview_date);
+      const now = new Date();
+
+      if (interviewDate < now) {
+        toast.error("Interview date cannot be in the past.");
+        return;
+      }
+
       await axios.post("http://localhost:9999/interview", formData);
       handleClose();
       onFetchInterviews();
-      toast.success("Interview added successfully!"); // Use toast for success notification
+      toast.success("Interview added successfully!");
     } catch (error) {
       console.error("Error adding interview:", error);
-      toast.error("Failed to add interview."); // Use toast for error notification
+
+      if (
+        error.response &&
+        error.response.status === 400 &&
+        error.response.data.message ===
+          "Interviewer already has an interview during this time."
+      ) {
+        toast.error("Interviewer is already booked for this time slot.");
+      } else {
+        toast.error("Failed to add interview.");
+      }
     }
   };
 
