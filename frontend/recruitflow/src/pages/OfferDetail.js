@@ -214,7 +214,7 @@ function OfferDetail() {
           <div className="col-1"></div>
           <div className="col-1">
             {offer.status?.name === "waiting for approved" &&
-              user?.role === "Recuitment Manager" && (
+              user?.role === "Recruitment Manager" && (
                 <button
                   className="btn btn-primary w-100"
                   onClick={handleOpenModalUpdate}
@@ -307,7 +307,7 @@ function OfferDetail() {
             </Modal>
           </div>
           <div className="col-1">
-            {offer.status?.name === "Open" &&
+            {offer.status?.name === "waiting for approved" &&
               user?.role === "Recuitment Manager" && (
                 <button
                   className="btn btn-danger"
@@ -493,7 +493,7 @@ function OfferDetail() {
           </div>
         </Card>
         {offer.status?.name === "waiting for approved" &&
-          user?.role === "Recuitment Manager" && (
+          user?.role === "Recruitment Manager" && (
             <div className="row">
               <div className="col-1">
                 <button

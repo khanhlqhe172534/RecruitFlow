@@ -29,7 +29,7 @@ async function getAllOffer(req, res, next) {
   }
 }
 
-// Create new offer without `status`
+//============ Create new offer ===============================================================
 async function createOffer(req, res, next) {
   try {
     const { interview, offerType, offerFrom, offerTo, salary, createdBy } =
@@ -54,7 +54,6 @@ async function createOffer(req, res, next) {
 
     const WATTING_FOR_APPROVED_ID = "67bc5a667ddc08921b739695";
     const OFFERED_STATUS_ID = "67bc5a667ddc08921b73969b";
-    const CLOSED_STATUS_ID = "67bc5a667ddc08921b739698";
 
     const offer = new Offer({
       interview,
@@ -63,30 +62,16 @@ async function createOffer(req, res, next) {
       offerTo,
       salary,
       createdBy,
+      //change offer status to "waiting for approved"
       status: WATTING_FOR_APPROVED_ID,
     });
 
     await offer.save();
 
+    // change interview status to "offered"
     const updateQueries = [
       Interview.findByIdAndUpdate(interview, { status: OFFERED_STATUS_ID }),
     ];
-
-    if (interviewData.candidate?._id) {
-      updateQueries.push(
-        Candidate.findByIdAndUpdate(interviewData.candidate._id, {
-          status: OFFERED_STATUS_ID,
-        })
-      );
-    }
-
-    if (interviewData.job?._id) {
-      const job = await Job.findById(interviewData.job._id);
-      if (job && job.number_of_vacancies === 0) {
-        job.status = CLOSED_STATUS_ID; // Chỉ đóng job nếu số lượng tuyển = 0
-        updateQueries.push(job.save());
-      }
-    }
 
     await Promise.all(updateQueries);
 
@@ -226,7 +211,7 @@ const getOfferById = async (req, res, next) => {
   }
 };
 
-// Backend API to update offer status
+//  update offer status
 const updateOfferStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -248,7 +233,7 @@ const updateOfferStatus = async (req, res) => {
   }
 };
 
-// Update an offer by ID
+// ============Update an offer by ID===============================================================
 async function updateOfferById(req, res, next) {
   try {
     const { id } = req.params;
@@ -418,14 +403,14 @@ async function cancelOffer(req, res, next) {
   }
 }
 
-//===============Accept Offer===============================================================
+//====================Accept Offer===============================================================
 
 async function acceptOffer(req, res, next) {
   try {
     const { id } = req.params;
     const { userId } = req.body; // Người thực hiện accept
 
-    // Tìm offer và populate thông tin phỏng vấn + job liên quan
+    // Tìm offer và populate thông tin phỏng vấn + job + candidate liên quan
     const offer = await Offer.findById(id).populate({
       path: "interview",
       populate: { path: "candidate job" }, // Lấy thông tin ứng viên và job
@@ -446,21 +431,60 @@ async function acceptOffer(req, res, next) {
       const job = await Job.findById(offer.interview.job._id);
 
       if (job) {
-        job.vacancies = Math.max(0, job.vacancies - 1); // Giảm số lượng cần tuyển đi 1
+        job.number_of_vacancies = Math.max(0, job.number_of_vacancies - 1); // Giảm số lượng cần tuyển đi 1
 
         // Nếu không còn vị trí tuyển dụng, cập nhật trạng thái job thành "Closed" và cập nhật thời gian cho fullAt
-        if (job.vacancies === 0) {
+        if (job.number_of_vacancies === 0) {
           job.status = "67bc5a667ddc08921b739698"; // Closed status ID
           job.fullAt = new Date();
         }
-        
 
         updateQueries.push(job.save());
       }
     }
 
-    // Thực hiện cập nhật song song
+    // Nếu có candidate, cập nhật trạng thái thành "offered"
+    if (offer.interview) {
+      // Populate interview để lấy candidate ID
+      const interview = await Interview.findById(offer.interview).select(
+        "candidate"
+      );
+
+      if (interview?.candidate) {
+        const candidate = await Candidate.findById(interview.candidate);
+
+        if (candidate) {
+          candidate.status = "67bc5a667ddc08921b73969b"; // Offered status ID
+          updateQueries.push(candidate.save());
+
+          // Tìm tất cả offer khác của candidate với trạng thái "waiting for approve" và reject chúng
+          const otherOffers = await Offer.find({
+            _id: { $ne: offer._id },
+            interview: {
+              $in: await Interview.find({ candidate: candidate._id }).distinct(
+                "_id"
+              ),
+            }, // Lấy tất cả interview của candidate
+            status: "67bc5a667ddc08921b739695", // Waiting for approve status ID
+          });
+
+          console.log(
+            "Other offers found:",
+            otherOffers.map((o) => o._id)
+          );
+
+          for (let o of otherOffers) {
+            o.status = "67c7f374e825bf941d636e09"; // Reject status ID
+            o.updatedBy = new mongoose.Types.ObjectId(userId); // Đảm bảo ObjectId hợp lệ
+            updateQueries.push(o.save());
+          }
+        }
+      }
+    }
+
+    // Chờ tất cả các cập nhật hoàn thành
     await Promise.all(updateQueries);
+    console.log("All updates applied successfully");
 
     // Gửi email xác nhận offer
     await sendOfferAcceptanceEmail(offer);

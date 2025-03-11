@@ -700,7 +700,7 @@ function InterviewDetail() {
               </div>
             )}
           {interview.result === "N/A" &&
-            interview.status == "open" &&
+            interview.status.name === "open" &&
             user.role === "Recruitment Manager" && (
               <div className="col-3 ms-1">
                 <button
