@@ -161,7 +161,14 @@ function OfferManagement() {
           </div>
         </div>
 
-        <div className="row">
+        <div
+          className="row overflow-auto"
+          style={{
+            maxHeight: "calc(85vh - 200px)",
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
+          }}
+        >
           {sortedOffers.length > 0 ? (
             sortedOffers.map((offer) => (
               <div key={offer._id} className="col-md-4 mb-4">
