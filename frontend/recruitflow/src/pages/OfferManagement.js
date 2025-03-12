@@ -54,8 +54,8 @@ function OfferManagement() {
       color: "#28a745",
       borderColor: "#1e7e34",
     },
-    "67bc5a667ddc08921b739697": {
-      text: "Closed",
+    "67bc5a667ddc08921b739698": {
+      text: "Closed (Expired)",
       color: "#6C757D",
       borderColor: "#495057",
     },

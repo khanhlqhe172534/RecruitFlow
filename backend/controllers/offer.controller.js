@@ -9,6 +9,39 @@ const nodemailer = require("nodemailer");
 // Get all offers with populated fields
 async function getAllOffer(req, res, next) {
   try {
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset giờ phút giây để so sánh chính xác ngày
+
+    // Cập nhật offer khi offerFrom đã qua, chuyển từ "accepted" sang "open"
+    await Offer.updateMany(
+      {
+        offerFrom: { $lte: currentDate },
+        status: "67c7f361e825bf941d636e07",
+      },
+      { status: "67bc5a667ddc08921b739697" }
+    );
+
+    // Cập nhật offer khi offerTo trùng ngày hiện tại, chuyển trạng thái hợp đồng
+    const offersToUpdate = await Offer.find({
+      offerTo: { $eq: currentDate }, // Kiểm tra trùng ngày
+    }).populate("interview.candidate");
+
+    for (const offer of offersToUpdate) {
+      // Cập nhật status của offer
+      offer.status = "67bc5a667ddc08921b739698";
+      await offer.save();
+
+      // Cập nhật status của candidate nếu có
+      if (offer.interview?.candidate) {
+        await Candidate.findByIdAndUpdate(offer.interview.candidate._id, {
+          status: "67bc5a667ddc08921b739694",
+        });
+      }
+    }
+
+    console.log(`Updated ${offersToUpdate.length} offers to contract ended.`);
+
+    // Fetch all updated offers
     const offers = await Offer.find()
       .populate({
         path: "interview",
@@ -25,6 +58,7 @@ async function getAllOffer(req, res, next) {
 
     res.status(200).json({ offers });
   } catch (err) {
+    console.error("Error getting offers:", err);
     next(err);
   }
 }
@@ -190,8 +224,8 @@ const getOfferById = async (req, res, next) => {
     // Check if the offer is expired (if it's not already canceled)
     if (offer.status.name == "open") {
       if (offerEndDate < currentDate) {
-        // Nếu offer hết hạn, cập nhật thành "Close"
-        offer.status = { _id: "67bc5a667ddc08921b739698", name: "Close" };
+        // Nếu offer hết hạn, cập nhật thành "Closed"
+        offer.status = { _id: "67bc5a667ddc08921b739698", name: "closed" };
 
         // Nếu offer có ứng viên, cập nhật trạng thái ứng viên thành "Activated"
         if (offer.interview?.candidate?._id) {
@@ -199,12 +233,11 @@ const getOfferById = async (req, res, next) => {
             status: "67bc5a667ddc08921b739694", // Activated candidate status ID
           });
         }
-      } else {
-        // Nếu offer vẫn còn hạn, cập nhật thành "Open"
-        offer.status = { _id: "67bc5a667ddc08921b739697", name: "open" };
+
+        // Lưu thay đổi vào MongoDB
+        await offer.save();
       }
     }
-
     res.status(200).json(offer);
   } catch (error) {
     next(error);

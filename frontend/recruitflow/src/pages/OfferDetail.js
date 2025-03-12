@@ -44,6 +44,8 @@ function OfferDetail() {
       try {
         const response = await axios.get(`http://localhost:9999/offer/${id}`);
         setOffer(response.data);
+        console.log(response.data);
+        
       } catch (error) {
         console.error("Error fetching offer:", error);
         toast.error("Failed to load offer details.");
