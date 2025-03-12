@@ -4,6 +4,9 @@ const mongoose = require("mongoose");
 const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const User = require("../models/user.model");
+const ExcelJS = require("exceljs");
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
 
 // Get all jobs
@@ -468,14 +471,13 @@ async function updateSalaryCheck(req, res, next) {
   }
 }
 
-
 const sendEmail = async (to, subject, text) => {
   try {
     const mailOptions = {
-      from: process.env.EMAIL_USER, 
-      to,                           
-      subject,                      
-      text,                         
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      text,
     };
     await transporter.sendMail(mailOptions);
     console.log("Email sent successfully");
@@ -494,7 +496,7 @@ const updateJobStatus = async (job) => {
     const closedStatus = await Status.findOne({ name: "closed" });
     const openStatus = await Status.findOne({ name: "open" });
 
-    let previousStatus = job.status; 
+    let previousStatus = job.status;
 
     if (job.benefitChecked === false || job.salaryChecked === false) {
       job.status = closedStatus._id;
@@ -550,6 +552,19 @@ async function closeJob(req, res, next) {
     job.status = closedStatus._id;
     await job.save();
 
+    res.status(200).json({ message: "Job closed successfully. Emails will be sent in the background.", job });
+
+    sendJobClosureEmails(job);
+
+  } catch (error) {
+    console.error("Error closing job:", error);
+    res.status(400).json({ message: "Failed to close job", error });
+  }
+}
+
+// Function to send emails asynchronously
+async function sendJobClosureEmails(job) {
+  try {
     const targetRoles = [
       "67b7d800a297fbf7bff8205b", // Benefit Manager
       "67b7d800a297fbf7bff8205a", // Payroll Manager
@@ -557,22 +572,26 @@ async function closeJob(req, res, next) {
       "67b7d800a297fbf7bff8205d", // Interviewer
     ];
 
-    const usersToNotify = await User.find({ role: { $in: targetRoles } });
+    const usersToNotify = await User.find({ role: { $in: targetRoles } }, "fullname email");
 
     if (usersToNotify.length === 0) {
       console.log("No users found with the specified roles.");
-    } else {
-      const recipientEmails = usersToNotify.map((user) => user.email);
+      return;
+    }
+
+    for (const user of usersToNotify) {
+      if (!user.email) {
+        console.warn(`Skipping user ${user.fullname} due to missing email.`);
+        continue;
+      }
 
       const emailContent = {
         from: { name: "HR Team", address: process.env.EMAIL_USER },
-        to: recipientEmails,
+        to: user.email,
         subject: `Job Closed - ${job.job_name}`,
         html: `<h2>Job Closure Notification</h2>
-          <p>Hello,</p>
-          <p>The job <strong>${
-            job.job_name
-          }</strong> has been officially closed.</p>
+          <p>Hello <strong>${user.fullname}</strong>,</p>
+          <p>The job <strong>${job.job_name}</strong> has been officially closed.</p>
           <p><strong>Job Details:</strong></p>
           <ul>
             <li><strong>Title:</strong> ${job.job_name}</li>
@@ -582,22 +601,116 @@ async function closeJob(req, res, next) {
           <p>Best regards,<br>HR Team</p>`,
       };
 
-      const info = await transporter.sendMail(emailContent);
-      console.log(
-        `Notification email sent to: ${recipientEmails.join(
-          ", "
-        )}, MessageId: ${info.messageId}`
-      );
+      transporter.sendMail(emailContent)
+        .then(info => console.log(`Email sent to ${user.email} (MessageId: ${info.messageId})`))
+        .catch(err => console.error(`Failed to send email to ${user.email}:`, err));
     }
 
-    res.status(200).json({ message: "Job closed and notifications sent", job });
   } catch (error) {
-    console.error("Error closing job and sending notifications:", error);
-    res
-      .status(400)
-      .json({ message: "Failed to close job and send notifications", error });
+    console.error("Error sending job closure emails:", error);
   }
 }
+
+const exportJobs = async (req, res) => {
+  try {
+    let { startDate, endDate } = req.query;
+    let errors = {};
+
+    if (!startDate && !endDate) {
+      startDate = new Date(0).toISOString().split("T")[0];
+      endDate = new Date().toISOString().split("T")[0];
+    }
+
+    if (!startDate) {
+      errors.startDate = "Start date is required.";
+    } else if (isNaN(new Date(startDate).getTime())) {
+      errors.startDate = "Invalid start date format.";
+    }
+
+    if (!endDate) {
+      endDate = new Date().toISOString().split("T")[0]; 
+    } else if (isNaN(new Date(endDate).getTime())) {
+      errors.endDate = "Invalid end date format.";
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      errors.endDate = "End date should be after start date.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json(errors);
+    }
+
+    const jobs = await Job.find({
+      updatedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    })
+      .populate("createdBy")
+      .populate("status");
+
+    if (jobs.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No jobs found in the selected date range." });
+    }
+
+    const exportDir = path.join(__dirname, "../exports");
+    if (!fs.existsSync(exportDir)) {
+      fs.mkdirSync(exportDir, { recursive: true });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Job List");
+
+    worksheet.columns = [
+      { header: "Job Name", key: "job_name", width: 25 },
+      { header: "Salary Range", key: "salaryRange", width: 20 },
+      { header: "Start Date", key: "start_date", width: 15 },
+      { header: "End Date", key: "end_date", width: 15 },
+      { header: "Level", key: "levels", width: 10 },
+      { header: "Skills", key: "skills", width: 30 },
+      { header: "Working Type", key: "working_type", width: 15 },
+      { header: "Experience", key: "experience", width: 15 },
+      { header: "Vacancies", key: "number_of_vacancies", width: 10 },
+      { header: "Benefits", key: "benefits", width: 30 },
+      { header: "Description", key: "description", width: 40 },
+      { header: "Status", key: "status", width: 10 },
+      { header: "Created At", key: "createdAt", width: 15 },
+      { header: "Updated At", key: "updatedAt", width: 15 },
+    ];
+
+    jobs.forEach((job) => {
+      worksheet.addRow({
+        job_name: job.job_name,
+        salaryRange: `${job.salary_min} - ${job.salary_max}`,
+        start_date: job.start_date.toISOString().split("T")[0],
+        end_date: job.end_date.toISOString().split("T")[0],
+        levels: job.levels,
+        skills: job.skills.join(", "),
+        working_type: job.working_type,
+        experience: job.experience,
+        number_of_vacancies: job.number_of_vacancies,
+        benefits: job.benefits.join(", "),
+        description: job.description,
+        status: job.status.name,
+        createdAt: job.createdAt.toISOString().split("T")[0] || "",
+        updatedAt: job.updatedAt.toISOString().split("T")[0] || "",
+      });
+    });
+
+    const filePath = path.join(exportDir, `Job_List_${Date.now()}.xlsx`);
+    await workbook.xlsx.writeFile(filePath);
+
+    res.download(filePath, "Job_List.xlsx", (err) => {
+      if (err) {
+        console.error("Error downloading file:", err);
+      }
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    console.error("Error exporting jobs:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 const jobController = {
   getAllJob,
@@ -611,6 +724,7 @@ const jobController = {
   deleteJob,
   getJobById,
   getJobList,
+  exportJobs,
 };
 
 module.exports = jobController;

@@ -492,23 +492,20 @@ function JobDetails() {
                         </div>
                       )}
 
-                    {user.role ===
-                      "Recruitment Manager" &&(
-                        <div>
-                          <Button
-                            variant="primary"
-                            className="btn btn-primary col-md-3 btn-md float-end me-2 mt-4"
-                            style={{ borderRadius: "8px" }}
-                            onClick={() => setShowFeedback(true)}
-                          >
-                            View Feedback
-                          </Button>
-                        </div>
+                    <div>
+                      {user.role === "Recruitment Manager" && (
+                        <Button
+                          variant="primary"
+                          className="btn btn-primary col-md-3 btn-md float-end ms-2 mt-4"
+                          style={{ borderRadius: "8px" }}
+                          onClick={() => setShowFeedback(true)}
+                        >
+                          View Feedback
+                        </Button>
                       )}
 
-                    {user.role === "Recruitment Manager" &&
-                      job.status.name === "open" && (
-                        <div>
+                      {user.role === "Recruitment Manager" &&
+                        job.status.name === "open" && (
                           <Button
                             variant="danger"
                             className="btn btn-danger col-md-2 btn-md float-end mt-4"
@@ -517,8 +514,8 @@ function JobDetails() {
                           >
                             Close
                           </Button>
-                        </div>
-                      )}
+                        )}
+                    </div>
 
                     {((user.role === "Payroll Manager" &&
                       job.salaryChecked === null) ||
@@ -1001,7 +998,11 @@ function JobDetails() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={close} onHide={() => setClose(true)} style={{ top: "30%" }} centered>
+      <Modal
+        show={close}
+        onHide={() => setClose(true)}
+        centered
+      >
         <Modal.Header>
           <Modal.Title>Close Job</Modal.Title>
         </Modal.Header>
@@ -1070,7 +1071,6 @@ function JobDetails() {
       <Modal
         show={approveModal}
         onHide={() => setApproveModal(false)}
-        style={{ top: "30%" }}
         centered
       >
         <Modal.Header>
@@ -1097,8 +1097,12 @@ function JobDetails() {
         <Modal.Body>
           <div className="row">
             <div className="col-12">
-              <p><strong>Salary feedback:</strong> {job.feedback[0]}</p>
-              <p><strong>Benefit feedback:</strong> {job.feedback[1]}</p>
+              <p>
+                <strong>Salary feedback:</strong> {job.feedback[0]}
+              </p>
+              <p>
+                <strong>Benefit feedback:</strong> {job.feedback[1]}
+              </p>
             </div>
           </div>
         </Modal.Body>
