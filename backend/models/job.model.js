@@ -93,6 +93,7 @@ const jobSchema = new Schema(
     fullAt: {
       type: Date,
     },
+    feedback: { type: [String], default: ["", ""] },
   },
   { timestamps: true }
 );

@@ -21,45 +21,57 @@ const transporter = nodemailer.createTransport({
 
 // Hàm gửi email thông báo trước 24h
 async function sendEndDateReminderEmail(job) {
-  if (!job.createdBy?.email) {
-    console.error(`No email found for job creator of job ${job._id}`);
-    return;
-  }
-
-  const emailContent = {
-    from: { name: "HR Team", address: process.env.EMAIL_USER },
-    to: job.createdBy.email,
-    subject: `Job End Date Reminder - ${job.job_name} Closing Soon`,
-    html: `<h2>Job End Date Reminder</h2>
-      <p>Hello,</p>
-      <p>This is a reminder that the job <strong>${job.job_name}</strong> will be closing in <strong>24 hours</strong>.</p>
-      <p><strong>Job Details:</strong></p>
-      <ul>
-        <li><strong>Title:</strong> ${job.job_name}</li>
-        <li><strong>End Date:</strong> ${new Date(job.end_date).toLocaleString()}</li>
-      </ul>
-      <p>Please review and take any necessary actions.</p>
-      <p>Best regards,<br>HR Team</p>`,
-  };
+  const targetRoles = [
+    "67b7d800a297fbf7bff8205b", // Benefit Manager
+    "67b7d800a297fbf7bff8205a", // Payroll Manager
+    "67b7d800a297fbf7bff82059", // Admin
+    "67b7d800a297fbf7bff8205d", // Interviewer
+    "67b7d800a297fbf7bff8205c", // Recruitment Manager
+  ];
 
   try {
-    const info = await transporter.sendMail(emailContent);
-    console.log(
-      `End date reminder email sent for job ${job._id} to ${job.createdBy.email}. MessageId: ${info.messageId}`
-    );
+    const usersToNotify = await User.find({ role: { $in: targetRoles } }, "fullname email");
+
+    if (!usersToNotify.length) {
+      console.error("No users found with target roles.");
+      return;
+    }
+
+    for (const user of usersToNotify) {
+      if (!user.email) {
+        console.warn(`Skipping user ${user.fullname} due to missing email.`);
+        continue;
+      }
+
+      const emailContent = {
+        from: { name: "HR Team", address: process.env.EMAIL_USER },
+        to: user.email,
+        subject: `Job End Date Reminder - ${job.job_name} Closing Soon`,
+        html: `<h2>Job End Date Reminder</h2>
+          <p>Hello <strong>${user.fullname}</strong>,</p>
+          <p>This is a reminder that the job <strong>${job.job_name}</strong> will be closing in <strong>24 hours</strong>.</p>
+          <p><strong>Job Details:</strong></p>
+          <ul>
+            <li><strong>Title:</strong> ${job.job_name}</li>
+            <li><strong>End Date:</strong> ${new Date(job.end_date).toLocaleString()}</li>
+          </ul>
+          <p>Please review and take any necessary actions.</p>
+          <p>Best regards,<br>HR Team</p>`,
+      };
+
+      const info = await transporter.sendMail(emailContent);
+      console.log(`End date reminder email sent to ${user.email} (MessageId: ${info.messageId})`);
+    }
   } catch (error) {
-    console.error(
-      `Failed to send end date reminder email to ${job.createdBy.email}:`,
-      error
-    );
+    console.error("Failed to send end date reminder emails:", error);
   }
 }
 
 cron.schedule("0 7 * * *", async () => {
   try {
     console.log("Checking jobs for end date reminders...");
-
     const closedStatus = await Status.findOne({ name: "closed" });
+    console.log("Closed status:", closedStatus);
     if (!closedStatus) {
       console.error("Closed status not found");
       return;
@@ -72,8 +84,8 @@ cron.schedule("0 7 * * *", async () => {
     const jobs = await Job.find({
       status: { $ne: closedStatus._id },
       end_date: {
-        $gte: new Date(nextDay.setHours(0, 0, 0, 0)), 
-        $lt: new Date(nextDay.setHours(23, 59, 59, 999)), 
+        $gte: new Date(nextDay.setHours(0, 0, 0, 0)),
+        $lt: new Date(nextDay.setHours(23, 59, 59, 999)),
       },
     }).populate("createdBy");
 

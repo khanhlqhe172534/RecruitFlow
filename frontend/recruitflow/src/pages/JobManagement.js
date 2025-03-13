@@ -5,7 +5,7 @@ import "../styles/a.css";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import { ToastContainer, toast } from "react-toastify";
-import SearchIcon from '@mui/icons-material/Search';
+import SearchIcon from "@mui/icons-material/Search";
 
 function JobManagement() {
   const [jobs, setJobs] = useState([]);
@@ -20,6 +20,13 @@ function JobManagement() {
   const [errors, setErrors] = useState({});
   const [levelFilter, setLevelFilter] = useState([]);
   const [experienceFilter, setExperienceFilter] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportErrors, setExportErrors] = useState({
+    startDate: "",
+    endDate: "",
+  });
 
   const navigate = useNavigate();
 
@@ -91,6 +98,43 @@ function JobManagement() {
     levelFilter,
     experienceFilter,
   ]);
+
+  const handleExport = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:9999/job/export?startDate=${startDate}&endDate=${endDate}`
+      );
+
+      if (!startDate && !endDate) {
+        toast.info("No date range selected. Exporting all jobs.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 400) {
+          setExportErrors(errorData);
+        } else {
+          throw new Error(errorData.message || "Failed to export jobs");
+        }
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Job_List_${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setExportErrors({ startDate: "", endDate: "" });
+    } catch (error) {
+      setExportErrors({ startDate: "", endDate: "", general: error.message });
+    }
+  };
 
   const skillOptions = [
     "Java",
@@ -256,10 +300,7 @@ function JobManagement() {
 
   return (
     <div className="d-flex flex-column bg-light ">
-      <div
-        className="container-fluid px-4"
-        style={{ border: "" }}
-      >
+      <div className="container-fluid px-4" style={{ border: "" }}>
         <div className="row col-md-12">
           <div
             className="p-4 border-0 container-fluid"
@@ -281,7 +322,7 @@ function JobManagement() {
                       <div className="col-md-12 mb-2">
                         <h4 className="mb-1">Search Job</h4>{" "}
                       </div>
-                      <div className="col-md-9">
+                      <div className="col-md-12">
                         <div className="search-bar">
                           <div id="search" className="menu-search mb-0">
                             <div className="position-relative">
@@ -296,23 +337,13 @@ function JobManagement() {
                                 className="fas fa-search position-absolute top-50 translate-middle-y ms-3"
                                 style={{ color: "#888" }}
                               ></i>{" "}
-                              <SearchIcon className="position-absolute top-50 translate-middle-y ms-3" style={{ color: "#888" }} />
+                              <SearchIcon
+                                className="position-absolute top-50 translate-middle-y ms-3"
+                                style={{ color: "#888" }}
+                              />
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="col-md-3 text-end">
-                        {["Recruitment Manager", "Admin"].includes(
-                          user.role
-                        ) && (
-                          <Button
-                            variant="warning"
-                            size="md"
-                            onClick={() => setShowModal(true)}
-                          >
-                            + Request New Job
-                          </Button>
-                        )}
                       </div>
                     </div>
                     <div
@@ -484,7 +515,39 @@ function JobManagement() {
                   </Stack>
                 </div>
               </div>
-              <div className="col-md-3 mt-4">
+              <div className="col-md-3 mt-4 overflow-auto"
+                  style={{
+                    maxHeight: "calc(100vh - 100px)",
+                    msOverflowStyle: "none",
+                    scrollbarWidth: "none",
+                  }}>
+                {user.role === "Recruitment Manager" && (
+                  <div className="card mb-3 shadow-sm bg-white">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h5 className="mb-0">Tools</h5>
+                      </div>
+                      <div className="">
+                        <p
+                          onClick={() => setShowModal(true)}
+                          className="mb-0 fs-6 text-warning"
+                          style={{ cursor: "pointer" }}
+                        >
+                          Request New Job
+                        </p>
+                      </div>
+                      <div className="">
+                        <p
+                          onClick={() => setShowExportModal(true)}
+                          className="mb-0 fs-6"
+                          style={{ color: "#64c2f1", cursor: "pointer" }}
+                        >
+                          Export Job List
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="card mb-3 shadow-sm bg-white">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -897,6 +960,65 @@ function JobManagement() {
           </Button>
           <Button variant="primary" onClick={handleAddJob}>
             Save Job
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={showExportModal}
+        onHide={() => {
+          setShowExportModal(false);
+          setExportErrors({});
+        }}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Export Job List</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Please choose the date range to export the job list.</p>
+
+          {exportErrors.general && (
+            <div className="alert alert-warning">{exportErrors.general}</div>
+          )}
+
+          <div className="row mt-3">
+            <div className="col-md-6">
+              <Form.Group controlId="startDate">
+                <Form.Label>Start Date:</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  isInvalid={!!exportErrors.startDate}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {exportErrors.startDate}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </div>
+            <div className="col-md-6">
+              <Form.Group controlId="endDate">
+                <Form.Label>End Date:</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  isInvalid={!!exportErrors.endDate}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {exportErrors.endDate}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={() => setShowExportModal(false)} variant="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleExport} variant="danger">
+            Export Job
           </Button>
         </Modal.Footer>
       </Modal>

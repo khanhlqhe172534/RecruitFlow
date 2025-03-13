@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Card, CardContent, Typography, Grid, Divider } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Divider,
+  TextField,
+} from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
 
@@ -15,6 +22,7 @@ import StatusIcon from "@mui/icons-material/CheckCircleOutline";
 import PersonIcon from "@mui/icons-material/Person";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import { ToastContainer, toast } from "react-toastify";
+import DoNotDisturbIcon from "@mui/icons-material/DoNotDisturb";
 
 function JobDetails() {
   const { jobId } = useParams();
@@ -27,6 +35,8 @@ function JobDetails() {
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [approveModal, setApproveModal] = useState(false);
+  const [failFeedback, setFailFeedback] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail");
@@ -161,14 +171,20 @@ function JobDetails() {
   const handleApproval = async (isApproved) => {
     try {
       let url = "";
-      let updateData = {};
+      let updateData = { feedback: [] };
 
       if (user.role === "Payroll Manager") {
         url = `http://localhost:9999/job/${job._id}/salary-check`;
         updateData.salaryChecked = isApproved;
+        updateData.feedback = isApproved
+          ? job.feedback
+          : [failFeedback, job.feedback[1] || ""];
       } else if (user.role === "Benefit Manager") {
         url = `http://localhost:9999/job/${job._id}/benefit-check`;
         updateData.benefitChecked = isApproved;
+        updateData.feedback = isApproved
+          ? job.feedback
+          : [job.feedback[0] || "", failFeedback];
       }
 
       const response = await fetch(url, {
@@ -476,9 +492,20 @@ function JobDetails() {
                         </div>
                       )}
 
-                    {user.role === "Recruitment Manager" &&
-                      job.status.name === "open" && (
-                        <div>
+                    <div>
+                      {user.role === "Recruitment Manager" && (
+                        <Button
+                          variant="primary"
+                          className="btn btn-primary col-md-3 btn-md float-end ms-2 mt-4"
+                          style={{ borderRadius: "8px" }}
+                          onClick={() => setShowFeedback(true)}
+                        >
+                          View Feedback
+                        </Button>
+                      )}
+
+                      {user.role === "Recruitment Manager" &&
+                        job.status.name === "open" && (
                           <Button
                             variant="danger"
                             className="btn btn-danger col-md-2 btn-md float-end mt-4"
@@ -487,8 +514,8 @@ function JobDetails() {
                           >
                             Close
                           </Button>
-                        </div>
-                      )}
+                        )}
+                    </div>
 
                     {((user.role === "Payroll Manager" &&
                       job.salaryChecked === null) ||
@@ -971,7 +998,11 @@ function JobDetails() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={close} onHide={() => setClose(true)} style={{ top: "30%" }}>
+      <Modal
+        show={close}
+        onHide={() => setClose(true)}
+        centered
+      >
         <Modal.Header>
           <Modal.Title>Close Job</Modal.Title>
         </Modal.Header>
@@ -988,32 +1019,59 @@ function JobDetails() {
         </Modal.Footer>
       </Modal>
 
-      <Modal
-        show={rejectModal}
-        onHide={() => setRejectModal(false)}
-        style={{ top: "30%" }}
-      >
-        <Modal.Header>
-          <Modal.Title>Reject</Modal.Title>
-        </Modal.Header>
+      <Modal show={rejectModal} onHide={() => setRejectModal(false)} centered>
         <Modal.Body>
-          Are you sure you want to perform this action? This action cannot be
-          undone.
+          <div className="text-center p-4">
+            <DoNotDisturbIcon
+              className="text-danger"
+              style={{ fontSize: 64 }}
+            />
+            <p className="h3 mt-3">Hang on a sec!</p>
+            <p>
+              Are you sure you want to reject this job? <br />
+              Please provide a reason below. This action{" "}
+              <strong>cannot be undone</strong>.
+            </p>
+
+            <TextField
+              error={failFeedback === ""}
+              id="outlined-multiline-flexible"
+              label="Feedback"
+              multiline
+              rows={4}
+              value={failFeedback}
+              className="mb-4 mt-3 w-100"
+              required
+              onChange={(event) => setFailFeedback(event.target.value)}
+            />
+
+            <div className="row">
+              <div className="col-6">
+                <button
+                  className="btn btn-danger w-100 rounded-4"
+                  onClick={() => handleApproval(false)}
+                  disabled={!failFeedback}
+                >
+                  Confirm Reject
+                </button>
+              </div>
+              <div className="col-6">
+                <button
+                  className="btn btn-outline-danger w-100 rounded-4"
+                  onClick={() => setRejectModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={() => setRejectModal(false)} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={() => handleApproval(false)} variant="danger">
-            Confirm
-          </Button>
-        </Modal.Footer>
       </Modal>
 
       <Modal
         show={approveModal}
         onHide={() => setApproveModal(false)}
-        style={{ top: "30%" }}
+        centered
       >
         <Modal.Header>
           <Modal.Title>Approve</Modal.Title>
@@ -1028,6 +1086,29 @@ function JobDetails() {
           </Button>
           <Button onClick={() => handleApproval(true)} variant="success">
             Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showFeedback} onHide={() => setShowFeedback(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Feedback</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="row">
+            <div className="col-12">
+              <p>
+                <strong>Salary feedback:</strong> {job.feedback[0]}
+              </p>
+              <p>
+                <strong>Benefit feedback:</strong> {job.feedback[1]}
+              </p>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowFeedback(false)}>
+            Close
           </Button>
         </Modal.Footer>
       </Modal>
