@@ -7,6 +7,7 @@ const Interview = require("./interview.model");
 const Offer = require("./offer.model");
 const Role = require("./role.model");
 const Status = require("./status.model");
+const ChangeRequest = require("./changeRequest.model");
 const Db = {};
 
 // Noi cac model voi default module  de sau nay su dung
@@ -17,6 +18,7 @@ Db.Interview = Interview;
 Db.Offer = Offer;
 Db.Role = Role;
 Db.Status = Status;
+Db.ChangeRequest = ChangeRequest;
 
 Db.connectDB = async () => {
   try {

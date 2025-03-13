@@ -4,6 +4,7 @@ const jobRouter = require("./job.route");
 const offerRouter = require("./offer.route");
 const userRouter = require("./user.route");
 const statsRouter = require("./stats.route");
+const changeRequestRouter = require("./changeRequest.route");
 
 module.exports = {
   candidateRouter,
@@ -11,5 +12,6 @@ module.exports = {
   jobRouter,
   offerRouter,
   userRouter,
-  statsRouter
+  statsRouter,
+  changeRequestRouter,
 };

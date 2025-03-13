@@ -7,9 +7,11 @@ userRouter.use(bodyParser.json());
 
 userRouter.post("/login", authController.login);
 userRouter.post("/reset-password", authController.resetPassword);
+userRouter.put("/change-password", authController.updatePassword);
 userRouter.get("/logout", authController.logout);
 userRouter.post("/create", userController.createUser);
 userRouter.get("/:role", userController.getUserByRole);
+userRouter.get("/by-id/:id", userController.findUserById);
 userRouter.get("/", userController.getAllUser);
 userRouter.put("/:id", userController.updateUser);
 userRouter.delete("/:id", userController.deleteUser);

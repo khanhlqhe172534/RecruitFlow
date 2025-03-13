@@ -12,6 +12,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  TextField,
+  Button,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -26,22 +28,36 @@ import {
   LockReset as LockIcon,
   Groups as GroupsIcon,
   ExitToAppRounded as LogoutIcon,
+  Checklist,
+  AssignmentTurnedIn,
 } from "@mui/icons-material";
+import { Form, Modal, Alert } from "react-bootstrap";
 
 export default function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [snackbarAlert, setSnackbarAlert] = useState(null);
   const [user, setUser] = useState({
     email: "email",
     role: "User",
     fullName: "No Name",
   });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [userId, setUserId] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const userEmail = localStorage.getItem("userEmail") || "No Email";
     const userRole = localStorage.getItem("userRole") || "User";
     const userFullName = localStorage.getItem("userFullName") || "No Name";
+    const _userId = localStorage.getItem("userId") || "Null";
+    setUserId(_userId);
     setUser({
       email: userEmail,
       role: userRole,
@@ -69,6 +85,67 @@ export default function SideBar() {
   const open = Boolean(anchorEl);
   const id = open ? "user-menu-popover" : undefined;
   const location = useLocation();
+
+  // Change Password
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleSubmitPasswordChange = async () => {
+    const { oldPassword, newPassword, confirmPassword } = passwordData;
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:9999/user/change-password",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            oldPassword,
+            newPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok)
+        throw new Error(data.message || "Failed to change password");
+
+      setSnackbarAlert({
+        message: "Password changed successfully!",
+        type: "success",
+      });
+      setShowPasswordModal(false);
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      setPasswordError(error.message);
+    }
+  };
+  useEffect(() => {
+    if (snackbarAlert) {
+      const timer = setTimeout(() => {
+        setSnackbarAlert(null);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [snackbarAlert]);
   return (
     <div
       className="vh-100 d-flex flex-column"
@@ -77,6 +154,19 @@ export default function SideBar() {
         transition: "width 0.3s ease",
       }}
     >
+      {snackbarAlert && (
+        <Alert
+          variant={snackbarAlert.type === "success" ? "success" : "danger"}
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 1050,
+          }}
+        >
+          {snackbarAlert.message}
+        </Alert>
+      )}
       {/* Sidebar Component */}
       <Sidebar
         className="w-100"
@@ -210,7 +300,12 @@ export default function SideBar() {
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton
+                    onClick={() => {
+                      handleClose();
+                      setShowPasswordModal(true);
+                    }}
+                  >
                     <ListItemIcon>
                       <LockIcon />
                     </ListItemIcon>
@@ -293,8 +388,73 @@ export default function SideBar() {
           >
             Candidates
           </MenuItem>
+          {user.role == "Admin" && (
+            <MenuItem
+              icon={<AssignmentTurnedIn />}
+              component={<Link to="/requests" />}
+              active={location.pathname.startsWith("/requests")}
+              className="mt-1"
+            >
+              Requests
+            </MenuItem>
+          )}
         </Menu>
       </Sidebar>
+      <Modal
+        centered
+        show={showPasswordModal}
+        onHide={() => setShowPasswordModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Change Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <TextField
+              fullWidth
+              label="Old Password"
+              name="oldPassword"
+              type="password"
+              value={passwordData?.oldPassword}
+              onChange={handlePasswordChange}
+              className="mb-3"
+            />
+            <TextField
+              fullWidth
+              label="New Password"
+              name="newPassword"
+              type="password"
+              value={passwordData?.newPassword}
+              onChange={handlePasswordChange}
+              className="mb-3"
+            />
+            <TextField
+              fullWidth
+              label="Confirm New Password"
+              name="confirmPassword"
+              type="password"
+              value={passwordData?.confirmPassword}
+              onChange={handlePasswordChange}
+              className="mb-3"
+            />
+            {passwordError && <Alert variant="danger">{passwordError}</Alert>}
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowPasswordModal(false)}
+          >
+            Close
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleSubmitPasswordChange}
+          >
+            Change Password
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

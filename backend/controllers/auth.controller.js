@@ -23,7 +23,7 @@ const login = async (req, res, next) => {
       .json({ message: "Please provide email and password!" });
   }
   const user = await User.findOne({ email: email }).select("+password");
-  if (!user || !(await user.correctPassword(password, user.password))) {
+  if (!user || !(await user.correctPassword(password))) {
     return res.status(401).json({ message: "Incorrect email or password" });
   }
   const populatedUser = await user.populate([
@@ -148,22 +148,22 @@ const resetPassword = async (req, res, next) => {
   await transporter.sendMail(mailOptions);
   createSendToken(user, 200, res);
 };
-// updatePassword = catchAsync(async (req, res, next) => {
-//   const user = await User.findById(req.user.id).select("+password");
-//   if (!(await user.correctPassword(req.body.oldPassword))) {
-//     return next(new AppError("Your current password is wrong!", 401));
-//   }
-//   user.password = req.body.newPassword;
-//   user.passwordConfirm = req.body.passwordConfirm;
-//   await user.save();
-//   createSendToken(user, 200, res);
-// });
+const updatePassword = async (req, res, next) => {
+  const user = await User.findById(req.body.userId).select("+password");
+  if (user && !(await user.correctPassword(req.body.oldPassword))) {
+    return res.status(401).json({ message: "Your current password is wrong!" });
+  }
+  user.password = req.body.newPassword;
+  await user.save();
+  createSendToken(user, 200, res);
+};
 
 const authController = {
   login,
   logout,
   isLoggedIn,
   resetPassword,
+  updatePassword,
 };
 
 module.exports = authController;
