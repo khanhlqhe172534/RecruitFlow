@@ -16,6 +16,7 @@ import InterviewDetail from "./pages/InterviewDetail";
 import OfferDetail from "./pages/OfferDetail";
 import ResetPassword from "./pages/ResetPassword";
 import EditProfile from "./pages/EditProfile";
+import RequestManagement from "./pages/RequestManagement";
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
 }
@@ -137,6 +138,14 @@ function App() {
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <JobDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <RequestManagement />
               </ProtectedRoute>
             }
           />
