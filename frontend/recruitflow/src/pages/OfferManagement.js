@@ -104,7 +104,7 @@ function OfferManagement() {
                   <div className="col-md-12 mb-2">
                     <h4 className="mb-1">Search Offer</h4>{" "}
                   </div>
-                  <div className="col-md-9">
+                  <div className="col-md-12">
                     <div className="search-bar">
                       <div id="search" className="menu-search mb-0">
                         <div className="position-relative">
