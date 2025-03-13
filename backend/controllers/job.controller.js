@@ -46,6 +46,8 @@ async function getJobs(req, res, next) {
       filter.status = {
         $in: ["67bc5a667ddc08921b739697", "67bc5a667ddc08921b739698"],
       };
+      filter.salaryChecked = { $in: true };
+      filter.benefitChecked = { $in: true };
     }
 
     if (statusFilter) {
