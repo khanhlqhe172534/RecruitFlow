@@ -156,7 +156,7 @@ function InterviewManagement() {
                 overflow: "hidden",
               }}
               eventPropGetter={(event) => {
-                let bgColor = "#D6E4FF"; // Mặc định xanh dương
+                let bgColor = "#D6E4FF"; // Default light blue
                 let textColor = "#215AEE";
                 let borderColor = "#215AEE";
 
@@ -169,12 +169,17 @@ function InterviewManagement() {
                   textColor = "#28a745";
                   borderColor = "#28a745";
                 } else if (
-                  event.interview.status.name === "cancel" ||
-                  event.interview.result === "Fail"
+                  event.interview.status.name === "offered" ||
+                  (event.interview.status.name === "done" &&
+                    event.interview.result === "Fail")
                 ) {
-                  bgColor = "#F8D7DA"; // Màu nền đỏ nhạt
-                  textColor = "#DC3545"; // Màu chữ đỏ đậm
-                  borderColor = "#DC3545"; // Viền đỏ
+                  bgColor = "#F8D7DA"; // Light red background
+                  textColor = "#DC3545"; // Dark red text
+                  borderColor = "#DC3545"; // Red border
+                } else if (event.interview.status.name === "cancel") {
+                  bgColor = "#E0E0E0"; // Light gray background
+                  textColor = "#6C757D"; // Medium gray text
+                  borderColor = "#495057"; // Dark gray border
                 }
 
                 return {
@@ -188,37 +193,43 @@ function InterviewManagement() {
                 };
               }}
               components={{
-                event: ({ event }) => (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "2px 8px",
-                    }}
-                  >
-                    <span
+                event: ({ event }) => {
+                  // Determine if the event is cancelled to apply line-through style
+                  const isCancelled = event.interview.status.name === "cancel";
+
+                  return (
+                    <div
                       style={{
-                        textAlign: "left",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        flex: 1,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "2px 8px",
                       }}
                     >
-                      {event.interview.candidate.fullname}
-                    </span>
-                    <span
-                      style={{
-                        textAlign: "right",
-                        fontWeight: "bold",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {moment(event.start).format("HH:mm")}
-                    </span>
-                  </div>
-                ),
+                      <span
+                        style={{
+                          textAlign: "left",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          flex: 1,
+                          textDecoration: isCancelled ? "line-through" : "none", // Apply line-through only if canceled
+                        }}
+                      >
+                        {event.interview.candidate.fullname}
+                      </span>
+                      <span
+                        style={{
+                          textAlign: "right",
+                          fontWeight: "bold",
+                          marginLeft: "8px",
+                        }}
+                      >
+                        {moment(event.start).format("HH:mm")}
+                      </span>
+                    </div>
+                  );
+                },
                 toolbar: (props) => (
                   <CustomToolbar
                     {...props}

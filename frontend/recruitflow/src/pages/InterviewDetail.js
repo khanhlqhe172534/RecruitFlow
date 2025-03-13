@@ -41,6 +41,7 @@ function InterviewDetail() {
   const [openPass, setOpenPass] = useState(false);
   const [openFail, setOpenFail] = useState(false);
   const [openUpdate, setOpenUpdate] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
   const [passFeedback, setPassFeedback] = useState("");
   const [failFeedback, setFailFeedback] = useState("");
   const [openOffer, setOpenOffer] = useState(false); // Modal state for "Create New Offer"
@@ -140,6 +141,15 @@ function InterviewDetail() {
   const handleOpenOffer = () => setOpenOffer(true);
   const handleCloseOffer = () => setOpenOffer(false);
 
+  // cancel interview
+  const handleOpenCancel = () => {
+    setOpenCancel(true);
+  };
+
+  const handleCloseCancel = () => {
+    setOpenCancel(false);
+  };
+
   const fetchInterviewDetails = async () => {
     try {
       const response = await fetch(`http://localhost:9999/interview/${id}`);
@@ -153,18 +163,50 @@ function InterviewDetail() {
   // Fetch interview details from backend
   useEffect(() => {
     fetchInterviewDetails();
-  }, [id]);
+  }, [id, openCancel, openUpdate]);
 
   const handleSubmit = async () => {
     try {
+      const { interview_date, meeting_link } = formData;
+
+      // Kiểm tra nếu không có dữ liệu hợp lệ để cập nhật
+      if (!interview_date && !meeting_link) {
+        toast.error("Only date and meeting link can be updated.");
+        return;
+      }
+
+      if (interview_date && new Date(interview_date) < new Date()) {
+        toast.error("Interview date cannot be in the past.");
+        return;
+      }
+
       await axios.put(`http://localhost:9999/interview/${id}`, formData);
+
       handleCloseUpdateModal();
-      toast.success("Interview updated successfully!"); // Use toast for success notification
-      // Fetch the updated interview details after the update
-      await fetchInterviewDetails(); // Call the fetch function here
+      toast.success("Interview updated successfully!");
+
+      // Gọi lại API để cập nhật dữ liệu hiển thị
+      await fetchInterviewDetails();
     } catch (error) {
       console.error("Error updating interview:", error);
-      toast.error("Failed to update interview."); // Use toast for error notification
+
+      if (error.response) {
+        const { status, data } = error.response;
+
+        if (
+          status === 400 &&
+          data.message ===
+            "Interviewer already has an interview during this time."
+        ) {
+          toast.error("Interviewer is already booked for this time slot.");
+        } else if (status === 404) {
+          toast.error("Interview not found.");
+        } else {
+          toast.error("Failed to update interview.");
+        }
+      } else {
+        toast.error("Failed to update interview.");
+      }
     }
   };
 
@@ -274,6 +316,15 @@ function InterviewDetail() {
       );
       handleCloseFailModal();
       navigate("/interview");
+    } catch (error) {
+      console.error("Error updating interview status to fail:", error);
+    }
+  };
+
+  const handleCancelInterview = async () => {
+    try {
+      await axios.put(`http://localhost:9999/interview/${id}/cancel`);
+      handleCloseCancel();
     } catch (error) {
       console.error("Error updating interview status to fail:", error);
     }
@@ -464,7 +515,6 @@ function InterviewDetail() {
                 </Modal>
               </div>
             )}
-
           {/* Show "Mark as Pass" and "Mark as Fail" Buttons if Result is "N/A" and role = "Interviewer" */}
           {interview.result === "N/A" && user.role === "Interviewer" && (
             <div className="col-3 ms-1">
@@ -581,121 +631,124 @@ function InterviewDetail() {
               </Modal>
             </div>
           )}
-          {/* Show "Update" Buttons if Result is "N/A" and role = "Recruiter" */}
-          {interview.result === "N/A" && user.role === "Recruiter" && (
-            <div className="col-3 ms-1">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleOpenUpdateModal}
-              >
-                Update Interview Information
-              </button>
-              <Modal show={openUpdate} onHide={handleCloseUpdateModal} centered>
-                <Modal.Header closeButton>
-                  <Modal.Title>
-                    <Typography variant="h6" component="p">
-                      <strong>Update Interview</strong>
-                    </Typography>
-                  </Modal.Title>
-                </Modal.Header>
+          {/* Show "Update" Buttons if Result is "N/A" and role = "Recruitment Manager" */}
+          {interview.result === "N/A" &&
+            interview.status.name == "open" &&
+            user.role === "Recruitment Manager" && (
+              <div className="col-3 ms-1">
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleOpenUpdateModal}
+                >
+                  Update
+                </button>
+                <Modal
+                  show={openUpdate}
+                  onHide={handleCloseUpdateModal}
+                  centered
+                >
+                  <Modal.Header closeButton>
+                    <Modal.Title>
+                      <Typography variant="h6" component="p">
+                        <strong>Update Interview</strong>
+                      </Typography>
+                    </Modal.Title>
+                  </Modal.Header>
 
-                <Modal.Body>
-                  {loading ? (
-                    <Typography>Loading data...</Typography>
-                  ) : (
-                    <>
-                      <TextField
-                        select
-                        label="Select Interviewer"
-                        name="interviewer"
-                        value={formData.interviewer}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        className="mb-3"
-                      >
-                        {interviewers.map((user) => (
-                          <MenuItem key={user._id} value={user._id}>
-                            {user.fullname}
-                          </MenuItem>
-                        ))}
-                      </TextField>
+                  <Modal.Body>
+                    {loading ? (
+                      <Typography>Loading data...</Typography>
+                    ) : (
+                      <>
+                        <TextField
+                          type="datetime-local"
+                          label="Interview Date"
+                          name="interview_date"
+                          value={formData.interview_date}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          className="mb-3"
+                          InputLabelProps={{ shrink: true }}
+                        />
 
-                      <TextField
-                        select
-                        label="Select Candidate"
-                        name="candidate"
-                        value={formData.candidate}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        className="mb-3"
-                      >
-                        {candidates.map((candidate) => (
-                          <MenuItem key={candidate._id} value={candidate._id}>
-                            {candidate.fullname}
-                          </MenuItem>
-                        ))}
-                      </TextField>
+                        <TextField
+                          label="Meeting Link"
+                          name="meeting_link"
+                          value={formData.meeting_link}
+                          onChange={handleChange}
+                          fullWidth
+                          className="mb-3"
+                        />
+                      </>
+                    )}
+                  </Modal.Body>
 
-                      <TextField
-                        select
-                        label="Select Job"
-                        name="job"
-                        value={formData.job}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        className="mb-3"
-                      >
-                        {jobs.map((job) => (
-                          <MenuItem key={job._id} value={job._id}>
-                            {job.job_name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
-                        type="datetime-local"
-                        label="Interview Date"
-                        name="interview_date"
-                        value={formData.interview_date}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        className="mb-3"
-                        InputLabelProps={{ shrink: true }}
+                  <Modal.Footer>
+                    <ButtonBootstrap
+                      variant="outline-secondary"
+                      onClick={handleCloseUpdateModal}
+                    >
+                      Close
+                    </ButtonBootstrap>
+                    <ButtonBootstrap variant="primary" onClick={handleSubmit}>
+                      Save
+                    </ButtonBootstrap>
+                  </Modal.Footer>
+                </Modal>
+              </div>
+            )}
+          {interview.result === "N/A" &&
+            interview.status.name === "open" &&
+            user.role === "Recruitment Manager" && (
+              <div className="col-3 ms-1">
+                <button
+                  type="button"
+                  className="btn btn-secondary ms-2"
+                  onClick={handleOpenCancel}
+                >
+                  Cancel
+                </button>
+                <Modal show={openCancel} onHide={handleCloseCancel} centered>
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <DoNotDisturbIcon
+                        className="text-danger"
+                        style={{ fontSize: 64 }}
                       />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        Confirm to Cancel this Interview? <br />
+                        Confirm your choice by clicking "Yes".
+                        <br />
+                        This action <strong>cannot be undone</strong>.
+                      </p>
 
-                      <TextField
-                        label="Meeting Link"
-                        name="meeting_link"
-                        value={formData.meeting_link}
-                        onChange={handleChange}
-                        fullWidth
-                        className="mb-3"
-                      />
-                    </>
-                  )}
-                </Modal.Body>
-
-                <Modal.Footer>
-                  <ButtonBootstrap
-                    variant="outline-secondary"
-                    onClick={handleCloseUpdateModal}
-                  >
-                    Close
-                  </ButtonBootstrap>
-                  <ButtonBootstrap variant="primary" onClick={handleSubmit}>
-                    Save
-                  </ButtonBootstrap>
-                </Modal.Footer>
-              </Modal>
-            </div>
-          )}
+                      <div className="row">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-danger w-100 rounded-4"
+                            onClick={handleCancelInterview}
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-danger w-100 rounded-4"
+                            onClick={handleCloseCancel}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Modal.Body>
+                </Modal>
+              </div>
+            )}
         </div>
-
         <div className="row">
           <Box sx={{ width: "100%", typography: "body1" }}>
             <TabContext value={tabValue}>
@@ -726,7 +779,7 @@ function InterviewDetail() {
                     }}
                   />
                   <Tab
-                    label="Job"
+                    label="Interviewer"
                     value="3"
                     sx={{
                       fontSize: "13px",
@@ -736,7 +789,7 @@ function InterviewDetail() {
                     }}
                   />
                   <Tab
-                    label="Interviewer"
+                    label="Job"
                     value="4"
                     sx={{
                       fontSize: "13px",

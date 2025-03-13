@@ -57,15 +57,18 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         ]);
 
         setInterviewers(interviewersRes.data);
-        setCandidates(candidatesRes.data);
+
+        // Filter candidates with status 'activated'
+        const activatedCandidates = candidatesRes.data.filter(
+          (candidate) => candidate.status.name === "activated"
+        );
+        setCandidates(activatedCandidates);
 
         // Filter jobs with status 'open'
         const openJobs = jobsRes.data.jobs.filter(
           (job) => job.status.name === "open"
         );
         setJobs(openJobs);
-        // console.log("open");
-        // console.log(openJobs); // Log only the open jobs
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data.");
@@ -83,13 +86,59 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
 
   const handleSubmit = async () => {
     try {
-      await axios.post("http://localhost:9999/interview", formData);
+      const interviewDate = new Date(formData.interview_date);
+      const now = new Date();
+
+      // Validate if the interview date is in the past
+      if (interviewDate < now) {
+        toast.error("Interview date cannot be in the past.");
+        return;
+      }
+
+      // Call the API to create the interview
+      const response = await axios.post(
+        "http://localhost:9999/interview",
+        formData
+      );
+
+      // On successful creation
       handleClose();
       onFetchInterviews();
-      toast.success("Interview added successfully!"); // Use toast for success notification
+      toast.success("Interview added successfully!");
     } catch (error) {
       console.error("Error adding interview:", error);
-      toast.error("Failed to add interview."); // Use toast for error notification
+
+      // Check for specific error responses and show appropriate toast messages
+      if (error.response && error.response.status === 400) {
+        const errorMessage = error.response.data.message;
+
+        if (
+          errorMessage ===
+          "Interviewer already has an interview during this time."
+        ) {
+          toast.error("Interviewer is already booked for this time slot.");
+        } else if (
+          errorMessage ===
+          "Candidate already has an interview scheduled within 2 hours of this time."
+        ) {
+          toast.error(
+            "Candidate already has an interview within 2 hours of this time."
+          );
+        } else if (
+          errorMessage === "Candidate already has an interview for this job."
+        ) {
+          toast.error(
+            "Candidate already has an interview scheduled for this job."
+          );
+        } else if (errorMessage === "Interview date cannot be in the past.") {
+          toast.error("Interview date cannot be in the past.");
+        } else {
+          toast.error("Failed to add interview. Please check the details.");
+        }
+      } else {
+        // General error fallback
+        toast.error("Failed to add interview.");
+      }
     }
   };
 
