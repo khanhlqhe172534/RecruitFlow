@@ -104,7 +104,7 @@ function OfferManagement() {
                   <div className="col-md-12 mb-2">
                     <h4 className="mb-1">Search Offer</h4>{" "}
                   </div>
-                  <div className="col-md-9">
+                  <div className="col-md-12">
                     <div className="search-bar">
                       <div id="search" className="menu-search mb-0">
                         <div className="position-relative">
@@ -161,7 +161,14 @@ function OfferManagement() {
           </div>
         </div>
 
-        <div className="row">
+        <div
+          className="row overflow-auto"
+          style={{
+            maxHeight: "calc(85vh - 200px)",
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
+          }}
+        >
           {sortedOffers.length > 0 ? (
             sortedOffers.map((offer) => (
               <div key={offer._id} className="col-md-4 mb-4">
