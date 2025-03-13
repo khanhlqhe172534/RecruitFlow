@@ -37,7 +37,7 @@ const ChartTimes = ({ chartSeries, sx }) => {
     labels: formatLabels(hiringTimeData),
     datasets: [
       {
-        label: "Thời gian trung bình tuyển dụng (ngày)",
+        label: "Average recruitment time (days)",
         data: hiringTimeData.map((item) => item.avgDaysToHire),
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
@@ -49,7 +49,7 @@ const ChartTimes = ({ chartSeries, sx }) => {
 
   return (
     <Card sx={sx}>
-      <CardHeader title="📌 Thời gian trung bình tuyển dụng" />
+      <CardHeader title="📌Average recruitment time" />
       <CardContent>
         <Stack spacing={2}>
           <Grid item xs={12} md={6} lg={6}>

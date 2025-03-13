@@ -47,7 +47,7 @@ const ChartCandidateOffer = ({ chartSeries, sx }) => {
 
   return (
     <Card sx={sx}>
-      <CardHeader title="📌 Tỷ lệ trạng thái Offer" />
+      <CardHeader title="📌 Offer status ratio" />
       <CardContent>
         <Stack spacing={2}>
           <Grid item xs={12} md={6} lg={6}>

@@ -1,8 +1,9 @@
 const Candidate = require("../models/candidate.model");
 const Job = require("../models/job.model");
 const Offer = require("../models/offer.model");
+const Status = require("../models/status.model");
 
-// 📌 1️⃣ Thống kê số lượng ứng viên theo từng tháng
+// 📌 1️⃣ Thống kê Number of candidates theo từng tháng
 async function getCandidateTrend(req, res, next) {
   try {
     const pipeline = [
@@ -15,7 +16,7 @@ async function getCandidateTrend(req, res, next) {
       {
         $group: {
           _id: { year: "$year", month: "$month" }, // Gom nhóm theo cả năm và tháng
-          count: { $sum: 1 } // Đếm số lượng ứng viên theo từng tháng
+          count: { $sum: 1 } // Đếm Number of candidates theo từng tháng
         }
       },
       { $sort: { "_id.year": 1, "_id.month": 1 } }, // Sắp xếp theo năm và tháng
@@ -37,7 +38,7 @@ async function getCandidateTrend(req, res, next) {
 }
 
 
-// 📌 2️⃣ Thống kê thời gian trung bình tuyển dụng theo tháng
+// 📌 2️⃣ Thống kêAverage recruitment time theo tháng
 async function getAvgHiringTimeTrend(req, res, next) {
   try {
     const pipeline = [
@@ -168,7 +169,7 @@ async function getOfferStatusTrend(req, res, next) {
 }
 
 
-// 📌 4️⃣ Thống kê số lượng ứng viên theo trạng thái (có thêm status name)
+// 📌 4️⃣ Thống kê Number of candidates theo trạng thái (có thêm status name)
 async function getCandidateStatusStats(req, res, next) {
   try {
     const pipeline = [
@@ -197,12 +198,61 @@ async function getCandidateStatusStats(req, res, next) {
   }
 }
 
-// 📌 5️⃣ Gộp tất cả API vào controller
+async function getJobCount(req, res, next) {
+  try {
+    const jobCount = await Job.countDocuments({});
+    res.status(200).json(jobCount);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getCandidateCount(req, res, next) {
+  try {
+    const candidateCount = await Candidate.countDocuments({});
+    res.status(200).json(candidateCount);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getOfferAcceptanceRate(req, res, next) {
+  try {
+    // Get the ObjectId of the "accept" status
+    const acceptStatus = await Status.findOne({ name: "accept" });
+
+    if (!acceptStatus) {
+      return res.status(400).json({ message: "Status 'accept' not found" });
+    }
+
+    // Count the total number of offers
+    const totalOffers = await Offer.countDocuments({});
+    
+    // Count the number of accepted offers
+    const acceptedOffers = await Offer.countDocuments({
+      status: acceptStatus._id // Compare with the ObjectId of the "accept" status
+    });
+
+    // Calculate the acceptance rate
+    const acceptanceRate = totalOffers > 0 ? (acceptedOffers / totalOffers) * 100 : 0;
+
+    // Respond with the acceptance rate
+    res.status(200).json({ acceptanceRate });
+  } catch (error) {
+    // Pass the error to the next middleware
+    next(error);
+  }
+}
+
+// 📌 Gộp tất cả API vào controller
 const statsController = {
   getCandidateTrend,
   getAvgHiringTimeTrend,
   getOfferStatusTrend,
   getCandidateStatusStats,
+  getJobCount,
+  getCandidateCount,
+  getOfferAcceptanceRate
 };
 
 module.exports = statsController;

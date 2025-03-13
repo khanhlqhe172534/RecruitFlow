@@ -20,8 +20,8 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 // ✅ Import MUI Components
 import {  Paper, Typography, Container } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css"; // ✅ Import Bootstrap
-import Budget from "./components/budget";
-import TotalCustomers from "./components/totalCustomer";
+import Budget from "./components/jobCount";
+import TotalCustomers from "./components/TotalCandidates";
 import Tasks from "./components/task";
 import ChartCandidate from "./components/chartCandidate";
 import Grid from '@mui/material/Grid2';
