@@ -305,7 +305,7 @@ function JobManagement() {
       <div className="container-fluid px-4" style={{ border: "" }}>
         <div className="row col-md-12">
           <div
-            className="p-4 border-0 container-fluid"
+            className="px-4 pt-4 border-0 container-fluid"
             style={{ scrollbarWidth: "none" }}
           >
             <div className="row">
@@ -926,7 +926,7 @@ function JobManagement() {
               </div>
 
               <div className="col-md-6">
-                <Form.Group className="mb-3">
+                <Form.Group className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}>
                   <Form.Label>Benefits</Form.Label>
                   <div className="row">
                     {benefitOptions.map((benefit, index) => (
@@ -940,6 +940,11 @@ function JobManagement() {
                       </div>
                     ))}
                   </div>
+                  {errors.benefits && (
+                    <Form.Text className="text-danger">
+                      {errors.benefits}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </div>
             </div>

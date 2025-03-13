@@ -476,22 +476,6 @@ function JobDetails() {
                   </Grid>
 
                   <div className="d-flex mb-3 row">
-                    {user.role === "Recruitment Manager" &&
-                      job.status.name === "waiting for approved" &&
-                      job.salaryChecked == null &&
-                      job.benefitChecked == null && (
-                        <div>
-                          <Button
-                            variant="success"
-                            className="btn btn-info col-md-2 btn-md float-end mt-4"
-                            style={{ borderRadius: "8px" }}
-                            onClick={() => setShowModal(true)}
-                          >
-                            Update
-                          </Button>
-                        </div>
-                      )}
-
                     <div>
                       {user.role === "Recruitment Manager" && (
                         <Button
@@ -503,6 +487,22 @@ function JobDetails() {
                           View Feedback
                         </Button>
                       )}
+
+                      {user.role === "Recruitment Manager" &&
+                        job.status.name === "waiting for approved" &&
+                        job.salaryChecked == null &&
+                        job.benefitChecked == null && (
+                          <div>
+                            <Button
+                              variant="success"
+                              className="btn btn-info col-md-2 btn-md float-end mt-4"
+                              style={{ borderRadius: "8px" }}
+                              onClick={() => setShowModal(true)}
+                            >
+                              Update
+                            </Button>
+                          </div>
+                        )}
 
                       {user.role === "Recruitment Manager" &&
                         job.status.name === "open" && (
@@ -956,7 +956,7 @@ function JobDetails() {
 
               {/* Benefits */}
               <div className="col-md-6">
-                <Form.Group className="mb-3">
+                <Form.Group className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}>
                   <Form.Label>Benefits</Form.Label>
                   <div className="row">
                     {benefitOptions.map((benefit) => (
@@ -971,6 +971,11 @@ function JobDetails() {
                       </div>
                     ))}
                   </div>
+                  {errors.benefits && (
+                    <Form.Text className="text-danger">
+                      {errors.benefits}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </div>
             </div>
@@ -998,11 +1003,7 @@ function JobDetails() {
         </Modal.Footer>
       </Modal>
 
-      <Modal
-        show={close}
-        onHide={() => setClose(true)}
-        centered
-      >
+      <Modal show={close} onHide={() => setClose(true)} centered>
         <Modal.Header>
           <Modal.Title>Close Job</Modal.Title>
         </Modal.Header>
@@ -1068,11 +1069,7 @@ function JobDetails() {
         </Modal.Body>
       </Modal>
 
-      <Modal
-        show={approveModal}
-        onHide={() => setApproveModal(false)}
-        centered
-      >
+      <Modal show={approveModal} onHide={() => setApproveModal(false)} centered>
         <Modal.Header>
           <Modal.Title>Approve</Modal.Title>
         </Modal.Header>
