@@ -268,6 +268,7 @@ function JobManagement() {
         ? prev.filter((item) => item !== value)
         : [...prev, value]
     );
+    setPage(1);
   };
 
   const handleWorkingTypeChange = (value) => {
@@ -296,6 +297,7 @@ function JobManagement() {
         return [...prev, value];
       }
     });
+    setPage(1);
   };
 
   return (
