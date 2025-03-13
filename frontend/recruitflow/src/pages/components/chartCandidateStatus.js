@@ -78,7 +78,7 @@ const ChartCandidateStatus = ({ chartSeries, labels, sx }) => {
     labels: candidateStatusData.map((item) => item.statusName),
     datasets: [
       {
-        label: "Số lượng ứng viên",
+        label: "Number of candidates",
         data: candidateStatusData.map((item) => item.count),
         backgroundColor: colors.slice(0, candidateStatusData.length),
         hoverOffset: 4,
@@ -103,7 +103,7 @@ const ChartCandidateStatus = ({ chartSeries, labels, sx }) => {
 
   return (
     <Card sx={sx}>
-      <CardHeader title="📌 Số lượng ứng viên theo trạng thái" />
+      <CardHeader title="📌 Number of candidates by status" />
       <CardContent>
         <Stack spacing={2}>
           <Grid item xs={12} md={6} lg={6}>

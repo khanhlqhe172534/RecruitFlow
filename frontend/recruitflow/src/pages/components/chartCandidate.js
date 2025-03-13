@@ -30,7 +30,7 @@ const ChartCandidate = ({ chartSeries, sx }) => {
     labels: formatLabels(candidateData),
     datasets: [
       {
-        label: "Số lượng ứng viên",
+        label: "Number of candidates",
         data: candidateData.map((item) => item.count),
         backgroundColor: "rgba(75, 192, 192, 0.6)",
         borderColor: "rgba(75, 192, 192, 1)",
@@ -53,11 +53,11 @@ const ChartCandidate = ({ chartSeries, sx }) => {
             Sync
           </Button>
         }
-        title="📌 Số lượng ứng viên theo tháng"
+        title="📌 Number of candidates per month"
       />
       <CardContent>
         <Grid container spacing={3}>
-          {/* Biểu đồ số lượng ứng viên theo tháng */}
+          {/* Biểu đồ Number of candidates theo tháng */}
           <Grid item size={{ xs: 12, sm: 12, lg: 12 }} >
             <Paper
               className="p-3 shadow"
