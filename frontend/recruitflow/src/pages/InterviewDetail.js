@@ -412,6 +412,7 @@ function InterviewDetail() {
           </div>
           {/* Show "Create New Offer" Button if Result is "Pass" */}
           {interview.result === "Pass" &&
+            interview.status.name == "done" && //done
             user.role === "Recruitment Manager" &&
             candidate.status === "67bc5a667ddc08921b739694" && // activated
             job.status === "67bc5a667ddc08921b739697" && ( // open
@@ -516,121 +517,128 @@ function InterviewDetail() {
               </div>
             )}
           {/* Show "Mark as Pass" and "Mark as Fail" Buttons if Result is "N/A" and role = "Interviewer" */}
-          {interview.result === "N/A" && user.role === "Interviewer" && (
-            <div className="col-3 ms-1">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleOpenPassModal}
-              >
-                Mark as Pass
-              </button>
+          {interview.result === "N/A" &&
+            user.role === "Interviewer" &&
+            interview.status.name !== "cancel" && ( // cancel
+              <div className="col-3 ms-1">
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleOpenPassModal}
+                >
+                  Mark as Pass
+                </button>
 
-              <Modal show={openPass} onHide={handleClosePassModal} centered>
-                <Modal.Body>
-                  <div className="text-center p-4">
-                    <CheckIcon
-                      className="text-success"
-                      style={{ fontSize: 64 }}
-                    />
-                    <p className="h3 mt-3">Hang on a sec!</p>
-                    <p>
-                      You need to provide us some feedback before we close this
-                    </p>
+                <Modal show={openPass} onHide={handleClosePassModal} centered>
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <CheckIcon
+                        className="text-success"
+                        style={{ fontSize: 64 }}
+                      />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        You need to provide us some feedback before we close
+                        this
+                      </p>
 
-                    <TextField
-                      error={passFeedback === ""}
-                      id="outlined-multiline-flexible"
-                      label="Feedback"
-                      multiline
-                      rows={8}
-                      value={passFeedback}
-                      className="mb-5 mt-3 w-100"
-                      required
-                      onChange={(event) => setPassFeedback(event.target.value)}
-                    />
+                      <TextField
+                        error={passFeedback === ""}
+                        id="outlined-multiline-flexible"
+                        label="Feedback"
+                        multiline
+                        rows={8}
+                        value={passFeedback}
+                        className="mb-5 mt-3 w-100"
+                        required
+                        onChange={(event) =>
+                          setPassFeedback(event.target.value)
+                        }
+                      />
 
-                    <div className="row mt-5">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-success w-100 rounded-4"
-                          onClick={handleSubmitPass}
-                          disabled={!passFeedback} // Disable if passFeedback is empty
-                        >
-                          Yes
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-outline-success w-100 rounded-4"
-                          onClick={handleClosePassModal}
-                        >
-                          Let Me Rethink
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </Modal.Body>
-              </Modal>
-
-              <button
-                type="button"
-                className="btn btn-danger ms-3"
-                onClick={handleOpenFailModal}
-              >
-                Mark as Fail
-              </button>
-
-              <Modal show={openFail} onHide={handleCloseFailModal} centered>
-                <Modal.Body>
-                  <div className="text-center p-4">
-                    <DoNotDisturbIcon
-                      className="text-danger"
-                      style={{ fontSize: 64 }}
-                    />
-                    <p className="h3 mt-3">Hang on a sec!</p>
-                    <p>
-                      Confirm to mark this interview as Fail? <br />
-                      Confirm your choice by clicking "Yes".
-                      <br /> This action <strong>cannot be undone</strong>
-                    </p>
-
-                    <TextField
-                      error={failFeedback === ""}
-                      id="outlined-multiline-flexible"
-                      label="Feedback"
-                      multiline
-                      rows={8}
-                      value={failFeedback}
-                      className="mb-5 mt-3 w-100"
-                      required
-                      onChange={(event) => setFailFeedback(event.target.value)}
-                    />
-
-                    <div className="row">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-danger w-100 rounded-4"
-                          onClick={handleSubmitFail}
-                          disabled={!failFeedback}
-                        >
-                          Yes
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-outline-danger w-100 rounded-4"
-                          onClick={handleCloseFailModal}
-                        >
-                          Let Me Rethink
-                        </button>
+                      <div className="row mt-5">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-success w-100 rounded-4"
+                            onClick={handleSubmitPass}
+                            disabled={!passFeedback} // Disable if passFeedback is empty
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-success w-100 rounded-4"
+                            onClick={handleClosePassModal}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Modal.Body>
-              </Modal>
-            </div>
-          )}
+                  </Modal.Body>
+                </Modal>
+
+                <button
+                  type="button"
+                  className="btn btn-danger ms-3"
+                  onClick={handleOpenFailModal}
+                >
+                  Mark as Fail
+                </button>
+
+                <Modal show={openFail} onHide={handleCloseFailModal} centered>
+                  <Modal.Body>
+                    <div className="text-center p-4">
+                      <DoNotDisturbIcon
+                        className="text-danger"
+                        style={{ fontSize: 64 }}
+                      />
+                      <p className="h3 mt-3">Hang on a sec!</p>
+                      <p>
+                        Confirm to mark this interview as Fail? <br />
+                        Confirm your choice by clicking "Yes".
+                        <br /> This action <strong>cannot be undone</strong>
+                      </p>
+
+                      <TextField
+                        error={failFeedback === ""}
+                        id="outlined-multiline-flexible"
+                        label="Feedback"
+                        multiline
+                        rows={8}
+                        value={failFeedback}
+                        className="mb-5 mt-3 w-100"
+                        required
+                        onChange={(event) =>
+                          setFailFeedback(event.target.value)
+                        }
+                      />
+
+                      <div className="row">
+                        <div className="col-6">
+                          <button
+                            className="btn btn-danger w-100 rounded-4"
+                            onClick={handleSubmitFail}
+                            disabled={!failFeedback}
+                          >
+                            Yes
+                          </button>
+                        </div>
+                        <div className="col-6">
+                          <button
+                            className="btn btn-outline-danger w-100 rounded-4"
+                            onClick={handleCloseFailModal}
+                          >
+                            Let Me Rethink
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Modal.Body>
+                </Modal>
+              </div>
+            )}
           {/* Show "Update" Buttons if Result is "N/A" and role = "Recruitment Manager" */}
           {interview.result === "N/A" &&
             interview.status.name == "open" &&
