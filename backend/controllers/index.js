@@ -1,5 +1,6 @@
 const authController = require("./auth.controller");
 const candidateController = require("./candidate.controller");
+const changeRequestController = require("./changeRequest.controller");
 const interviewController = require("./interview.controller");
 const jobController = require("./job.controller");
 const offerController = require("./offer.controller");
@@ -12,5 +13,6 @@ module.exports = {
   candidateController,
   jobController,
   authController,
-  statsController
+  statsController,
+  changeRequestController,
 };

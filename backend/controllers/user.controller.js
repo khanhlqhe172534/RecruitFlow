@@ -240,6 +240,22 @@ async function deleteUser(req, res, next) {
     next(err);
   }
 }
+async function findUserById(req, res, next) {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    const user = await User.findById(id)
+      .populate("role", "name")
+      .populate("status", "name");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+}
 
 const userController = {
   createUser,
@@ -248,6 +264,7 @@ const userController = {
   updateUser,
   deleteUser,
   updateUserStatus,
+  findUserById,
 };
 
 module.exports = userController;

@@ -163,26 +163,69 @@ async function addJob(req, res, next) {
       }
     });
 
-    if (salary_min && salary_max && Number(salary_min) > Number(salary_max)) {
-      errors.salary_max = "Max Salary should be greater than Min Salary";
-    }
-
-    if (start_date && end_date && new Date(start_date) >= new Date(end_date)) {
-      errors.end_date = "End Date should be after Start Date";
-    }
-
-    if (
-      experience &&
-      !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience)
-    ) {
-      errors.experience = "Experience should include 'year' or 'month'";
-    }
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (start_date && new Date(start_date) < today) {
-      errors.start_date = "Start Date should be today or later";
-    }
+
+    const validations = [
+      {
+        condition:
+          salary_min && salary_max && Number(salary_min) > Number(salary_max),
+        key: "salary_max",
+        message: "Max Salary should be greater than Min Salary",
+      },
+      {
+        condition: salary_min && (isNaN(salary_min) || salary_min < 0),
+        key: "salary_min",
+        message: "Min Salary should be a positive number",
+      },
+      {
+        condition: salary_max && (isNaN(salary_max) || salary_max < 0),
+        key: "salary_max",
+        message: "Max Salary should be a positive number",
+      },
+      {
+        condition:
+          start_date && end_date && new Date(start_date) >= new Date(end_date),
+        key: "end_date",
+        message: "End Date should be after Start Date",
+      },
+      {
+        condition:
+          experience &&
+          !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience),
+        key: "experience",
+        message: "Experience should include 'year' or 'month'",
+      },
+      {
+        condition: job_name && job_name.length > 50,
+        key: "job_name",
+        message: "Job Name must be less than 50 characters",
+      },
+      {
+        condition: description && description.length > 500,
+        key: "description",
+        message: "Description must be less than 500 characters",
+      },
+      {
+        condition:
+          number_of_vacancies &&
+          (isNaN(number_of_vacancies) ||
+            number_of_vacancies < 1 ||
+            number_of_vacancies > 100),
+        key: "number_of_vacancies",
+        message:
+          "Number of Vacancies should be a positive number less than 100",
+      },
+      {
+        condition: start_date && new Date(start_date) < today,
+        key: "start_date",
+        message: "Start Date should be today or later",
+      },
+    ];
+
+    validations.forEach(({ condition, key, message }) => {
+      if (condition) errors[key] = message;
+    });
 
     if (Object.keys(errors).length > 0) {
       console.log("Validation errors:", errors);
@@ -286,8 +329,8 @@ async function updateJob(req, res, next) {
   const { jobId } = req.params;
   const {
     job_name,
-    salary_min,
     salary_max,
+    salary_min,
     start_date,
     end_date,
     levels,
@@ -325,26 +368,68 @@ async function updateJob(req, res, next) {
     }
   });
 
-  if (salary_min && salary_max && Number(salary_min) > Number(salary_max)) {
-    errors.salary_max = "Max Salary should be greater than Min Salary";
-  }
-
-  if (start_date && end_date && new Date(start_date) >= new Date(end_date)) {
-    errors.end_date = "End Date should be after Start Date";
-  }
-
-  if (
-    experience &&
-    !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience)
-  ) {
-    errors.experience = "Experience should include 'year' or 'month'";
-  }
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (start_date && new Date(start_date) < today) {
-    errors.start_date = "Start Date should be today or later";
-  }
+
+  const validations = [
+    {
+      condition:
+        salary_min && salary_max && Number(salary_min) > Number(salary_max),
+      key: "salary_max",
+      message: "Max Salary should be greater than Min Salary",
+    },
+    {
+      condition: salary_min && (isNaN(salary_min) || salary_min < 0),
+      key: "salary_min",
+      message: "Min Salary should be a positive number",
+    },
+    {
+      condition: salary_max && (isNaN(salary_max) || salary_max < 0),
+      key: "salary_max",
+      message: "Max Salary should be a positive number",
+    },
+    {
+      condition:
+        start_date && end_date && new Date(start_date) >= new Date(end_date),
+      key: "end_date",
+      message: "End Date should be after Start Date",
+    },
+    {
+      condition:
+        experience &&
+        !/(\byear\b|\bmonth\b|\byears\b|\bmonths\b)/i.test(experience),
+      key: "experience",
+      message: "Experience should include 'year' or 'month'",
+    },
+    {
+      condition: job_name && job_name.length > 50,
+      key: "job_name",
+      message: "Job Name must be less than 50 characters",
+    },
+    {
+      condition: description && description.length > 500,
+      key: "description",
+      message: "Description must be less than 500 characters",
+    },
+    {
+      condition:
+        number_of_vacancies &&
+        (isNaN(number_of_vacancies) ||
+          number_of_vacancies < 1 ||
+          number_of_vacancies > 100),
+      key: "number_of_vacancies",
+      message: "Number of Vacancies should be a positive number less than 100",
+    },
+    {
+      condition: start_date && new Date(start_date) < today,
+      key: "start_date",
+      message: "Start Date should be today or later",
+    },
+  ];
+
+  validations.forEach(({ condition, key, message }) => {
+    if (condition) errors[key] = message;
+  });
 
   if (Object.keys(errors).length > 0) {
     console.log("Validation errors:", errors);
@@ -389,8 +474,8 @@ async function updateJob(req, res, next) {
 
     const updatedJob = job.set({
       job_name,
-      salary_min,
       salary_max,
+      salary_min,
       start_date,
       end_date,
       levels,
@@ -402,7 +487,6 @@ async function updateJob(req, res, next) {
       description,
       createdBy,
       updatedAt: new Date(),
-      fullAt,
     });
 
     await job.save();
@@ -443,12 +527,20 @@ async function updateBenefitCheck(req, res, next) {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
+    const previousStatus = job.status;
+
     job.benefitChecked = benefitChecked;
     job.feedback = feedback || job.feedback;
 
     await updateJobStatus(job);
 
     res.status(200).json({ message: "Benefit check updated", job });
+
+    if (previousStatus !== job.status) {
+      sendStatusUpdateEmail(job).catch((err) =>
+        console.error("Error sending email:", err)
+      );
+    }
   } catch (error) {
     next(error);
   }
@@ -462,12 +554,20 @@ async function updateSalaryCheck(req, res, next) {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
+    const previousStatus = job.status;
+
     job.salaryChecked = salaryChecked;
     job.feedback = feedback || job.feedback;
 
     await updateJobStatus(job);
 
     res.status(200).json({ message: "Salary check updated", job });
+
+    if (previousStatus !== job.status) {
+      sendStatusUpdateEmail(job).catch((err) =>
+        console.error("Error sending email:", err)
+      );
+    }
   } catch (error) {
     next(error);
   }
@@ -498,8 +598,6 @@ const updateJobStatus = async (job) => {
     const closedStatus = await Status.findOne({ name: "closed" });
     const openStatus = await Status.findOne({ name: "open" });
 
-    let previousStatus = job.status;
-
     if (job.benefitChecked === false || job.salaryChecked === false) {
       job.status = closedStatus._id;
     } else if (job.benefitChecked === true && job.salaryChecked === true) {
@@ -507,22 +605,28 @@ const updateJobStatus = async (job) => {
     }
 
     await job.save();
-
-    if (previousStatus.toString() !== job.status.toString()) {
-      const jobCreator = await User.findById(job.createdBy);
-      if (jobCreator && jobCreator.email) {
-        const subject = `Job Status Update: ${job.job_name}`;
-        const text =
-          job.status.toString() === openStatus._id.toString()
-            ? `Your job "${job.job_name}" has been approved and is now Open.`
-            : `Your job "${job.job_name}" has been Rejected. Please check the feedback.`;
-
-        await sendEmail(jobCreator.email, subject, text);
-      }
-    }
   } catch (error) {
     console.error("Error updating job status:", error);
     throw error;
+  }
+};
+
+const sendStatusUpdateEmail = async (job) => {
+  try {
+    const jobCreator = await User.findById(job.createdBy);
+    if (jobCreator?.email) {
+      const openStatus = await Status.findOne({ name: "open" });
+
+      const subject = `Job Status Update: ${job.job_name}`;
+      const text =
+        job.status.toString() === openStatus._id.toString()
+          ? `Your job "${job.job_name}" has been approved and is now Open.`
+          : `Your job "${job.job_name}" has been Rejected. Please check the feedback.`;
+
+      await sendEmail(jobCreator.email, subject, text);
+    }
+  } catch (error) {
+    console.error("Failed to send status update email:", error);
   }
 };
 
@@ -554,10 +658,13 @@ async function closeJob(req, res, next) {
     job.status = closedStatus._id;
     await job.save();
 
-    res.status(200).json({ message: "Job closed successfully. Emails will be sent in the background.", job });
+    res.status(200).json({
+      message:
+        "Job closed successfully. Emails will be sent in the background.",
+      job,
+    });
 
     sendJobClosureEmails(job);
-
   } catch (error) {
     console.error("Error closing job:", error);
     res.status(400).json({ message: "Failed to close job", error });
@@ -574,7 +681,10 @@ async function sendJobClosureEmails(job) {
       "67b7d800a297fbf7bff8205d", // Interviewer
     ];
 
-    const usersToNotify = await User.find({ role: { $in: targetRoles } }, "fullname email");
+    const usersToNotify = await User.find(
+      { role: { $in: targetRoles } },
+      "fullname email"
+    );
 
     if (usersToNotify.length === 0) {
       console.log("No users found with the specified roles.");
@@ -593,7 +703,9 @@ async function sendJobClosureEmails(job) {
         subject: `Job Closed - ${job.job_name}`,
         html: `<h2>Job Closure Notification</h2>
           <p>Hello <strong>${user.fullname}</strong>,</p>
-          <p>The job <strong>${job.job_name}</strong> has been officially closed.</p>
+          <p>The job <strong>${
+            job.job_name
+          }</strong> has been officially closed.</p>
           <p><strong>Job Details:</strong></p>
           <ul>
             <li><strong>Title:</strong> ${job.job_name}</li>
@@ -603,11 +715,17 @@ async function sendJobClosureEmails(job) {
           <p>Best regards,<br>HR Team</p>`,
       };
 
-      transporter.sendMail(emailContent)
-        .then(info => console.log(`Email sent to ${user.email} (MessageId: ${info.messageId})`))
-        .catch(err => console.error(`Failed to send email to ${user.email}:`, err));
+      transporter
+        .sendMail(emailContent)
+        .then((info) =>
+          console.log(
+            `Email sent to ${user.email} (MessageId: ${info.messageId})`
+          )
+        )
+        .catch((err) =>
+          console.error(`Failed to send email to ${user.email}:`, err)
+        );
     }
-
   } catch (error) {
     console.error("Error sending job closure emails:", error);
   }
@@ -630,7 +748,7 @@ const exportJobs = async (req, res) => {
     }
 
     if (!endDate) {
-      endDate = new Date().toISOString().split("T")[0]; 
+      endDate = new Date().toISOString().split("T")[0];
     } else if (isNaN(new Date(endDate).getTime())) {
       errors.endDate = "Invalid end date format.";
     }
