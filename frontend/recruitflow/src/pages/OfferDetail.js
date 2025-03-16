@@ -45,7 +45,6 @@ function OfferDetail() {
         const response = await axios.get(`http://localhost:9999/offer/${id}`);
         setOffer(response.data);
         console.log(response.data);
-        
       } catch (error) {
         console.error("Error fetching offer:", error);
         toast.error("Failed to load offer details.");
@@ -309,8 +308,10 @@ function OfferDetail() {
             </Modal>
           </div>
           <div className="col-1">
-            {offer.status?.name === "waiting for approved" &&
-              user?.role === "Recuitment Manager" && (
+            {["accept", "waiting for approved", "open"].includes(
+              offer.status?.name
+            ) &&
+              user?.role === "Recruitment Manager" && (
                 <button
                   className="btn btn-danger"
                   style={{ float: "right" }}
