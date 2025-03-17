@@ -1,8 +1,9 @@
 const Candidate = require("../models/candidate.model");
 const Job = require("../models/job.model");
 const Offer = require("../models/offer.model");
+const Status = require("../models/status.model");
 
-// 📌 1️⃣ Thống kê số lượng ứng viên theo từng tháng
+// 📌 1️⃣ Thống kê Number of candidates theo từng tháng
 async function getCandidateTrend(req, res, next) {
   try {
     const pipeline = [
@@ -15,7 +16,7 @@ async function getCandidateTrend(req, res, next) {
       {
         $group: {
           _id: { year: "$year", month: "$month" }, // Gom nhóm theo cả năm và tháng
-          count: { $sum: 1 } // Đếm số lượng ứng viên theo từng tháng
+          count: { $sum: 1 } // Đếm Number of candidates theo từng tháng
         }
       },
       { $sort: { "_id.year": 1, "_id.month": 1 } }, // Sắp xếp theo năm và tháng
@@ -36,8 +37,7 @@ async function getCandidateTrend(req, res, next) {
   }
 }
 
-
-// 📌 2️⃣ Thống kê thời gian trung bình tuyển dụng theo tháng
+// 📌 2️⃣ Thống kêAverage recruitment time theo tháng
 async function getAvgHiringTimeTrend(req, res, next) {
   try {
     const pipeline = [
@@ -52,7 +52,10 @@ async function getAvgHiringTimeTrend(req, res, next) {
           year: { $year: "$createdAt" }, // Lấy năm từ createdAt
           month: { $month: "$createdAt" }, // Lấy tháng từ createdAt
           daysToHire: {
-            $divide: [{ $subtract: ["$fullAt", "$createdAt"] }, 1000 * 60 * 60 * 24] // Tính số ngày từ createdAt đến fullAt
+            $divide: [
+              { $subtract: ["$fullAt", "$createdAt"] },
+              1000 * 60 * 60 * 24
+            ] // Tính số ngày từ createdAt đến fullAt
           }
         }
       },
@@ -80,7 +83,6 @@ async function getAvgHiringTimeTrend(req, res, next) {
   }
 }
 
-
 // 📌 3️⃣ Thống kê tỷ lệ chấp nhận offer theo tháng
 async function getOfferStatusTrend(req, res, next) {
   try {
@@ -90,22 +92,22 @@ async function getOfferStatusTrend(req, res, next) {
           from: "status", // Join với bảng Status
           localField: "status",
           foreignField: "_id",
-          as: "statusInfo",
-        },
+          as: "statusInfo"
+        }
       },
       { $unwind: "$statusInfo" }, // Mở rộng dữ liệu để lấy tên status thay vì ID
       {
         $project: {
           year: { $year: "$createdAt" }, // Lấy năm từ createdAt
           month: { $month: "$createdAt" }, // Lấy tháng từ createdAt
-          status: "$statusInfo.name", // Lấy tên status
-        },
+          status: "$statusInfo.name" // Lấy tên status
+        }
       },
       {
         $group: {
           _id: { year: "$year", month: "$month", status: "$status" }, // Gom nhóm theo năm, tháng và trạng thái
-          count: { $sum: 1 }, // Đếm số lượng offer theo từng trạng thái
-        },
+          count: { $sum: 1 } // Đếm số lượng offer theo từng trạng thái
+        }
       },
       {
         $group: {
@@ -115,9 +117,9 @@ async function getOfferStatusTrend(req, res, next) {
             $push: {
               status: "$_id.status",
               count: "$count"
-            },
-          },
-        },
+            }
+          }
+        }
       },
       {
         $unwind: "$statusBreakdown" // Mở rộng để tính toán percentage
@@ -134,12 +136,17 @@ async function getOfferStatusTrend(req, res, next) {
             percentage: {
               $cond: {
                 if: { $gt: ["$totalOffers", 0] }, // Tránh lỗi chia cho 0
-                then: { $multiply: [{ $divide: ["$statusBreakdown.count", "$totalOffers"] }, 100] },
-                else: 0,
-              },
-            },
-          },
-        },
+                then: {
+                  $multiply: [
+                    { $divide: ["$statusBreakdown.count", "$totalOffers"] },
+                    100
+                  ]
+                },
+                else: 0
+              }
+            }
+          }
+        }
       },
       {
         $group: {
@@ -154,10 +161,10 @@ async function getOfferStatusTrend(req, res, next) {
           year: "$_id.year",
           month: "$_id.month",
           totalOffers: 1,
-          statusBreakdown: 1,
-        },
+          statusBreakdown: 1
+        }
       },
-      { $sort: { year: 1, month: 1 } }, // Sắp xếp theo thời gian
+      { $sort: { year: 1, month: 1 } } // Sắp xếp theo thời gian
     ];
 
     const stats = await Offer.aggregate(pipeline);
@@ -167,8 +174,7 @@ async function getOfferStatusTrend(req, res, next) {
   }
 }
 
-
-// 📌 4️⃣ Thống kê số lượng ứng viên theo trạng thái (có thêm status name)
+// 📌 4️⃣ Thống kê Number of candidates theo trạng thái (có thêm status name)
 async function getCandidateStatusStats(req, res, next) {
   try {
     const pipeline = [
@@ -197,12 +203,67 @@ async function getCandidateStatusStats(req, res, next) {
   }
 }
 
-// 📌 5️⃣ Gộp tất cả API vào controller
+async function getJobCount(req, res, next) {
+  try {
+    const jobCount = await Job.countDocuments({});
+    res.status(200).json(jobCount);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getCandidateCount(req, res, next) {
+  try {
+    const candidateCount = await Candidate.countDocuments({});
+    res.status(200).json(candidateCount);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getOfferAcceptanceRate(req, res, next) {
+  try {
+    // Lấy ObjectId của trạng thái "accept" và "open"
+    const acceptStatus = await Status.findOne({ name: "accept" });
+    const openStatus = await Status.findOne({ name: "open" });
+
+    if (!acceptStatus || !openStatus) {
+      return res
+        .status(400)
+        .json({ message: "Status 'accept' or 'open' not found" });
+    }
+
+    // Đếm tổng số lượng offer
+    const totalOffers = await Offer.countDocuments({});
+
+    // Đếm số lượng offer có trạng thái "accept" hoặc "open"
+    const acceptedAndOpenOffers = await Offer.countDocuments({
+      status: { $in: [acceptStatus._id, openStatus._id] } // So sánh với ObjectId của "accept" và "open"
+    });
+
+    // Tính tỷ lệ chấp nhận offer hoặc open offer
+    const acceptanceRate =
+      totalOffers > 0
+        ? ((acceptedAndOpenOffers / totalOffers) * 100).toFixed(1) // Làm tròn về 1 chữ số
+        : 0;
+
+    // Trả về tỷ lệ đã làm tròn
+    res.status(200).json({ acceptanceRate });
+  } catch (error) {
+    // Pass the error to the next middleware
+    next(error);
+  }
+}
+
+// 📌 Gộp tất cả API vào controller
 const statsController = {
   getCandidateTrend,
   getAvgHiringTimeTrend,
   getOfferStatusTrend,
   getCandidateStatusStats,
+  getJobCount,
+  getCandidateCount,
+  getOfferAcceptanceRate
 };
 
 module.exports = statsController;
