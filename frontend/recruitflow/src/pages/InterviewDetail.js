@@ -519,7 +519,8 @@ function InterviewDetail() {
           {/* Show "Mark as Pass" and "Mark as Fail" Buttons if Result is "N/A" and role = "Interviewer" */}
           {interview.result === "N/A" &&
             user.role === "Interviewer" &&
-            interview.status.name !== "cancel" && ( // cancel
+            interview.status.name !== "cancel" &&
+            new Date(interview.interview_date) <= new Date() && ( // cancel
               <div className="col-3 ms-1">
                 <button
                   type="button"
@@ -669,6 +670,60 @@ function InterviewDetail() {
                       <Typography>Loading data...</Typography>
                     ) : (
                       <>
+                        <TextField
+                          select
+                          label="Select Interviewer"
+                          name="interviewer"
+                          value={formData.interviewer}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          className="mb-3"
+                          hidden
+                        >
+                          {interviewers.map((user) => (
+                            <MenuItem key={user._id} value={user._id}>
+                              {user.fullname}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+                        <TextField
+                          select
+                          label="Select Candidate"
+                          name="candidate"
+                          value={formData.candidate}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          className="mb-3"
+                          hidden
+                        >
+                          {candidates.map((candidate) => (
+                            <MenuItem key={candidate._id} value={candidate._id}>
+                              {candidate.fullname}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+                        <TextField
+                          select
+                          label="Select Job"
+                          name="job"
+                          value={formData.job}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          className="mb-3"
+                          hidden
+                        >
+                          {jobs.map((job) => (
+                            <MenuItem key={job._id} value={job._id}>
+                              {job.job_name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
                         <TextField
                           type="datetime-local"
                           label="Interview Date"

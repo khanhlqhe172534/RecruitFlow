@@ -2,17 +2,32 @@ const Interview = require("../models/interview.model");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
 
-// get all categories
 async function getAllInterview(req, res, next) {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt giờ phút giây về 0 để so sánh chính xác
+
+    // Tìm tất cả interview cần cập nhật
+    const interviewsToUpdate = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739697", // Đúng status cần đổi
+    });
+
+    if (interviewsToUpdate.length > 0) {
+      // Cập nhật status của các interview này thành "67bc5a667ddc08921b739696"
+      await Interview.updateMany(
+        { _id: { $in: interviewsToUpdate.map((i) => i._id) } },
+        { $set: { status: "67bc5a667ddc08921b739696" } }
+      );
+    }
+
+    // Trả về tất cả interview sau khi cập nhật
     const interviews = await Interview.find()
       .populate("interviewer")
       .populate("candidate")
       .populate("job")
       .populate("status");
-    if (!interviews) {
-      return res.status(404).json({ message: "interviews not found" });
-    }
+
     res.status(200).json(interviews);
   } catch (err) {
     next(err);
@@ -231,7 +246,8 @@ async function sendCandidateInterviewInvitation(interview) {
 async function updateInterview(req, res, next) {
   try {
     const { id } = req.params;
-    const { interview_date, meeting_link } = req.body;
+    const { interviewer, candidate, job, interview_date, meeting_link } =
+      req.body;
 
     // Kiểm tra nếu không có trường nào được gửi
     if (!interview_date && !meeting_link) {
@@ -246,7 +262,6 @@ async function updateInterview(req, res, next) {
       return res.status(404).json({ message: "Interview not found" });
     }
 
-    // Kiểm tra nếu có thay đổi thời gian phỏng vấn
     if (interview_date) {
       const newInterviewDate = new Date(interview_date);
       const now = new Date();
@@ -258,16 +273,20 @@ async function updateInterview(req, res, next) {
           .json({ message: "Interview date cannot be in the past." });
       }
 
-      // Kiểm tra trùng lịch với các cuộc phỏng vấn khác của người phỏng vấn (excludes canceled interviews)
-      const twoHours = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+      // Mỗi buổi phỏng vấn kéo dài 2 giờ
+      const interviewEndTime = new Date(
+        newInterviewDate.getTime() + 2 * 60 * 60 * 1000
+      );
+
+      // Kiểm tra lịch trình người phỏng vấn, loại trừ chính interview đang update
+      const twoHoursBefore = new Date(
+        newInterviewDate.getTime() - 2 * 60 * 60 * 1000
+      );
       const existingInterview = await Interview.findOne({
-        interviewer: interview.interviewer,
-        _id: { $ne: id }, // Exclude the current interview
-        interview_date: {
-          $gte: new Date(newInterviewDate.getTime() - twoHours),
-          $lte: new Date(newInterviewDate.getTime() + twoHours),
-        },
-        status: { $ne: "cancel" }, // Exclude interviews with "cancel" status
+        interviewer,
+        _id: { $ne: id }, // Loại trừ chính interview hiện tại
+        interview_date: { $gte: twoHoursBefore, $lte: interviewEndTime },
+        status: { $ne: "67bc5a667ddc08921b739696" }, // Exclude "cancel" status
       });
 
       if (existingInterview) {
@@ -276,11 +295,12 @@ async function updateInterview(req, res, next) {
         });
       }
 
-      // Kiểm tra ứng viên đã có cuộc phỏng vấn nào với công việc này chưa (trạng thái "open" không cho phép)
+      // Kiểm tra ứng viên đã có interview với cùng job chưa, loại trừ chính interview hiện tại
       const existingCandidateInterview = await Interview.findOne({
-        candidate: interview.candidate,
-        job: interview.job,
-        status: { $in: ["67bc5a667ddc08921b739697"] }, // open
+        candidate,
+        job,
+        _id: { $ne: id }, // Loại trừ chính interview hiện tại
+        status: { $in: ["67bc5a667ddc08921b739697"] }, // Open
       });
 
       if (existingCandidateInterview) {
@@ -289,19 +309,16 @@ async function updateInterview(req, res, next) {
         });
       }
 
-      // Kiểm tra các cuộc phỏng vấn của ứng viên cách nhau ít nhất 2 tiếng
+      // Kiểm tra ứng viên có interview nào cách ít nhất 2 giờ, loại trừ chính interview hiện tại
       const twoHoursBeforeCandidate = new Date(
         newInterviewDate.getTime() - 2 * 60 * 60 * 1000
       );
-      const twoHoursAfterCandidate = new Date(
-        newInterviewDate.getTime() + 2 * 60 * 60 * 1000
-      );
-
       const candidateExistingInterview = await Interview.findOne({
-        candidate: interview.candidate,
+        candidate,
+        _id: { $ne: id }, // Loại trừ chính interview hiện tại
         interview_date: {
           $gte: twoHoursBeforeCandidate,
-          $lte: twoHoursAfterCandidate,
+          $lte: interviewEndTime,
         },
       });
 
@@ -321,19 +338,22 @@ async function updateInterview(req, res, next) {
       interview.meeting_link = meeting_link;
     }
 
-    // Save the updated interview
+    // Lưu lại dữ liệu sau khi cập nhật
     await interview.save();
 
-    // Send email notification to the candidate with updated details
+    // Gửi email thông báo cập nhật lịch phỏng vấn
     try {
-      await sendUpdateEmail(interview); // Send updated interview details to the candidate
+      await sendUpdateEmail(interview);
     } catch (emailError) {
       console.error("Failed to send interview update email:", emailError);
     }
 
     res.status(200).json(interview);
   } catch (err) {
-    next(err);
+    console.error("Error in updateInterview:", err);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
   }
 }
 
