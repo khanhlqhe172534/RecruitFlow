@@ -423,6 +423,7 @@ function CandidateManagement() {
                       value={newCandidateData.fullname}
                       onChange={handleInputChange}
                     />
+                    {errors.fullname && <div className="text-danger">{errors.fullname}</div>}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
