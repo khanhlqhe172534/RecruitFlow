@@ -73,7 +73,7 @@ const ChartCandidate = ({ chartSeries, sx }) => {
         </Grid>
       </CardContent>
       <Divider />
-      <CardActions sx={{ justifyContent: "flex-end" }}>
+      {/* <CardActions sx={{ justifyContent: "flex-end" }}>
         <Button
           color="inherit"
           endIcon={<ArrowRightIcon fontSize="var(--icon-fontSize-md)" />}
@@ -81,7 +81,7 @@ const ChartCandidate = ({ chartSeries, sx }) => {
         >
           Overview
         </Button>
-      </CardActions>
+      </CardActions> */}
     </Card>
   );
 };
