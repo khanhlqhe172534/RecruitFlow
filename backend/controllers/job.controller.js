@@ -199,12 +199,12 @@ async function addJob(req, res, next) {
       {
         condition: job_name && job_name.length > 50,
         key: "job_name",
-        message: "Job Name must be less than 50 characters",
+        message: "Job Title must be less than or equal 50 characters",
       },
       {
         condition: description && description.length > 500,
         key: "description",
-        message: "Description must be less than 500 characters",
+        message: "Description must be less than or equal 500 characters",
       },
       {
         condition:
@@ -257,19 +257,27 @@ async function addJob(req, res, next) {
     const newJob = new Job(jobData);
     await newJob.save();
 
-    const managers = await User.find({
-      role: { $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"] },
-    }).select("email");
-
-    const recipientEmails = managers.map((user) => user.email);
-
-    if (recipientEmails.length > 0) {
-      sendJobNotificationEmail(recipientEmails, newJob);
-    }
-
     res.status(201).json({
       message: "Job created and set to 'waiting for approval'",
       job: newJob,
+    });
+
+    process.nextTick(async () => {
+      try {
+        const managers = await User.find({
+          role: {
+            $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"],
+          },
+        }).select("email");
+
+        const recipientEmails = managers.map((user) => user.email);
+
+        if (recipientEmails.length > 0) {
+          await sendJobNotificationEmail(recipientEmails, newJob);
+        }
+      } catch (emailError) {
+        console.error("Error sending job notification email:", emailError);
+      }
     });
   } catch (err) {
     console.error("Error in addJob:", err);
@@ -404,12 +412,12 @@ async function updateJob(req, res, next) {
     {
       condition: job_name && job_name.length > 50,
       key: "job_name",
-      message: "Job Name must be less than 50 characters",
+      message: "Job Title must be less than or equal 50 characters",
     },
     {
       condition: description && description.length > 500,
       key: "description",
-      message: "Description must be less than 500 characters",
+      message: "Description must be less than or equal 500 characters",
     },
     {
       condition:
