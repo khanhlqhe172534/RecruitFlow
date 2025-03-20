@@ -305,6 +305,7 @@ function CandidateManagement() {
                     "email",
                     "phoneNumber",
                     "status",
+                    "createdAt",
                     "action",
                   ].map((column) => (
                     <th
@@ -346,6 +347,7 @@ function CandidateManagement() {
                         {c.status?.name}
                       </span>
                     </td>
+                    <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                     <td>
                       <Button
                         variant="primary"
@@ -424,6 +426,7 @@ function CandidateManagement() {
                       value={newCandidateData.fullname}
                       onChange={handleInputChange}
                     />
+                    {errors.fullname && <div className="text-danger">{errors.fullname}</div>}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -662,6 +665,7 @@ function CandidateManagement() {
                       name="email"
                       value={currentCandidate?.email}
                       onChange={handleEditInputChange}
+                      readOnly
                     />
                     {errors.email && (
                       <div className="text-danger">{errors.email}</div>

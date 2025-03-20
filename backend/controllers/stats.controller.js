@@ -89,30 +89,30 @@ async function getOfferStatusTrend(req, res, next) {
     const pipeline = [
       {
         $lookup: {
-          from: "status", // Join với bảng Status
+          from: "status", // Join with the Status collection
           localField: "status",
           foreignField: "_id",
           as: "statusInfo"
         }
       },
-      { $unwind: "$statusInfo" }, // Mở rộng dữ liệu để lấy tên status thay vì ID
+      { $unwind: "$statusInfo" }, // Unwind to get the status name instead of ID
       {
         $project: {
-          year: { $year: "$createdAt" }, // Lấy năm từ createdAt
-          month: { $month: "$createdAt" }, // Lấy tháng từ createdAt
-          status: "$statusInfo.name" // Lấy tên status
+          year: { $year: "$createdAt" }, // Extract year from createdAt
+          month: { $month: "$createdAt" }, // Extract month from createdAt
+          status: "$statusInfo.name" // Get the status name
         }
       },
       {
         $group: {
-          _id: { year: "$year", month: "$month", status: "$status" }, // Gom nhóm theo năm, tháng và trạng thái
-          count: { $sum: 1 } // Đếm số lượng offer theo từng trạng thái
+          _id: { year: "$year", month: "$month", status: "$status" }, // Group by year, month, and status
+          count: { $sum: 1 } // Count the number of offers for each status
         }
       },
       {
         $group: {
-          _id: { year: "$_id.year", month: "$_id.month" }, // Gom nhóm theo năm và tháng
-          totalOffers: { $sum: "$count" }, // Tổng số offer trong tháng đó
+          _id: { year: "$_id.year", month: "$_id.month" }, // Group by year and month
+          totalOffers: { $sum: "$count" }, // Total offers in that month
           statusBreakdown: {
             $push: {
               status: "$_id.status",
@@ -122,7 +122,7 @@ async function getOfferStatusTrend(req, res, next) {
         }
       },
       {
-        $unwind: "$statusBreakdown" // Mở rộng để tính toán percentage
+        $unwind: "$statusBreakdown" // Unwind to calculate percentage
       },
       {
         $project: {
@@ -135,11 +135,16 @@ async function getOfferStatusTrend(req, res, next) {
             count: "$statusBreakdown.count",
             percentage: {
               $cond: {
-                if: { $gt: ["$totalOffers", 0] }, // Tránh lỗi chia cho 0
+                if: { $gt: ["$totalOffers", 0] }, // Avoid division by zero
                 then: {
-                  $multiply: [
-                    { $divide: ["$statusBreakdown.count", "$totalOffers"] },
-                    100
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$statusBreakdown.count", "$totalOffers"] },
+                        100
+                      ]
+                    },
+                    1
                   ]
                 },
                 else: 0
@@ -164,7 +169,7 @@ async function getOfferStatusTrend(req, res, next) {
           statusBreakdown: 1
         }
       },
-      { $sort: { year: 1, month: 1 } } // Sắp xếp theo thời gian
+      { $sort: { year: 1, month: 1 } } // Sort by year and month
     ];
 
     const stats = await Offer.aggregate(pipeline);
