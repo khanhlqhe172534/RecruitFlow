@@ -257,10 +257,11 @@ async function updateInterview(req, res, next) {
     }
 
     // Lấy thông tin phỏng vấn hiện tại
-    const interview = await Interview.findById(id);
+    const interview = await Interview.findById(id).populate("candidate");
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
+    console.log("interview:", interview);
 
     if (interview_date) {
       const newInterviewDate = new Date(interview_date);

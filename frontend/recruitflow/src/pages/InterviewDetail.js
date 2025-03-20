@@ -168,15 +168,22 @@ function InterviewDetail() {
   const handleSubmit = async () => {
     try {
       const { interview_date, meeting_link } = formData;
+      const interviewDate = new Date(formData.interview_date);
+      const hours = interviewDate.getHours();
+      const minutes = interviewDate.getMinutes();
+      const now = new Date();
 
-      // Kiểm tra nếu không có dữ liệu hợp lệ để cập nhật
-      if (!interview_date && !meeting_link) {
-        toast.error("Only date and meeting link can be updated.");
+      // Validate if the interview date is in the past
+      if (interviewDate < now) {
+        toast.error("Interview date cannot be in the past.");
         return;
       }
-
-      if (interview_date && new Date(interview_date) < new Date()) {
-        toast.error("Interview date cannot be in the past.");
+      if (hours < 9 || (hours === 15 && minutes > 0) || hours > 15) {
+        toast.error("Interview time must be between 9 AM and 3 PM.");
+        return;
+      }
+      if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
+        toast.error("Interview day must be Monday to Friday.");
         return;
       }
 
@@ -202,10 +209,10 @@ function InterviewDetail() {
         } else if (status === 404) {
           toast.error("Interview not found.");
         } else {
-          toast.error("Failed to update interview.");
+          toast.error(error.response.data.message);
         }
       } else {
-        toast.error("Failed to update interview.");
+        toast.error(error.response.data.message);
       }
     }
   };

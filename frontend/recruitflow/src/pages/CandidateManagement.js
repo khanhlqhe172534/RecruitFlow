@@ -9,8 +9,10 @@ import {
 } from "react-bootstrap";
 import { Eye, Pencil, UserPlus, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 function CandidateManagement() {
+  const nav = useNavigate();
   const [candidate, setCandidate] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [currentCandidate, setCurrentCandidate] = useState(null);
@@ -215,6 +217,7 @@ function CandidateManagement() {
         window.location.reload();
       })
       .catch((err) => console.log(err));
+    nav("/candidate");
   };
 
   const handleEditInputChange = (e) => {
@@ -426,7 +429,9 @@ function CandidateManagement() {
                       value={newCandidateData.fullname}
                       onChange={handleInputChange}
                     />
-                    {errors.fullname && <div className="text-danger">{errors.fullname}</div>}
+                    {errors.fullname && (
+                      <div className="text-danger">{errors.fullname}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
