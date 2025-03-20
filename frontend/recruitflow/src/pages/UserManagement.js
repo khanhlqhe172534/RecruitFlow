@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
 } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
 import { Eye, Pencil, Trash, UserPlus, ChevronsUpDown } from "lucide-react";
 
 function UserManagement() {
@@ -68,7 +69,7 @@ function UserManagement() {
   const validateUserData = (handleType, data) => {
     // check full name
     if (
-      !/^(([A-Za-z]+[\-\']?)*([A-Za-z]+)?\s)+([A-Za-z]+[\-\']?)*([A-Za-z]+)?$/.test(
+      !/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(
         handleType == "add" ? data.fullName : data.fullname
       )
     ) {
@@ -78,14 +79,14 @@ function UserManagement() {
       };
     }
     // check phone has number and "+" optional
-    if (!/^[+]?\d+$/.test(data.phoneNumber)) {
+    if (!/^\d+$/.test(data.phoneNumber)) {
       return {
         isValid: false,
-        error: 'Phone number must contain only numbers and "+" (optional).',
+        error: "Phone number must contain only numbers.",
       };
     }
 
-    if (!/^[+]?\d{10,11}$/.test(data.phoneNumber)) {
+    if (!/^\d{10,11}$/.test(data.phoneNumber)) {
       return {
         isValid: false,
         error: "Phone number must be between 10 and 11 digits.",
@@ -121,7 +122,7 @@ function UserManagement() {
     e.preventDefault();
     const { isValid, error } = validateUserData("add", newUser);
     if (!isValid) {
-      alert(error);
+      toast.error(error);
       return;
     }
     try {
@@ -171,7 +172,7 @@ function UserManagement() {
     e.preventDefault();
     const { isValid, error } = validateUserData("edit", currentUser);
     if (!isValid) {
-      alert(error);
+      toast.error(error);
       return;
     }
     try {
@@ -998,6 +999,15 @@ function UserManagement() {
           </Modal.Footer>
         </Modal>
       </Container>
+      {/* ToastContainer for notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }
