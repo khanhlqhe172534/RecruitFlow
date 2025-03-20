@@ -658,7 +658,7 @@ function CandidateManagement() {
                       name="email"
                       value={currentCandidate?.email}
                       onChange={handleEditInputChange}
-
+                      readOnly
                     />
                     {errors.email && <div className="text-danger">{errors.email}</div>}
                   </Form.Group>
