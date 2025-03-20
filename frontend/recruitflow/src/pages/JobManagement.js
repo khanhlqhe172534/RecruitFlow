@@ -1024,7 +1024,7 @@ function JobManagement() {
           <Button onClick={() => setShowExportModal(false)} variant="secondary">
             Cancel
           </Button>
-          <Button onClick={handleExport} variant="danger">
+          <Button onClick={handleExport} variant="primary">
             Export Job
           </Button>
         </Modal.Footer>
