@@ -127,7 +127,7 @@ function CandidateManagement() {
 
       setCandidate(sortedCandidate);
     }
-  }, [sortColumn, sortOrder, candidate]);
+  }, [sortColumn, sortOrder, candidate, showEditModal]);
 
   const totalPages = Math.ceil(filteredCandidates.length / usersPerPage);
 
@@ -149,56 +149,58 @@ function CandidateManagement() {
   //Validate
   const validateCandidateData = (data, isEdit = false) => {
     let newErrors = {};
-  
+
     // Check for duplicate email
     const existingEmailCandidate = candidate.find(
-      (c) => c.email.toLowerCase() === data.email.toLowerCase() && (!isEdit || c._id !== data._id)
+      (c) =>
+        c.email.toLowerCase() === data.email.toLowerCase() &&
+        (!isEdit || c._id !== data._id)
     );
     if (existingEmailCandidate) {
       newErrors.email = "Email already exists.";
     }
-  
+
     // Check for duplicate phone number
     const existingPhoneCandidate = candidate.find(
-      (c) => c.phoneNumber === data.phoneNumber && (!isEdit || c._id !== data._id)
+      (c) =>
+        c.phoneNumber === data.phoneNumber && (!isEdit || c._id !== data._id)
     );
     if (existingPhoneCandidate) {
       newErrors.phoneNumber = "Phone number already exists.";
     }
-  
+
     // Check full name
     if (/\d/.test(data.fullname)) {
       newErrors.fullname = "Full name cannot contain numbers.";
     }
-  
+
     // Check phone number format
     if (!/^[+]?[0-9]{10,11}$/.test(data.phoneNumber)) {
       newErrors.phoneNumber = "Phone number must be between 10 and 11 digits.";
     }
-  
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return false;
     }
-  
+
     setErrors({});
     return true;
   };
-  
 
   const handleAddCandidate = (e) => {
     e.preventDefault();
     setErrors({});
-  
+
     if (!hasRecruiterPermission) {
       alert("You don't have permission to add candidates");
       return;
     }
-  
+
     if (!validateCandidateData(newCandidateData)) {
       return;
     }
-  
+
     fetch(`http://localhost:9999/candidate/create`, {
       method: "POST",
       headers: {
@@ -221,23 +223,22 @@ function CandidateManagement() {
   };
   //Validate
 
-
   const validateEditData = (data) => {
     return validateCandidateData(data, true);
   };
   const handleEditCandidate = (e) => {
     e.preventDefault();
     setErrors({});
-  
+
     if (!hasRecruiterPermission) {
       alert("You don't have permission to edit candidates");
       return;
     }
-  
+
     if (!validateEditData(currentCandidate)) {
       return;
     }
-  
+
     fetch(`http://localhost:9999/candidate/update/${currentCandidate._id}`, {
       method: "PUT",
       headers: {
@@ -255,12 +256,12 @@ function CandidateManagement() {
       })
       .catch((err) => console.log(err));
   };
-  
+
   const handleOpenAddModal = () => {
     setErrors({});
     setShowAddModal(true);
   };
-  
+
   const handleOpenEditModal = (candidate) => {
     setErrors({});
     setCurrentCandidate(candidate);
@@ -438,7 +439,9 @@ function CandidateManagement() {
                       value={newCandidateData.email}
                       onChange={handleInputChange}
                     />
-                    {errors.email && <div className="text-danger">{errors.email}</div>}
+                    {errors.email && (
+                      <div className="text-danger">{errors.email}</div>
+                    )}
                   </Form.Group>
                 </Col>
               </Row>
@@ -489,7 +492,9 @@ function CandidateManagement() {
                       value={newCandidateData.phoneNumber}
                       onChange={handleInputChange}
                     />
-                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
+                    {errors.phoneNumber && (
+                      <div className="text-danger">{errors.phoneNumber}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -657,9 +662,10 @@ function CandidateManagement() {
                       name="email"
                       value={currentCandidate?.email}
                       onChange={handleEditInputChange}
-
                     />
-                    {errors.email && <div className="text-danger">{errors.email}</div>}
+                    {errors.email && (
+                      <div className="text-danger">{errors.email}</div>
+                    )}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Date of Birth</Form.Label>
@@ -701,9 +707,10 @@ function CandidateManagement() {
                       name="phoneNumber"
                       value={currentCandidate?.phoneNumber}
                       onChange={handleEditInputChange}
-
                     />
-                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
+                    {errors.phoneNumber && (
+                      <div className="text-danger">{errors.phoneNumber}</div>
+                    )}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Gender</Form.Label>
