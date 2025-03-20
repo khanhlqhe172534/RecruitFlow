@@ -304,6 +304,7 @@ function CandidateManagement() {
                     "email",
                     "phoneNumber",
                     "status",
+                    "createdAt",
                     "action",
                   ].map((column) => (
                     <th
@@ -345,6 +346,7 @@ function CandidateManagement() {
                         {c.status?.name}
                       </span>
                     </td>
+                    <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                     <td>
                       <Button
                         variant="primary"
