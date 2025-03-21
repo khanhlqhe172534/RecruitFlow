@@ -380,10 +380,7 @@ function UserManagement() {
 
   return (
     <div className="d-flex vh-100">
-      <Container
-        fluid
-        className="p-4 vh-100 bg-light"
-      >
+      <Container fluid className="p-4 vh-100 bg-light">
         {snackbarAlert && (
           <Alert
             variant={snackbarAlert.type === "success" ? "success" : "danger"}
@@ -421,28 +418,18 @@ function UserManagement() {
                 <option value="Admin">Admin</option>
               </Form.Select>
             </Col>
-            <Col
-              md={3}
-              className="text-end"
-            >
+            <Col md={3} className="text-end">
               <Button
                 variant="warning"
                 className="rounded-pill"
                 onClick={() => setShowAddModal(true)}
               >
-                <UserPlus
-                  className="pb-1"
-                  size={20}
-                />{" "}
-                Add New User
+                <UserPlus className="pb-1" size={20} /> Add New User
               </Button>
             </Col>
           </Row>
 
-          <Table
-            hover
-            responsive
-          >
+          <Table hover responsive>
             <thead className="table-lighter">
               <tr>
                 {[
@@ -521,6 +508,7 @@ function UserManagement() {
                       variant="danger"
                       className="m-1 btn btn-icon btn-pills btn-soft-danger"
                       onClick={() => handleDeleteUser(user._id)}
+                      hidden
                     >
                       <Trash size={18} />
                     </Button>
@@ -725,10 +713,7 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button
-                variant="warning"
-                type="submit"
-              >
+              <Button variant="warning" type="submit">
                 Add User
               </Button>
             </Modal.Footer>
@@ -855,10 +840,7 @@ function UserManagement() {
               >
                 Close
               </Button>
-              <Button
-                variant="warning"
-                type="submit"
-              >
+              <Button variant="warning" type="submit">
                 Edit User
               </Button>
             </Modal.Footer>
@@ -986,10 +968,7 @@ function UserManagement() {
             >
               Cancel
             </Button>
-            <Button
-              variant="danger"
-              onClick={confirmDeleteUser}
-            >
+            <Button variant="danger" onClick={confirmDeleteUser}>
               Delete
             </Button>
           </Modal.Footer>
