@@ -1,5 +1,59 @@
 const Candidate = require("../models/candidate.model");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
+const xlsx = require("xlsx");
+
+
+// Cấu hình multer để upload file
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// API xử lý import ứng viên từ file Excel
+async function importCandidates(req, res, next) {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Đọc file Excel
+    const workbook = xlsx.read(file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0]; // Lấy sheet đầu tiên
+    const sheet = workbook.Sheets[sheetName];
+
+    // Chuyển đổi sheet thành JSON
+    const candidatesData = xlsx.utils.sheet_to_json(sheet);
+
+    // Lặp qua từng ứng viên và thêm vào cơ sở dữ liệu
+    const addedCandidates = [];
+
+    for (const candidate of candidatesData) {
+      const newCandidate = new Candidate({
+        fullname: candidate["Full Name"],
+        email: candidate["Email"],
+        phoneNumber: candidate["Phone Number"],
+        isMale: candidate["Gender"].toLowerCase() === "male",
+        dob: new Date(candidate["Date of Birth"]),
+        address: candidate["Address"],
+        cv_url: candidate["CV URL"],
+        status: "67bc5a667ddc08921b739694", // default status = activated
+        role: "67bc59b77ddc08921b73968f", // default role = candidate
+      });
+
+      await newCandidate.save();
+      addedCandidates.push(newCandidate);
+    }
+
+    res.status(201).json({
+      message: "Candidates imported successfully",
+      addedCandidates,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 
 // Get all candidate
 async function getAllCandidate(req, res, next) {
@@ -134,7 +188,8 @@ const candidateController = {
   getAllCandidate,
   getOneCandidate,
   createCandidate,
-  updateCandidate
+  updateCandidate,
+  importCandidates,
 };
 
 module.exports = candidateController;

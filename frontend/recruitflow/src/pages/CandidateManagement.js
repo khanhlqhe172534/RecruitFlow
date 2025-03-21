@@ -5,7 +5,7 @@ import {
   Table,
   Form,
   Button,
-  Modal,
+  Modal
 } from "react-bootstrap";
 import { Eye, Pencil, UserPlus, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
@@ -33,7 +33,7 @@ function CandidateManagement() {
     address: "",
     cv_url: "",
     status: "67bc5a667ddc08921b739694", // default status = activated
-    role: "67bc59b77ddc08921b73968f", // default role = candidate
+    role: "67bc59b77ddc08921b73968f" // default role = candidate
   });
   const [errors, setErrors] = useState({});
 
@@ -206,9 +206,9 @@ function CandidateManagement() {
     fetch(`http://localhost:9999/candidate/create`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(newCandidateData),
+      body: JSON.stringify(newCandidateData)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -245,9 +245,9 @@ function CandidateManagement() {
     fetch(`http://localhost:9999/candidate/update/${currentCandidate._id}`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(currentCandidate),
+      body: JSON.stringify(currentCandidate)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -309,7 +309,7 @@ function CandidateManagement() {
                     "phoneNumber",
                     "status",
                     "createdAt",
-                    "action",
+                    "action"
                   ].map((column) => (
                     <th
                       key={column}
@@ -517,13 +517,31 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setNewCandidateData({
                           ...newCandidateData,
-                          isMale: e.target.value === "true",
+                          isMale: e.target.value === "true"
                         })
                       }
                     >
                       <option value="true">Male</option>
                       <option value="false">Female</option>
                     </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold">
+                      CV URL <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="cv_url"
+                      placeholder="Insert a cv url..."
+                      required
+                      value={newCandidateData.cv_url}
+                      onChange={handleInputChange}
+                    />
                   </Form.Group>
                 </Col>
               </Row>
@@ -628,6 +646,27 @@ function CandidateManagement() {
                   </Form.Group>
                 </Col>
               </Row>
+
+              {/* <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={currentCandidate?.cv_url}
+                  readOnly
+                />
+              </Form.Group> */}
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <div>
+                  <a
+                    href={currentCandidate?.cv_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {currentCandidate?.cv_url}
+                  </a>
+                </div>
+              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -729,7 +768,7 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setCurrentCandidate({
                           ...currentCandidate,
-                          isMale: e.target.value === "true",
+                          isMale: e.target.value === "true"
                         })
                       }
                     >
@@ -748,7 +787,7 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setCurrentCandidate({
                           ...currentCandidate,
-                          status: e.target.value,
+                          status: e.target.value
                         })
                       }
                     >
@@ -762,6 +801,15 @@ function CandidateManagement() {
                   </Form.Group>
                 </Col>
               </Row>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="cv_url"
+                  value={currentCandidate?.cv_url}
+                  onChange={handleEditInputChange}
+                />
+              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
