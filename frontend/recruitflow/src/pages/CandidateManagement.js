@@ -5,7 +5,7 @@ import {
   Table,
   Form,
   Button,
-  Modal,
+  Modal
 } from "react-bootstrap";
 import { Eye, Pencil, UserPlus, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
@@ -31,7 +31,7 @@ function CandidateManagement() {
     address: "",
     cv_url: "",
     status: "67bc5a667ddc08921b739694", // default status = activated
-    role: "67bc59b77ddc08921b73968f", // default role = candidate
+    role: "67bc59b77ddc08921b73968f" // default role = candidate
   });
   const [errors, setErrors] = useState({});
 
@@ -149,62 +149,64 @@ function CandidateManagement() {
   //Validate
   const validateCandidateData = (data, isEdit = false) => {
     let newErrors = {};
-  
+
     // Check for duplicate email
     const existingEmailCandidate = candidate.find(
-      (c) => c.email.toLowerCase() === data.email.toLowerCase() && (!isEdit || c._id !== data._id)
+      (c) =>
+        c.email.toLowerCase() === data.email.toLowerCase() &&
+        (!isEdit || c._id !== data._id)
     );
     if (existingEmailCandidate) {
       newErrors.email = "Email already exists.";
     }
-  
+
     // Check for duplicate phone number
     const existingPhoneCandidate = candidate.find(
-      (c) => c.phoneNumber === data.phoneNumber && (!isEdit || c._id !== data._id)
+      (c) =>
+        c.phoneNumber === data.phoneNumber && (!isEdit || c._id !== data._id)
     );
     if (existingPhoneCandidate) {
       newErrors.phoneNumber = "Phone number already exists.";
     }
-  
+
     // Check full name
     if (/\d/.test(data.fullname)) {
       newErrors.fullname = "Full name cannot contain numbers.";
     }
-  
+
     // Check phone number format
     if (!/^[+]?[0-9]{10,11}$/.test(data.phoneNumber)) {
       newErrors.phoneNumber = "Phone number must be between 10 and 11 digits.";
     }
-  
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return false;
     }
-  
+
     setErrors({});
     return true;
   };
-  
 
   const handleAddCandidate = (e) => {
     e.preventDefault();
     setErrors({});
-  
+
     if (!hasRecruiterPermission) {
       alert("You don't have permission to add candidates");
       return;
     }
-  
+
     if (!validateCandidateData(newCandidateData)) {
       return;
     }
-  
+
     fetch(`http://localhost:9999/candidate/create`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(newCandidateData),
+      body: JSON.stringify(newCandidateData)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -221,29 +223,28 @@ function CandidateManagement() {
   };
   //Validate
 
-
   const validateEditData = (data) => {
     return validateCandidateData(data, true);
   };
   const handleEditCandidate = (e) => {
     e.preventDefault();
     setErrors({});
-  
+
     if (!hasRecruiterPermission) {
       alert("You don't have permission to edit candidates");
       return;
     }
-  
+
     if (!validateEditData(currentCandidate)) {
       return;
     }
-  
+
     fetch(`http://localhost:9999/candidate/update/${currentCandidate._id}`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(currentCandidate),
+      body: JSON.stringify(currentCandidate)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -255,12 +256,12 @@ function CandidateManagement() {
       })
       .catch((err) => console.log(err));
   };
-  
+
   const handleOpenAddModal = () => {
     setErrors({});
     setShowAddModal(true);
   };
-  
+
   const handleOpenEditModal = (candidate) => {
     setErrors({});
     setCurrentCandidate(candidate);
@@ -305,7 +306,7 @@ function CandidateManagement() {
                     "phoneNumber",
                     "status",
                     "createdAt",
-                    "action",
+                    "action"
                   ].map((column) => (
                     <th
                       key={column}
@@ -425,7 +426,9 @@ function CandidateManagement() {
                       value={newCandidateData.fullname}
                       onChange={handleInputChange}
                     />
-                    {errors.fullname && <div className="text-danger">{errors.fullname}</div>}
+                    {errors.fullname && (
+                      <div className="text-danger">{errors.fullname}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -441,7 +444,9 @@ function CandidateManagement() {
                       value={newCandidateData.email}
                       onChange={handleInputChange}
                     />
-                    {errors.email && <div className="text-danger">{errors.email}</div>}
+                    {errors.email && (
+                      <div className="text-danger">{errors.email}</div>
+                    )}
                   </Form.Group>
                 </Col>
               </Row>
@@ -492,7 +497,9 @@ function CandidateManagement() {
                       value={newCandidateData.phoneNumber}
                       onChange={handleInputChange}
                     />
-                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
+                    {errors.phoneNumber && (
+                      <div className="text-danger">{errors.phoneNumber}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -507,13 +514,31 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setNewCandidateData({
                           ...newCandidateData,
-                          isMale: e.target.value === "true",
+                          isMale: e.target.value === "true"
                         })
                       }
                     >
                       <option value="true">Male</option>
                       <option value="false">Female</option>
                     </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold">
+                      CV URL <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="cv_url"
+                      placeholder="Insert a cv url..."
+                      required
+                      value={newCandidateData.cv_url}
+                      onChange={handleInputChange}
+                    />
                   </Form.Group>
                 </Col>
               </Row>
@@ -618,6 +643,27 @@ function CandidateManagement() {
                   </Form.Group>
                 </Col>
               </Row>
+
+              {/* <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={currentCandidate?.cv_url}
+                  readOnly
+                />
+              </Form.Group> */}
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <div>
+                  <a
+                    href={currentCandidate?.cv_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {currentCandidate?.cv_url}
+                  </a>
+                </div>
+              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -662,7 +708,9 @@ function CandidateManagement() {
                       onChange={handleEditInputChange}
                       readOnly
                     />
-                    {errors.email && <div className="text-danger">{errors.email}</div>}
+                    {errors.email && (
+                      <div className="text-danger">{errors.email}</div>
+                    )}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Date of Birth</Form.Label>
@@ -704,9 +752,10 @@ function CandidateManagement() {
                       name="phoneNumber"
                       value={currentCandidate?.phoneNumber}
                       onChange={handleEditInputChange}
-
                     />
-                    {errors.phoneNumber && <div className="text-danger">{errors.phoneNumber}</div>}
+                    {errors.phoneNumber && (
+                      <div className="text-danger">{errors.phoneNumber}</div>
+                    )}
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Gender</Form.Label>
@@ -716,7 +765,7 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setCurrentCandidate({
                           ...currentCandidate,
-                          isMale: e.target.value === "true",
+                          isMale: e.target.value === "true"
                         })
                       }
                     >
@@ -735,7 +784,7 @@ function CandidateManagement() {
                       onChange={(e) =>
                         setCurrentCandidate({
                           ...currentCandidate,
-                          status: e.target.value,
+                          status: e.target.value
                         })
                       }
                     >
@@ -749,6 +798,15 @@ function CandidateManagement() {
                   </Form.Group>
                 </Col>
               </Row>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">CV</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="cv_url"
+                  value={currentCandidate?.cv_url}
+                  onChange={handleEditInputChange}
+                />
+              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
