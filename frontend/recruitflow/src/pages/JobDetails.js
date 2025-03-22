@@ -207,6 +207,65 @@ function JobDetails() {
     }
   };
 
+  const handleApply = async (jobId) => {
+    const userId = localStorage.getItem("userId");
+    try {
+      const response = await fetch(`http://localhost:9999/job/${jobId}/apply`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        toast.success("Applied successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setRefreshTrigger((prev) => !prev);
+      } else {
+        toast.error("Failed to apply", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleCancelApply = async (jobId) => {
+    const userId = localStorage.getItem("userId");
+    try {
+      const response = await fetch(
+        `http://localhost:9999/job/${jobId}/cancel-apply`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Application cancelled!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setRefreshTrigger((prev) => !prev);
+      } else {
+        toast.error("Failed to cancel application", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="d-flex vh-100">
       <div className="container-fluid p-4 overflow-auto vh-100 bg-light">
@@ -351,6 +410,8 @@ function JobDetails() {
                                   ? "#4caf50"
                                   : job.status.name === "waiting for approved"
                                   ? "#ff9800"
+                                  : job.status.name === "closed"
+                                  ? "#6b6b6b"
                                   : "#f44336",
                               marginRight: "8px",
                             }}
@@ -367,6 +428,8 @@ function JobDetails() {
                                     ? "#4caf50"
                                     : job.status.name === "waiting for approved"
                                     ? "#ff9800"
+                                    : job.status.name === "closed"
+                                    ? "#383838"
                                     : "#f44336",
                               }}
                             >
@@ -374,7 +437,9 @@ function JobDetails() {
                                 ? "Opened"
                                 : job.status.name === "closed"
                                 ? "Closed"
-                                : "Waiting"}
+                                : job.status.name === "waiting for approved"
+                                ? "Waiting"
+                                : "Reject"}
                             </Typography>
                           </div>
                         </div>
@@ -488,21 +553,22 @@ function JobDetails() {
                         </Button>
                       )}
 
-                      {user.role === "Recruitment Manager" &&
+                      {((user.role === "Recruitment Manager" &&
                         job.status.name === "waiting for approved" &&
                         job.salaryChecked == null &&
-                        job.benefitChecked == null && (
-                          <div>
-                            <Button
-                              variant="success"
-                              className="btn btn-info col-md-2 btn-md float-end mt-4"
-                              style={{ borderRadius: "8px" }}
-                              onClick={() => setShowModal(true)}
-                            >
-                              Update
-                            </Button>
-                          </div>
-                        )}
+                        job.benefitChecked == null) ||
+                        job.status.name === "reject") && (
+                        <div>
+                          <Button
+                            variant="success"
+                            className="btn btn-info col-md-2 btn-md float-end mt-4"
+                            style={{ borderRadius: "8px" }}
+                            onClick={() => setShowModal(true)}
+                          >
+                            Update
+                          </Button>
+                        </div>
+                      )}
 
                       {user.role === "Recruitment Manager" &&
                         job.status.name === "open" && (
@@ -540,6 +606,32 @@ function JobDetails() {
                         </Button>
                       </div>
                     )}
+
+                    <div>
+                      {user.role === "Candidate" &&
+                        job.applicants.includes(user.id) && (
+                          <Button
+                            variant="danger"
+                            className="btn btn-danger col-md-3 btn-md float-end me-2 mt-4"
+                            style={{ borderRadius: "8px" }}
+                            onClick={() => handleCancelApply(job._id)}
+                          >
+                            Cancel Apply
+                          </Button>
+                        )}
+
+                      {user.role === "Candidate" &&
+                        !job.applicants.includes(user.id) && (
+                          <Button
+                            variant="success"
+                            className="btn btn-success col-md-2 btn-md float-end me-2 mt-4"
+                            style={{ borderRadius: "8px" }}
+                            onClick={() => handleApply(job._id)}
+                          >
+                            Apply
+                          </Button>
+                        )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -956,7 +1048,9 @@ function JobDetails() {
 
               {/* Benefits */}
               <div className="col-md-6">
-                <Form.Group className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}>
+                <Form.Group
+                  className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}
+                >
                   <Form.Label>Benefits</Form.Label>
                   <div className="row">
                     {benefitOptions.map((benefit) => (

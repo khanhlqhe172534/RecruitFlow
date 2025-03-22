@@ -10,14 +10,14 @@ async function getAllInterview(req, res, next) {
     // Tìm tất cả interview cần cập nhật
     const interviewsToUpdate = await Interview.find({
       interview_date: { $lt: today }, // interview_date trước hôm nay
-      status: "67bc5a667ddc08921b739697", // Đúng status cần đổi
+      status: "67bc5a667ddc08921b739697", // open
     });
 
     if (interviewsToUpdate.length > 0) {
       // Cập nhật status của các interview này thành "67bc5a667ddc08921b739696"
       await Interview.updateMany(
         { _id: { $in: interviewsToUpdate.map((i) => i._id) } },
-        { $set: { status: "67bc5a667ddc08921b739696" } }
+        { $set: { status: "67bc5a667ddc08921b739696" } } // cancel
       );
     }
 
@@ -161,7 +161,101 @@ async function createInterview(req, res, next) {
     next(err);
   }
 }
+//==================== Invite interview ========================================
+async function inviteInterview(req, res, next) {
+  try {
+    const { interviewer, candidate, job, interview_date, meeting_link, note } =
+      req.body;
 
+    // 1. Validate required fields
+    if (!interviewer || !candidate || !job || !interview_date) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // 2. Validate interview date (cannot be in the past)
+    const interviewDateTime = new Date(interview_date);
+    if (interviewDateTime < new Date()) {
+      return res
+        .status(400)
+        .json({ message: "Interview date cannot be in the past." });
+    }
+
+    // 3. Validate each interview lasts 2 hours
+    const interviewEndTime = new Date(
+      interviewDateTime.getTime() + 2 * 60 * 60 * 1000
+    );
+
+    // 4. Check for interviewer schedule conflict (must be 2 hours apart)
+    const twoHoursBefore = new Date(
+      interviewDateTime.getTime() - 2 * 60 * 60 * 1000
+    );
+    const twoHoursAfter = interviewEndTime;
+
+    const existingInterview = await Interview.findOne({
+      interviewer,
+      interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
+      status: { $ne: "67bc5a667ddc08921b739696" }, // Exclude interviews with "cancel" status id
+    });
+
+    if (existingInterview) {
+      return res.status(400).json({
+        message: "Interviewer already has an interview during this time.",
+      });
+    }
+
+    // 5. Check that a candidate cannot have another interview for the same job if they already have an "open" interview for the same job
+    const existingCandidateInterview = await Interview.findOne({
+      candidate,
+      job,
+      status: { $in: ["67bc5a667ddc08921b739697"] }, // open
+    });
+
+    if (existingCandidateInterview) {
+      return res.status(400).json({
+        message: "Candidate already has an interview for this job.",
+      });
+    }
+
+    // 6. Check that the candidate's interviews are spaced at least 2 hours apart
+    const twoHoursBeforeCandidate = new Date(
+      interviewDateTime.getTime() - 2 * 60 * 60 * 1000
+    );
+    const twoHoursAfterCandidate = interviewEndTime;
+
+    const candidateExistingInterview = await Interview.findOne({
+      candidate,
+      interview_date: {
+        $gte: twoHoursBeforeCandidate,
+        $lte: twoHoursAfterCandidate,
+      },
+    });
+
+    if (candidateExistingInterview) {
+      return res.status(400).json({
+        message:
+          "Candidate already has an interview scheduled within 2 hours of this time.",
+      });
+    }
+
+    // 7. Create the interview
+    const interview = new Interview({
+      interviewer,
+      candidate,
+      job,
+      interview_date,
+      meeting_link,
+      result: "N/A",
+      note,
+      status: "67bc5a667ddc08921b739695", // waiting for approved
+    });
+
+    await interview.save();
+
+    res.status(201).json(interview);
+  } catch (err) {
+    next(err);
+  }
+}
 async function sendCandidateInterviewInvitation(interview) {
   // Populate necessary fields if not already populated
   await interview.populate("candidate interviewer job");
@@ -730,6 +824,7 @@ const interviewController = {
   markAsFail,
   getInterviewByInterviewerId,
   cancelInterview,
+  inviteInterview,
 };
 
 module.exports = interviewController;

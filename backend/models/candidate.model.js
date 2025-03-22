@@ -59,6 +59,10 @@ const candidateSchema = new Schema(
         required: true
       }
     ]
+        // enum:"Java","Nodejs","C++",".Net","Python","JavaScript","PHP", "Ruby","Go","Rust",
+        required: true,
+      },
+    ],
   },
   { timestamps: true }
 );

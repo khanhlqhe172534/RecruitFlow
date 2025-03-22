@@ -180,7 +180,10 @@ async function getAllCandidate(req, res, next) {
       .populate("status")
       .populate("role")
       .exec();
+
+
     if (candidates) {
+      
       res.status(200).json(candidates);
     }
   } catch (err) {

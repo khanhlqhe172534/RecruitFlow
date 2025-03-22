@@ -2,6 +2,7 @@ const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const User = require("../models/user.model");
+const Candidate = require("../models/candidate.model");
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -22,7 +23,10 @@ const login = async (req, res, next) => {
       .status(400)
       .json({ message: "Please provide email and password!" });
   }
-  const user = await User.findOne({ email: email }).select("+password");
+  let user = await User.findOne({ email: email }).select("+password");
+  if (!user) {
+    user = await Candidate.findOne({ email: email }).select("+password");
+  }
   if (!user || !(await user.correctPassword(password))) {
     return res.status(401).json({ message: "Incorrect email or password" });
   }
@@ -43,7 +47,10 @@ const isLoggedIn = async (req, res, next) => {
       process.env.JWT_SECRET
     );
     // 2) Check if user still exists
-    const currentUser = await User.findById(decoded.id);
+    let currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      currentUser = await Candidate.findById(decoded.id);
+    }
     if (!currentUser) {
       return res.status(400).json({
         status: "fail",
@@ -120,7 +127,10 @@ const generateRandomPassword = (length = 8) => {
   return password;
 };
 const resetPassword = async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email });
+  let user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    user = await Candidate.findOne({ email: email });
+  }
   if (!user) {
     return res
       .status(404)
@@ -149,7 +159,10 @@ const resetPassword = async (req, res, next) => {
   createSendToken(user, 200, res);
 };
 const updatePassword = async (req, res, next) => {
-  const user = await User.findById(req.body.userId).select("+password");
+  let user = await User.findById(req.body.userId).select("+password");
+  if (!user) {
+    user = await Candidate.findById(req.body.userId).select("+password");
+  }
   if (user && !(await user.correctPassword(req.body.oldPassword))) {
     return res.status(401).json({ message: "Your current password is wrong!" });
   }
