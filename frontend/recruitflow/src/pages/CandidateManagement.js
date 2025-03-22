@@ -44,8 +44,44 @@ function CandidateManagement() {
     address: "",
     cv_url: "",
     status: "67bc5a667ddc08921b739694", // default status = activated
-    role: "67bc59b77ddc08921b73968f" // default role = candidate
+    role: "67bc59b77ddc08921b73968f", // default role = candidate
+    skills: []
   });
+
+  const skillOptions = [
+    "Java",
+    "Nodejs",
+    "C++",
+    ".Net",
+    "Python",
+    "JavaScript",
+    "PHP",
+    "Ruby",
+    "Go",
+    "Rust"
+  ];
+
+  // for add candidate
+  const handleCheckboxChange = (e, type) => {
+    const { value, checked } = e.target;
+    setNewCandidateData((prevCandidate) => {
+      const updatedValues = checked
+        ? [...prevCandidate[type], value]
+        : prevCandidate[type].filter((item) => item !== value);
+      return { ...prevCandidate, [type]: updatedValues };
+    });
+  };
+
+  // for edit candidate
+  const handleCheckboxChangeEdit = (e, type) => {
+    const { value, checked } = e.target;
+    setCurrentCandidate((prevCandidate) => {
+      const updatedValues = checked
+        ? [...prevCandidate[type], value]
+        : prevCandidate[type].filter((item) => item !== value);
+      return { ...prevCandidate, [type]: updatedValues };
+    });
+  };
 
   // import excel start
 
@@ -112,8 +148,16 @@ function CandidateManagement() {
       setIsButtonDisabled(false); // Bỏ vô hiệu hóa nút
     }
   };
-
   // import excel end
+
+  // Hàm để download file mẫu Excel từ thư mục public
+  const handleDownloadTemplate = () => {
+    // Chỉ cần truyền đường dẫn tĩnh đến file trong thư mục public
+    const link = document.createElement("a");
+    link.href = "/files/Candidates_Mock_Data.xlsx"; // Đường dẫn đến file mẫu trong thư mục public
+    link.download = "Candidates_Mock_Data.xlsx"; // Đặt tên file khi tải xuống
+    link.click();
+  };
 
   const [errors, setErrors] = useState({});
 
@@ -429,6 +473,10 @@ function CandidateManagement() {
                       <strong>Selected File:</strong> {file.name}
                     </div>
                   )}
+                  {/* Nút tải file mẫu */}
+                  <Button variant="link" onClick={handleDownloadTemplate}>
+                    <Import className="pb-1" size={20} /> Download Template File
+                  </Button>
                 </Modal.Body>
                 <Modal.Footer>
                   <Button
@@ -720,6 +768,38 @@ function CandidateManagement() {
                   </Form.Group>
                 </Col>
               </Row>
+
+              <Row>
+                {/* Skills and Benefits Row */}
+                <div className="row">
+                  <div className="col-md-12">
+                    <Form.Group
+                      className={`mb-3 ${errors.skills ? "is-invalid" : ""}`}
+                    >
+                      <Form.Label>Skills</Form.Label>
+                      <div className="row">
+                        {skillOptions.map((skill, index) => (
+                          <div key={skill} className="col-6">
+                            <Form.Check
+                              type="checkbox"
+                              label={skill}
+                              value={skill}
+                              onChange={(e) =>
+                                handleCheckboxChange(e, "skills")
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      {errors.skills && (
+                        <Form.Text className="text-danger">
+                          {errors.skills}
+                        </Form.Text>
+                      )}
+                    </Form.Group>
+                  </div>
+                </div>
+              </Row>
             </Modal.Body>
             <Modal.Footer>
               <Button
@@ -822,14 +902,14 @@ function CandidateManagement() {
                 </Col>
               </Row>
 
-              {/* <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">CV</Form.Label>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">Skills</Form.Label>
                 <Form.Control
                   type="text"
-                  value={currentCandidate?.cv_url}
+                  value={currentCandidate?.skills?.join(", ")}
                   readOnly
                 />
-              </Form.Group> */}
+              </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-bold">CV</Form.Label>
                 <div>
@@ -986,6 +1066,34 @@ function CandidateManagement() {
                 />
               </Form.Group>
             </Form>
+
+            <Row>
+              {/* Skills and Benefits Row */}
+              <div className="row">
+                <div className="col-md-12">
+                  <Form.Group
+                    className={`mb-3 ${errors.skills ? "is-invalid" : ""}`}
+                  >
+                    <Form.Label>Skills</Form.Label>
+                    <div className="row">
+                      {skillOptions.map((skill, index) => (
+                        <div key={skill} className="col-6">
+                          <Form.Check
+                            type="checkbox"
+                            label={skill}
+                            value={skill}
+                            onChange={(e) =>
+                              handleCheckboxChangeEdit(e, "skills")
+                            }
+                            checked={currentCandidate?.skills?.includes(skill)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Form.Group>
+                </div>
+              </div>
+            </Row>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
