@@ -36,6 +36,11 @@ function InterviewManagement() {
       if (user.role === "Interviewer") {
         apiUrl = `http://localhost:9999/interview/interviewer/${user.id}`;
       }
+      
+      // Check if the user is an candidate and adjust the API endpoint
+      if (user.role === "Candidate") {
+        apiUrl = `http://localhost:9999/interview/candidate/${user.id}`;
+      }
 
       const response = await fetch(apiUrl);
       const data = await response.json();

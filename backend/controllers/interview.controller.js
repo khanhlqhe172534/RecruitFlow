@@ -60,6 +60,32 @@ async function getInterviewByInterviewerId(req, res, next) {
   }
 }
 
+async function getInterviewByCandidateId(req, res, next) {
+  try {
+    const { candidateId } = req.params;
+
+    // Chuyển đổi id thành ObjectId để đảm bảo kiểu dữ liệu khớp
+    const objectId = new mongoose.Types.ObjectId(candidateId);
+
+    const interviews = await Interview.find({ interviewer: objectId })
+      .populate("interviewer")
+      .populate("candidate")
+      .populate("job")
+      .populate("status");
+
+    if (!interviews || interviews.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No interviews found for this candidates" });
+    }
+
+    res.status(200).json(interviews);
+  } catch (error) {
+    console.error("Error fetching interviews:", error);
+    next(error); // Pass error to Express error handler
+  }
+}
+
 async function createInterview(req, res, next) {
   try {
     const { interviewer, candidate, job, interview_date, meeting_link, note } =
@@ -823,6 +849,7 @@ const interviewController = {
   markAsPass,
   markAsFail,
   getInterviewByInterviewerId,
+  getInterviewByCandidateId,
   cancelInterview,
   inviteInterview,
 };

@@ -11,6 +11,11 @@ interviewRouter.get(
   "/interviewer/:interviewrId",
   interviewController.getInterviewByInterviewerId
 );
+interviewRouter.get(
+  "/interviewer/:candidateId",
+  interviewController.getInterviewByCandidateId
+);
+
 interviewRouter.post("/", interviewController.createInterview);
 interviewRouter.post("/invite", interviewController.inviteInterview);
 
