@@ -2,9 +2,16 @@ const Candidate = require("../models/candidate.model");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const xlsx = require("xlsx");
+const mongoose = require("mongoose");
+
+// Cấu hình multer để upload file
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // API xử lý import ứng viên từ file Excel
 async function importCandidates(req, res, next) {
+  const session = await mongoose.startSession(); // Bắt đầu session cho transaction
+
   try {
     const file = req.file;
 
@@ -13,10 +20,17 @@ async function importCandidates(req, res, next) {
     }
 
     // Kiểm tra kiểu file
-    const allowedMimes = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"];
+    const allowedMimes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel"
+    ];
     if (!allowedMimes.includes(file.mimetype)) {
-      errorMessages.push("Invalid file type. Only .xlsx or .xls files are allowed.");
-      return res.status(400).json({ message: "Invalid file type. Only .xlsx or .xls files are allowed." });
+      errorMessages.push(
+        "Invalid file type. Only .xlsx or .xls files are allowed."
+      );
+      return res.status(400).json({
+        message: "Invalid file type. Only .xlsx or .xls files are allowed."
+      });
     }
 
     console.log("File uploaded:", file.originalname);
@@ -34,15 +48,17 @@ async function importCandidates(req, res, next) {
     const addedCandidates = [];
     const errorMessages = [];
 
+     // Bắt đầu transaction
+     session.startTransaction();
+
     for (const candidate of candidatesData) {
-      // Kiểm tra trùng email
-       // Kiểm tra trùng email và số điện thoại cùng lúc
-       const existingCandidateEmail = await Candidate.findOne({
+      // Kiểm tra trùng email và số điện thoại cùng lúc
+      const existingCandidateEmail = await Candidate.findOne({
         email: candidate["Email"]
-      });
+      }).session(session);
       const existingCandidatePhone = await Candidate.findOne({
         phoneNumber: candidate["Phone Number"]
-      });
+      }).session(session);
 
       // Báo lỗi nếu trùng email
       if (existingCandidateEmail) {
@@ -61,6 +77,22 @@ async function importCandidates(req, res, next) {
         continue;
       }
 
+      // Validate skills - kiểm tra kỹ năng
+      const skills = candidate["Skills"]
+        ? candidate["Skills"].split(",").map((skill) => skill.trim()) // Chuyển thành mảng kỹ năng
+        : [];
+
+      // Nếu kỹ năng không phải là mảng chuỗi, báo lỗi
+      if (
+        !Array.isArray(skills) ||
+        skills.some((skill) => typeof skill !== "string")
+      ) {
+        errorMessages.push(
+          `Invalid skills for candidate "${candidate["Full Name"]}"`
+        );
+        continue; // Bỏ qua ứng viên này
+      }
+
       const password = generateRandomPassword();
 
       const newCandidate = new Candidate({
@@ -72,6 +104,7 @@ async function importCandidates(req, res, next) {
         dob: new Date(candidate["Date of Birth"]),
         address: candidate["Address"],
         cv_url: candidate["CV URL"],
+        skills,
         status: "67bc5a667ddc08921b739694", // default status = activated
         role: "67bc59b77ddc08921b73968f" // default role = candidate
       });
@@ -85,21 +118,29 @@ async function importCandidates(req, res, next) {
         dob: new Date(candidate["Date of Birth"]),
         address: candidate["Address"],
         cv_url: candidate["CV URL"],
+        skills,
         status: "67bc5a667ddc08921b739694", // default status = activated
         role: "67bc59b77ddc08921b73968f" // default role = candidate
       });
 
       addedCandidates.push(newCandidateForEmail);
 
-      console.log("Adding candidate:", newCandidate);
-
-      await newCandidate.save();
+      await newCandidate.save({ session });
     }
 
     if (errorMessages.length > 0) {
+      // Nếu có lỗi, rollback transaction
+      await session.abortTransaction();
+      session.endSession();
       console.log("Import failed", errorMessages);
-      return res.status(400).json({ message: "Import failed", errors: errorMessages });
+      return res
+        .status(400)
+        .json({ message: "Import failed", errors: errorMessages });
     }
+
+    // Commit transaction nếu không có lỗi
+    await session.commitTransaction();
+    session.endSession();
 
     // Trả về phản hồi trước khi gửi email
     res.status(201).json({
@@ -114,6 +155,8 @@ async function importCandidates(req, res, next) {
 
     console.log("Emails sent to all candidates");
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 }
@@ -176,7 +219,8 @@ async function createCandidate(req, res, next) {
       address,
       cv_url,
       status,
-      role
+      role,
+      skills
     } = req.body;
 
     // Generate a random password
@@ -203,7 +247,8 @@ async function createCandidate(req, res, next) {
       address,
       cv_url,
       status,
-      role
+      role,
+      skills
     });
 
     await newCandidate.save().then(async (newDoc) => {

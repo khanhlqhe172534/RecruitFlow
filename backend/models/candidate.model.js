@@ -44,15 +44,28 @@ const candidateSchema = new Schema(
       {
         //java, python
         type: String,
+        // const skillOptions = [
+        //   "Java",
+        //   "Nodejs",
+        //   "C++",
+        //   ".Net",
+        //   "Python",
+        //   "JavaScript",
+        //   "PHP",
+        //   "Ruby",
+        //   "Go",
+        //   "Rust",
+        // ];
+        required: true
+      }
+    ]
         // enum:"Java","Nodejs","C++",".Net","Python","JavaScript","PHP", "Ruby","Go","Rust",
         required: true,
       },
     ],
-
   },
   { timestamps: true }
 );
-
 
 candidateSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -65,7 +78,6 @@ candidateSchema.methods.correctPassword = async function (userPassword) {
   const correct = await bcrypt.compare(userPassword, this.password);
   return correct;
 };
-
 
 const Candidate = mongoose.model("Candidate", candidateSchema);
 
