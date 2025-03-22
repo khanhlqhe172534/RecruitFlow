@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
 } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
 import { Eye, Pencil, Trash, UserPlus, ChevronsUpDown } from "lucide-react";
 
 function UserManagement() {
@@ -26,7 +27,7 @@ function UserManagement() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [userToDelete, setUserToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState({});
   const usersPerPage = 6;
 
   const [newUser, setNewUser] = useState({
@@ -66,30 +67,22 @@ function UserManagement() {
     setNewUser((prevData) => ({ ...prevData, [name]: value }));
   };
   const validateUserData = (handleType, data) => {
+    let newErrors = {};
     // check full name
     if (
-      !/^(([A-Za-z]+[\-\']?)*([A-Za-z]+)?\s)+([A-Za-z]+[\-\']?)*([A-Za-z]+)?$/.test(
+      !/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(
         handleType == "add" ? data.fullName : data.fullname
       )
     ) {
-      return {
-        isValid: false,
-        error: "Full name cannot contain numbers.",
-      };
+      newErrors.fullName = "Full name cannot contain numbers.";
     }
     // check phone has number and "+" optional
-    if (!/^[+]?\d+$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: 'Phone number must contain only numbers and "+" (optional).',
-      };
+    if (!/^\d+$/.test(data.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must contain only numbers.";
     }
 
-    if (!/^[+]?\d{10,11}$/.test(data.phoneNumber)) {
-      return {
-        isValid: false,
-        error: "Phone number must be between 10 and 11 digits.",
-      };
+    if (!/^\d{10,11}$/.test(data.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be between 10 and 11 digits.";
     }
     // validate email and phone
     const existingPhone = users.find(
@@ -99,29 +92,24 @@ function UserManagement() {
       (c) => c.email.toLowerCase() === newUser.email
     );
     if (existingPhone && handleType == "add") {
-      return {
-        isValid: false,
-        error: "Phone number already exists. Please try again.",
-      };
+      newErrors.phoneNumber = "Phone number already exists. Please try again.";
     }
     if (existingEmail && handleType == "add") {
-      return {
-        isValid: false,
-        error: "Email already exists. Please try again.",
-      };
+      newErrors.email = "Email already exists. Please try again.";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setError(newErrors);
+      return false;
     }
 
-    // if all information is valid
-    return {
-      isValid: true,
-      error: null,
-    };
+    setError({});
+    return true;
   };
   const handleAddUser = async (e) => {
     e.preventDefault();
-    const { isValid, error } = validateUserData("add", newUser);
+    setError({});
+    const isValid = validateUserData("add", newUser);
     if (!isValid) {
-      alert(error);
       return;
     }
     try {
@@ -169,9 +157,9 @@ function UserManagement() {
 
   const handleEditUser = async (e) => {
     e.preventDefault();
-    const { isValid, error } = validateUserData("edit", currentUser);
+    setError({});
+    const isValid = validateUserData("edit", currentUser);
     if (!isValid) {
-      alert(error);
       return;
     }
     try {
@@ -591,6 +579,9 @@ function UserManagement() {
                       onChange={handleNewUserChange}
                       required
                     />
+                    {error.fullName && (
+                      <div className="text-danger">{error.fullName}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -606,6 +597,9 @@ function UserManagement() {
                       onChange={handleNewUserChange}
                       required
                     />
+                    {error.email && (
+                      <div className="text-danger">{error.email}</div>
+                    )}
                   </Form.Group>
                 </Col>
               </Row>
@@ -658,6 +652,9 @@ function UserManagement() {
                       onChange={handleNewUserChange}
                       required
                     />
+                    {error.phoneNumber && (
+                      <div className="text-danger">{error.phoneNumber}</div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
@@ -998,6 +995,15 @@ function UserManagement() {
           </Modal.Footer>
         </Modal>
       </Container>
+      {/* ToastContainer for notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

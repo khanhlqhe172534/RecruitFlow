@@ -199,12 +199,12 @@ async function addJob(req, res, next) {
       {
         condition: job_name && job_name.length > 50,
         key: "job_name",
-        message: "Job Name must be less than 50 characters",
+        message: "Job Title must be less than or equal 50 characters",
       },
       {
         condition: description && description.length > 500,
         key: "description",
-        message: "Description must be less than 500 characters",
+        message: "Description must be less than or equal 500 characters",
       },
       {
         condition:
@@ -257,19 +257,27 @@ async function addJob(req, res, next) {
     const newJob = new Job(jobData);
     await newJob.save();
 
-    const managers = await User.find({
-      role: { $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"] },
-    }).select("email");
-
-    const recipientEmails = managers.map((user) => user.email);
-
-    if (recipientEmails.length > 0) {
-      sendJobNotificationEmail(recipientEmails, newJob);
-    }
-
     res.status(201).json({
       message: "Job created and set to 'waiting for approval'",
       job: newJob,
+    });
+
+    setImmediate(async () => {
+      try {
+        const managers = await User.find({
+          role: {
+            $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"],
+          },
+        }).select("email");
+
+        const recipientEmails = managers.map((user) => user.email);
+
+        if (recipientEmails.length > 0) {
+          await sendJobNotificationEmail(recipientEmails, newJob);
+        }
+      } catch (emailError) {
+        console.error("Error sending job notification email:", emailError);
+      }
     });
   } catch (err) {
     console.error("Error in addJob:", err);
@@ -278,6 +286,7 @@ async function addJob(req, res, next) {
 }
 
 async function sendJobNotificationEmail(recipients, job) {
+  const jobDetailUrl = `http://localhost:3000/job/${job._id}`;
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -312,7 +321,7 @@ async function sendJobNotificationEmail(recipients, job) {
         }</li>
         <li><strong>Benefits:</strong> ${job.benefits.join(", ")}</li>
       </ul>
-      <p>Please review and approve this job.</p>
+      <p>Please review and approve this job : <a href="${jobDetailUrl}" target="_blank">Go to site</a></p>
     `,
   };
 
@@ -404,12 +413,12 @@ async function updateJob(req, res, next) {
     {
       condition: job_name && job_name.length > 50,
       key: "job_name",
-      message: "Job Name must be less than 50 characters",
+      message: "Job Title must be less than or equal 50 characters",
     },
     {
       condition: description && description.length > 500,
       key: "description",
-      message: "Description must be less than 500 characters",
+      message: "Description must be less than or equal 500 characters",
     },
     {
       condition:
@@ -437,7 +446,7 @@ async function updateJob(req, res, next) {
   }
 
   try {
-    const job = await Job.findById(jobId);
+    const job = await Job.findById(jobId).populate("createdBy");
     if (!job) return res.status(404).json({ message: "Job not found" });
 
     const waitingStatus = await Status.findById("67bc5a667ddc08921b739695");
@@ -494,8 +503,72 @@ async function updateJob(req, res, next) {
     res
       .status(200)
       .json({ message: "Job updated successfully", job: updatedJob });
+    setImmediate(async () => {
+      try {
+        const managers = await User.find({
+          role: {
+            $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"],
+          },
+        }).select("email");
+
+        const recipientEmails = managers.map((user) => user.email);
+        if (recipientEmails.length > 0) {
+          await sendJobUpdateNotificationEmail(recipientEmails, job);
+        }
+      } catch (emailError) {
+        console.error("Error sending job update email:", emailError);
+      }
+    });
   } catch (err) {
     next(err);
+  }
+}
+
+// Send mail update job
+async function sendJobUpdateNotificationEmail(recipients, job) {
+  if (!recipients || recipients.length === 0) return;
+
+  const jobDetailUrl = `http://localhost:3000/job/${job._id}`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: recipients.join(", "),
+    subject: `Job Update Notification: ${job.job_name}`,
+    html: `
+      <h3>Job "${job.job_name}" has been updated</h3>
+      <p><strong>Updated By:</strong> ${job.createdBy.fullname}</p>
+      <li><strong>Salary:</strong> ${job.salary_min} - ${job.salary_max}</li>
+        <li><strong>Start Date:</strong> ${new Date(
+          job.start_date
+        ).toLocaleString()}</li>
+        <li><strong>End Date:</strong> ${new Date(
+          job.end_date
+        ).toLocaleString()}</li>
+        <li><strong>Level:</strong> ${job.levels}</li>
+        <li><strong>Skills Required:</strong> ${job.skills.join(", ")}</li>
+        <li><strong>Working Type:</strong> ${job.working_type}</li>
+        <li><strong>Experience:</strong> ${job.experience}</li>
+        <li><strong>Number of Vacancies:</strong> ${
+          job.number_of_vacancies
+        }</li>
+        <li><strong>Benefits:</strong> ${job.benefits.join(", ")}</li>
+      <p>Please review the updated job details:  <a href="${jobDetailUrl}" target="_blank">Go to site</a></p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Job update notification email sent successfully");
+  } catch (error) {
+    console.error("Error sending job update notification email:", error);
   }
 }
 

@@ -16,7 +16,7 @@ import axios from "axios";
 import Grid from '@mui/material/Grid2';
 
 const formatLabels = (data) =>
-  data.map((item) => `${item.year}-${item.month.toString().padStart(2, "0")}`);
+  data.map((item) => `${item?.year}-${item.month?.toString().padStart(2, "0")}`);
 
 const ChartCandidate = ({ chartSeries, sx }) => {
   const [candidateData, setCandidateData] = React.useState([]);
