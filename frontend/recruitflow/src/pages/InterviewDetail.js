@@ -182,10 +182,10 @@ function InterviewDetail() {
         toast.error("Interview time must be between 9 AM and 3 PM.");
         return;
       }
-      if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
-        toast.error("Interview day must be Monday to Friday.");
-        return;
-      }
+      // if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
+      //   toast.error("Interview day must be Monday to Friday.");
+      //   return;
+      // }
 
       await axios.put(`http://localhost:9999/interview/${id}`, formData);
 

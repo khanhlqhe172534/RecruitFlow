@@ -264,16 +264,10 @@ export default function SideBar() {
 
               {!collapsed && (
                 <div className="ms-3">
-                  <Typography
-                    variant="body1"
-                    fontWeight="bold"
-                  >
+                  <Typography variant="body1" fontWeight="bold">
                     {user.fullName}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                  >
+                  <Typography variant="body2" color="textSecondary">
                     {user.role}
                   </Typography>
                 </div>
@@ -338,14 +332,17 @@ export default function SideBar() {
           >
             General
           </Typography>
-          <MenuItem
-            icon={<HomeIcon />}
-            component={<Link to="/dashboard" />}
-            active={location.pathname === "/dashboard"}
-            className="mt-1"
-          >
-            Dashboard
-          </MenuItem>
+          {user.role !== "Candidate" && (
+            <MenuItem
+              icon={<HomeIcon />}
+              component={<Link to="/dashboard" />}
+              active={location.pathname === "/dashboard"}
+              className="mt-1"
+            >
+              Dashboard
+            </MenuItem>
+          )}
+
           {user.role === "Admin" && (
             <MenuItem
               icon={<PersonIcon />}
@@ -447,10 +444,7 @@ export default function SideBar() {
           >
             Close
           </Button>
-          <Button
-            variant="success"
-            onClick={handleSubmitPasswordChange}
-          >
+          <Button variant="success" onClick={handleSubmitPasswordChange}>
             Change Password
           </Button>
         </Modal.Footer>

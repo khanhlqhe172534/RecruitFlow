@@ -161,10 +161,10 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         toast.error("Interview time must be between 9 AM and 3 PM.");
         return;
       }
-      if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
-        toast.error("Interview day must be Monday to Friday.");
-        return;
-      }
+      // if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
+      //   toast.error("Interview day must be Monday to Friday.");
+      //   return;
+      // }
 
       await axios.post("http://localhost:9999/interview/invite", formData);
       handleClose();
@@ -207,10 +207,10 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         toast.error("Interview time must be between 9 AM and 3 PM.");
         return;
       }
-      if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
-        toast.error("Interview day must be Monday to Friday.");
-        return;
-      }
+      // if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
+      //   toast.error("Interview day must be Monday to Friday.");
+      //   return;
+      // }
 
       await axios.post("http://localhost:9999/interview/", formDataAdd);
       handleCloseAdd();
