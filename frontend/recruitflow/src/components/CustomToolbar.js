@@ -87,6 +87,8 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
   const handleSubmit = async () => {
     try {
       const interviewDate = new Date(formData.interview_date);
+      const hours = interviewDate.getHours();
+      const minutes = interviewDate.getMinutes();
       const now = new Date();
 
       // Validate if the interview date is in the past
@@ -94,7 +96,14 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
         toast.error("Interview date cannot be in the past.");
         return;
       }
-
+      if (hours < 9 || (hours === 15 && minutes > 0) || hours > 15) {
+        toast.error("Interview time must be between 9 AM and 3 PM.");
+        return;
+      }
+      if (interviewDate.getDay() === 0 || interviewDate.getDay() === 6) {
+        toast.error("Interview day must be Monday to Friday.");
+        return;
+      }
       // Call the API to create the interview
       const response = await axios.post(
         "http://localhost:9999/interview",

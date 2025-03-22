@@ -9,8 +9,10 @@ import {
 } from "react-bootstrap";
 import { Eye, Pencil, UserPlus, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 function CandidateManagement() {
+  const nav = useNavigate();
   const [candidate, setCandidate] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [currentCandidate, setCurrentCandidate] = useState(null);
@@ -127,7 +129,7 @@ function CandidateManagement() {
 
       setCandidate(sortedCandidate);
     }
-  }, [sortColumn, sortOrder, candidate]);
+  }, [sortColumn, sortOrder, candidate, showEditModal]);
 
   const totalPages = Math.ceil(filteredCandidates.length / usersPerPage);
 
@@ -215,6 +217,7 @@ function CandidateManagement() {
         window.location.reload();
       })
       .catch((err) => console.log(err));
+    nav("/candidate");
   };
 
   const handleEditInputChange = (e) => {

@@ -517,12 +517,14 @@ function JobManagement() {
                   </Stack>
                 </div>
               </div>
-              <div className="col-md-3 mt-4 overflow-auto"
-                  style={{
-                    maxHeight: "calc(100vh - 100px)",
-                    msOverflowStyle: "none",
-                    scrollbarWidth: "none",
-                  }}>
+              <div
+                className="col-md-3 mt-4 overflow-auto"
+                style={{
+                  maxHeight: "calc(100vh - 100px)",
+                  msOverflowStyle: "none",
+                  scrollbarWidth: "none",
+                }}
+              >
                 {user.role === "Recruitment Manager" && (
                   <div className="card mb-3 shadow-sm bg-white">
                     <div className="card-body">
@@ -926,7 +928,9 @@ function JobManagement() {
               </div>
 
               <div className="col-md-6">
-                <Form.Group className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}>
+                <Form.Group
+                  className={`mb-3 ${errors.benefits ? "is-invalid" : ""}`}
+                >
                   <Form.Label>Benefits</Form.Label>
                   <div className="row">
                     {benefitOptions.map((benefit, index) => (
@@ -958,6 +962,9 @@ function JobManagement() {
                 name="description"
                 onChange={handleInputChange}
               />
+              {errors.description && (
+                <Form.Text className="text-danger">{errors.description}</Form.Text>
+              )}
             </Form.Group>
           </Form>
         </Modal.Body>

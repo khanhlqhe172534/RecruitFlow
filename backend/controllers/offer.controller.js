@@ -6,25 +6,52 @@ const Candidate = require("../models/candidate.model");
 const Job = require("../models/job.model");
 const nodemailer = require("nodemailer");
 
-// Get all offers with populated fields
 async function getAllOffer(req, res, next) {
   try {
+    // Lấy thời gian hiện tại theo UTC
     const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Reset giờ phút giây để so sánh chính xác ngày
+    currentDate.setUTCHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 UTC
 
-    // Cập nhật offer khi offerFrom đã qua, chuyển từ "accepted" sang "open"
-    await Offer.updateMany(
-      {
-        offerFrom: { $lte: currentDate },
-        status: "67c7f361e825bf941d636e07",
-      },
-      { status: "67bc5a667ddc08921b739697" }
-    );
+    const nextDate = new Date(currentDate);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1); // Ngày kế tiếp (0h00 ngày hôm sau)
 
-    // Cập nhật offer khi offerTo trùng ngày hiện tại, chuyển trạng thái hợp đồng
+    console.log("Current Date (UTC):", currentDate.toISOString());
+    console.log("Next Date (UTC):", nextDate.toISOString());
+
+    /**
+     * Cập nhật trạng thái offer từ "accepted" -> "open"
+     * Điều kiện:
+     * - status là "accepted"
+     * - offerFrom nằm trong khoảng hôm nay (UTC)
+     */
+    const offersToOpen = await Offer.find({
+      status: "67c7f361e825bf941d636e07", // "accepted"
+      offerFrom: { $gte: currentDate, $lt: nextDate }, // Chỉ trong ngày hiện tại (UTC)
+    });
+
+    console.log(`Found ${offersToOpen.length} offers to open.`);
+
+    if (offersToOpen.length > 0) {
+      const updateResult = await Offer.updateMany(
+        { _id: { $in: offersToOpen.map((offer) => offer._id) } },
+        { $set: { status: "67bc5a667ddc08921b739697" } } // "open"
+      );
+
+      console.log(`Updated ${updateResult.modifiedCount} offers to open.`);
+    }
+
+    /**
+     * Cập nhật trạng thái offer khi hợp đồng kết thúc ("contract ended")
+     * Điều kiện:
+     * - offerTo đúng vào ngày hiện tại (chỉ so sánh ngày, không xét giờ)
+     */
     const offersToUpdate = await Offer.find({
-      offerTo: { $eq: currentDate }, // Kiểm tra trùng ngày
+      offerTo: { $gte: currentDate, $lt: nextDate }, // Chỉ lấy offer có offerTo đúng ngày hôm nay
     }).populate("interview.candidate");
+
+    console.log(
+      `Found ${offersToUpdate.length} offers to update contract status.`
+    );
 
     for (const offer of offersToUpdate) {
       // Cập nhật status của offer
