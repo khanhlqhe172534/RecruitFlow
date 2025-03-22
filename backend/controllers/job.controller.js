@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const User = require("../models/user.model");
+const Candidate = require("../models/candidate.model");
 const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
@@ -50,10 +51,15 @@ async function getJobs(req, res, next) {
       filter.benefitChecked = { $in: true };
     }
 
+    if (role === "Candidate") {
+      filter.status = "67bc5a667ddc08921b739697";
+    }
+
     if (statusFilter) {
       const statusMap = {
         opened: "67bc5a667ddc08921b739697",
         closed: "67bc5a667ddc08921b739698",
+        reject: "67c7f374e825bf941d636e09",
         waiting: "67bc5a667ddc08921b739695",
       };
       const statusIds = statusFilter
@@ -100,7 +106,7 @@ async function getJobs(req, res, next) {
     const jobs = await Job.find(filter)
       .populate("createdBy")
       .populate("status")
-      .sort({ updatedAt: -1 })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
@@ -453,14 +459,26 @@ async function updateJob(req, res, next) {
     if (!waitingStatus)
       return res.status(500).json({ message: "Status not found" });
 
+    const rejectStatus = await Status.findById("67c7f374e825bf941d636e09");
+
     if (
       job.status.toString() !== waitingStatus._id.toString() &&
+      job.status.toString() !== rejectStatus._id.toString()
+    ) {
+      return res.status(403).json({
+        message:
+          "Job can only be updated when status is 'waiting for approval' or 'reject'",
+      });
+    }
+
+    if (
+      job.status.toString() === waitingStatus._id.toString() &&
       job.salaryChecked !== null &&
       job.benefitChecked !== null
     ) {
       return res.status(403).json({
         message:
-          "Job can only be updated when status is 'waiting for approval' and benefit/salary check is not done",
+          "Job cannot be updated when benefit/salary check is already done for 'waiting for approval' status",
       });
     }
 
@@ -495,7 +513,11 @@ async function updateJob(req, res, next) {
       benefits,
       description,
       createdBy,
+      status: waitingStatus._id,
       updatedAt: new Date(),
+      salaryChecked: null,
+      benefitChecked: null,
+      feedback: ["", ""],
     });
 
     await job.save();
@@ -668,11 +690,11 @@ const updateJobStatus = async (job) => {
       throw new Error("Invalid job document");
     }
 
-    const closedStatus = await Status.findOne({ name: "closed" });
+    const rejectStatus = await Status.findOne({ name: "reject" });
     const openStatus = await Status.findOne({ name: "open" });
 
     if (job.benefitChecked === false || job.salaryChecked === false) {
-      job.status = closedStatus._id;
+      job.status = rejectStatus._id;
     } else if (job.benefitChecked === true && job.salaryChecked === true) {
       job.status = openStatus._id;
     }
@@ -751,7 +773,6 @@ async function sendJobClosureEmails(job) {
       "67b7d800a297fbf7bff8205b", // Benefit Manager
       "67b7d800a297fbf7bff8205a", // Payroll Manager
       "67b7d800a297fbf7bff82059", // Admin
-      "67b7d800a297fbf7bff8205d", // Interviewer
     ];
 
     const usersToNotify = await User.find(
@@ -835,7 +856,7 @@ const exportJobs = async (req, res) => {
     }
 
     const jobs = await Job.find({
-      updatedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+      createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
     })
       .populate("createdBy")
       .populate("status");
@@ -905,6 +926,123 @@ const exportJobs = async (req, res) => {
   }
 };
 
+// Apply for a job, add candidate to applicant array of job
+const applyJob = async (req, res, next) => {
+  const { jobId } = req.params;
+  const { userId  } = req.body;
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    const candidate = await Candidate.findById(userId );
+    if (!candidate)
+      return res.status(404).json({ message: "Candidate not found" });
+
+    if (job.applicants.includes(userId )) {
+      return res
+        .status(400)
+        .json({ message: "Candidate already applied for this job" });
+    }
+
+    job.applicants.push(userId );
+    await job.save();
+
+    res.status(200).json({ message: "Applied successfully", job });
+  } catch (error) {
+    next(error);
+  }
+};
+// Unapply for a job
+
+const unapplyJob = async (req, res, next) => {
+  const { jobId } = req.params;
+  const { userId  } = req.body;
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    const candidate = await Candidate.findById(userId );
+    if (!candidate)
+      return res.status(404).json({ message: "Candidate not found" });
+
+    if (!job.applicants.includes(userId )) {
+      return res
+        .status(400)
+        .json({ message: "Candidate has not applied for this job" });
+    }
+
+    job.applicants = job.applicants.filter(
+      (id) => id.toString() !== userId 
+    );
+    await job.save();
+
+    res.status(200).json({ message: "Unapplied successfully", job });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Clone job
+async function cloneJob(req, res, next) {
+  try {
+    const { id } = req.params; 
+    const oldJob = await Job.findById(id);
+    if (!oldJob) return res.status(404).json({ message: "Job not found" });
+
+    const waitingStatus = await Status.findById("67bc5a667ddc08921b739695");
+    if (!waitingStatus) {
+      return res
+        .status(500)
+        .json({ message: "Waiting for approved status not found" });
+    }
+
+
+    const clonedJobData = {
+      ...oldJob._doc, 
+      _id: undefined, 
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: waitingStatus._id, 
+      createdBy: req.body.createdBy || oldJob.createdBy, 
+    };
+
+    const errors = validateJobData(clonedJobData);
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ message: "Validation errors", errors });
+    }
+
+    const newJob = new Job(clonedJobData);
+    await newJob.save();
+
+    res.status(201).json({
+      message: "Job cloned and set to 'waiting for approval'",
+      job: newJob,
+    });
+
+    setImmediate(async () => {
+      try {
+        const managers = await User.find({
+          role: { $in: ["67b7d800a297fbf7bff8205a", "67b7d800a297fbf7bff8205b"] },
+        }).select("email");
+
+        const recipientEmails = managers.map((user) => user.email);
+
+        if (recipientEmails.length > 0) {
+          await sendJobNotificationEmail(recipientEmails, newJob);
+        }
+      } catch (emailError) {
+        console.error("Error sending job notification email:", emailError);
+      }
+    });
+
+  } catch (err) {
+    console.error("Error in cloneJob:", err);
+    next(err);
+  }
+}
+
 const jobController = {
   getAllJob,
   getJobs,
@@ -918,6 +1056,8 @@ const jobController = {
   getJobById,
   getJobList,
   exportJobs,
+  applyJob,
+  unapplyJob,
 };
 
 module.exports = jobController;

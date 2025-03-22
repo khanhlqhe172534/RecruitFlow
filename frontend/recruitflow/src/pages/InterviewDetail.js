@@ -526,7 +526,7 @@ function InterviewDetail() {
           {/* Show "Mark as Pass" and "Mark as Fail" Buttons if Result is "N/A" and role = "Interviewer" */}
           {interview.result === "N/A" &&
             user.role === "Interviewer" &&
-            interview.status.name !== "cancel" &&
+            interview.status.name == "open" &&
             new Date(interview.interview_date) <= new Date() && ( // cancel
               <div className="col-3 ms-1">
                 <button
