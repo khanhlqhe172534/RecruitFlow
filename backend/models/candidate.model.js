@@ -7,38 +7,38 @@ const Schema = mongoose.Schema;
 const candidateSchema = new Schema(
   {
     fullname: {
-      type: String
+      type: String,
     },
     email: {
       type: String,
-      required: [true, "Email is required"]
+      required: [true, "Email is required"],
     },
     password: {
       type: String,
-      required: [true, "Password is required"]
+      required: [true, "Password is required"],
     },
     phoneNumber: {
-      type: String
+      type: String,
     },
     isMale: {
-      type: Boolean
+      type: Boolean,
     },
     dob: {
-      type: Date
+      type: Date,
     },
     address: {
-      type: String
+      type: String,
     },
     cv_url: {
-      type: String
+      type: String,
     },
     status: {
       type: Schema.Types.ObjectId,
-      ref: "Status"
+      ref: "Status",
     },
     role: {
       type: Schema.Types.ObjectId,
-      ref: "Role"
+      ref: "Role",
     },
     skills: [
       {
@@ -56,10 +56,6 @@ const candidateSchema = new Schema(
         //   "Go",
         //   "Rust",
         // ];
-        required: true
-      }
-    ]
-        // enum:"Java","Nodejs","C++",".Net","Python","JavaScript","PHP", "Ruby","Go","Rust",
         required: true,
       },
     ],
