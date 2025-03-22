@@ -124,7 +124,10 @@ const generateRandomPassword = (length = 8) => {
   return password;
 };
 const resetPassword = async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email });
+  let user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    user = await Candidate.findOne({ email: email }).select("+password");
+  }
   if (!user) {
     return res
       .status(404)
