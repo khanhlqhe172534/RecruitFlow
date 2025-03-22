@@ -25,7 +25,6 @@ async function sendEndDateReminderEmail(job) {
     "67b7d800a297fbf7bff8205b", // Benefit Manager
     "67b7d800a297fbf7bff8205a", // Payroll Manager
     "67b7d800a297fbf7bff82059", // Admin
-    "67b7d800a297fbf7bff8205d", // Interviewer
     "67b7d800a297fbf7bff8205c", // Recruitment Manager
   ];
 

@@ -44,7 +44,7 @@ function JobManagement() {
           workingType: workingType.join(","),
           levelFilter: levelFilter.join(","),
           experienceFilter: experienceFilter.join(","),
-          sort: "updatedAt:desc",
+          sort: "createdAt:desc",
         });
 
         const apiUrl = `http://localhost:9999/job?${params.toString()}`;
@@ -300,6 +300,63 @@ function JobManagement() {
     setPage(1);
   };
 
+  const handleApply = async (jobId) => {
+    const userId = localStorage.getItem("userId");
+    try {
+      const response = await fetch(`http://localhost:9999/job/${jobId}/apply`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        toast.success("Applied successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } else {
+        toast.error("Failed to apply", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleCancelApply = async (jobId) => {
+    const userId = localStorage.getItem("userId");
+    try {
+      const response = await fetch(
+        `http://localhost:9999/job/${jobId}/cancel-apply`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Application cancelled!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } else {
+        toast.error("Failed to cancel application", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="d-flex flex-column bg-light ">
       <div className="container-fluid px-4" style={{ border: "" }}>
@@ -452,6 +509,25 @@ function JobManagement() {
                                     : "Pending"}
                                 </span>
                               </span>
+
+                              {/* Nếu role là "Candidate" thì hiển thị Apply hoặc Cancel Apply */}
+                              {user.role === "Candidate" ? (
+                                job.applicants.includes(user.userId) ? (
+                                  <button
+                                    className="btn btn-danger ms-3"
+                                    onClick={() => handleCancelApply(job._id)}
+                                  >
+                                    Cancel Apply
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-primary ms-3"
+                                    onClick={() => handleApply(job._id)}
+                                  >
+                                    Apply Job
+                                  </button>
+                                )
+                              ) : null}
                             </div>
                             <div className="mt-2">
                               <span className="badge bg-info text-white me-2">
@@ -466,17 +542,21 @@ function JobManagement() {
                               <span
                                 className={`badge text-white ${
                                   job.status.name === "closed"
-                                    ? "bg-danger"
+                                    ? "bg-secondary"
                                     : job.status.name === "open"
                                     ? "bg-success"
-                                    : "bg-warning"
+                                    : job.status.name === "waiting for approved"
+                                    ? "bg-warning"
+                                    : "bg-danger"
                                 }`}
                               >
                                 {job.status.name === "open"
-                                  ? "Opened"
+                                  ? "Open"
                                   : job.status.name === "closed"
                                   ? "Closed"
-                                  : "Waiting"}
+                                  : job.status.name === "waiting for approved"
+                                  ? "Waiting"
+                                  : "Rejected"}
                               </span>
                               <small className="text-muted float-end">
                                 {job.skills.join(", ")}
@@ -573,52 +653,72 @@ function JobManagement() {
                 </div>
 
                 {/* Status Filter */}
-                <div className="card mb-3 shadow-sm bg-white">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h6 className="mb-2">Status</h6>
-                      <p
-                        onClick={() => {
-                          setStatusFilter([]);
-                        }}
-                        className="mb-2"
-                        style={{ color: "#64c2f1", cursor: "pointer" }}
-                      >
-                        Clear
-                      </p>
-                    </div>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        value="waiting"
-                        checked={statusFilter.includes("waiting")}
-                        onChange={() => handleStatusFilterChange("waiting")}
-                      />
-                      <label className="form-check-label">Waiting</label>
-                    </div>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        value="opened"
-                        checked={statusFilter.includes("opened")}
-                        onChange={() => handleStatusFilterChange("opened")}
-                      />
-                      <label className="form-check-label">Opened</label>
-                    </div>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        value="closed"
-                        checked={statusFilter.includes("closed")}
-                        onChange={() => handleStatusFilterChange("closed")}
-                      />
-                      <label className="form-check-label">Closed</label>
+                {user.role !== "Candidate" && (
+                  <div className="card mb-3 shadow-sm bg-white">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <h6 className="mb-2">Status</h6>
+                        <p
+                          onClick={() => {
+                            setStatusFilter([]);
+                          }}
+                          className="mb-2"
+                          style={{ color: "#64c2f1", cursor: "pointer" }}
+                        >
+                          Clear
+                        </p>
+                      </div>
+
+                      {user.role !== "Interviewer" && (
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            value="waiting"
+                            checked={statusFilter.includes("waiting")}
+                            onChange={() => handleStatusFilterChange("waiting")}
+                          />
+                          <label className="form-check-label">Waiting</label>
+                        </div>
+                      )}
+
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          value="opened"
+                          checked={statusFilter.includes("opened")}
+                          onChange={() => handleStatusFilterChange("opened")}
+                        />
+                        <label className="form-check-label">Open</label>
+                      </div>
+
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          value="closed"
+                          checked={statusFilter.includes("closed")}
+                          onChange={() => handleStatusFilterChange("closed")}
+                        />
+                        <label className="form-check-label">Closed</label>
+                      </div>
+
+                      {user.role !== "Interviewer" && (
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            value="reject"
+                            checked={statusFilter.includes("reject")}
+                            onChange={() => handleStatusFilterChange("reject")}
+                          />
+                          <label className="form-check-label">Rejected</label>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Working Type Filter */}
                 <div className="card mb-3 shadow-sm bg-white">
@@ -963,7 +1063,9 @@ function JobManagement() {
                 onChange={handleInputChange}
               />
               {errors.description && (
-                <Form.Text className="text-danger">{errors.description}</Form.Text>
+                <Form.Text className="text-danger">
+                  {errors.description}
+                </Form.Text>
               )}
             </Form.Group>
           </Form>
