@@ -47,7 +47,10 @@ const isLoggedIn = async (req, res, next) => {
       process.env.JWT_SECRET
     );
     // 2) Check if user still exists
-    const currentUser = await User.findById(decoded.id);
+    let currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      currentUser = await Candidate.findById(decoded.id);
+    }
     if (!currentUser) {
       return res.status(400).json({
         status: "fail",
@@ -156,7 +159,10 @@ const resetPassword = async (req, res, next) => {
   createSendToken(user, 200, res);
 };
 const updatePassword = async (req, res, next) => {
-  const user = await User.findById(req.body.userId).select("+password");
+  let user = await User.findById(req.body.userId).select("+password");
+  if (!user) {
+    user = await Candidate.findById(req.body.userId).select("+password");
+  }
   if (user && !(await user.correctPassword(req.body.oldPassword))) {
     return res.status(401).json({ message: "Your current password is wrong!" });
   }
