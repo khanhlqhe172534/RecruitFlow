@@ -67,7 +67,7 @@ async function getInterviewByCandidateId(req, res, next) {
     // Chuyển đổi id thành ObjectId để đảm bảo kiểu dữ liệu khớp
     const objectId = new mongoose.Types.ObjectId(candidateId);
 
-    const interviews = await Interview.find({ interviewer: objectId })
+    const interviews = await Interview.find({ candidate: objectId })
       .populate("interviewer")
       .populate("candidate")
       .populate("job")

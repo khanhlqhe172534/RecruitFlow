@@ -377,14 +377,17 @@ export default function SideBar() {
           >
             Offers List
           </MenuItem>
-          <MenuItem
-            icon={<GroupsIcon />}
-            component={<Link to="/candidate" />}
-            active={location.pathname.startsWith("/candidate")}
-            className="mt-1"
-          >
-            Candidates
-          </MenuItem>
+          {user.role !== "Candidate" && (
+            <MenuItem
+              icon={<GroupsIcon />}
+              component={<Link to="/candidate" />}
+              active={location.pathname.startsWith("/candidate")}
+              className="mt-1"
+            >
+              Candidates
+            </MenuItem>
+          )}
+
           {user.role == "Admin" && (
             <MenuItem
               icon={<AssignmentTurnedIn />}

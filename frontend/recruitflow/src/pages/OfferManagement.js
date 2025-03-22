@@ -12,11 +12,25 @@ function OfferManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState([]);
   const navigate = useNavigate();
+  const [user, setUser] = useState({ email: "", id: "", role: "" });
 
+  // Load user info from localStorage when the component mounts
+  useEffect(() => {
+    const userEmail = localStorage.getItem("userEmail");
+    const userRole = localStorage.getItem("userRole");
+    const userId = localStorage.getItem("userId");
+    console.log(userEmail, userRole, userId);
+    setUser({ email: userEmail, id: userId, role: userRole });
+  }, []);
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const response = await axios.get("http://localhost:9999/offer");
+        const api = "http://localhost:9999/offer";
+
+        if (user.role === "Candidate") {
+          api = `http://localhost:9999/offer/candidate/${user.id}`;
+        }
+        const response = await axios.get(api);
         setOffers(response.data.offers || []);
       } catch (error) {
         console.error("Error fetching offers:", error);

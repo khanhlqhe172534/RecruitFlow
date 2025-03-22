@@ -12,18 +12,16 @@ interviewRouter.get(
   interviewController.getInterviewByInterviewerId
 );
 interviewRouter.get(
-  "/interviewer/:candidateId",
+  "/candidate/:candidateId",
   interviewController.getInterviewByCandidateId
 );
 
 interviewRouter.post("/", interviewController.createInterview);
 interviewRouter.post("/invite", interviewController.inviteInterview);
 
-
 interviewRouter.put("/:id", interviewController.updateInterview);
 interviewRouter.put("/:id/pass", interviewController.markAsPass);
 interviewRouter.put("/:id/fail", interviewController.markAsFail);
 interviewRouter.put("/:id/cancel", interviewController.cancelInterview);
-
 
 module.exports = interviewRouter;
