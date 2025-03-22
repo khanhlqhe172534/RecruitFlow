@@ -34,6 +34,14 @@ const candidateSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Role"
     },
+    skills: [
+      {
+        //java, python
+        type: String,
+        // enum:"Java","Nodejs","C++",".Net","Python","JavaScript","PHP", "Ruby","Go","Rust",
+        required: true,
+      },
+    ],
 
   },
   { timestamps: true }

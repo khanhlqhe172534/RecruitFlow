@@ -94,6 +94,12 @@ const jobSchema = new Schema(
       type: Date,
     },
     feedback: { type: [String], default: ["", ""] },
+    applicants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Candidate",
+      },
+    ],
   },
   { timestamps: true }
 );
