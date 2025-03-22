@@ -56,7 +56,7 @@ const candidateSchema = new Schema(
         //   "Go",
         //   "Rust",
         // ];
-        required: true
+        // required: true
       }
     ]
 

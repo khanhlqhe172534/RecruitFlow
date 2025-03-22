@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { TextField, MenuItem, Typography } from "@mui/material";
+import { TextField, MenuItem, Typography, Autocomplete } from "@mui/material";
 import Modal from "react-bootstrap/Modal";
 import ButtonBootstrap from "react-bootstrap/Button";
 import axios from "axios";
@@ -16,6 +16,8 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
 
   const [filteredCandidates, setFilteredCandidates] = useState([]); // Danh sách candidates lọc theo job
   const [filteredCandidatesAdd, setFilteredCandidatesAdd] = useState([]); // Danh sách candidates lọc theo job
+
+  const [selectedOption, setSelectedOption] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -93,6 +95,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
           (job) => job.status.name === "open"
         );
         setJobs(openJobs);
+        setSelectedOption(openJobs);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data.");
@@ -432,23 +435,35 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
                     </MenuItem>
                   ))}
                 </TextField>
+                <Autocomplete
+                  options={jobs}
+                  getOptionLabel={(job) => job.job_name} // Hiển thị job_name trong dropdown
+                  value={
+                    jobs.find((job) => job._id === formDataAdd.job) || null
+                  } // Đặt giá trị mặc định
+                  onChange={(event, newValue) => {
+                    // console.log(formDataAdd.job);
 
-                <TextField
-                  select
-                  label="Select Job"
-                  name="job"
-                  value={formDataAdd.job}
-                  onChange={handleChangeAdd}
-                  fullWidth
-                  required
-                  className="mb-3"
-                >
-                  {jobs.map((job) => (
-                    <MenuItem key={job._id} value={job._id}>
-                      {`${job.job_name} `}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                    handleChangeAdd({
+                      target: {
+                        name: "job",
+                        value: newValue ? newValue._id : "",
+                      },
+                    });
+                  }}
+                  isOptionEqualToValue={(option, value) =>
+                    option.job_name === value.job_name
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Job"
+                      fullWidth
+                      required
+                      className="mb-3"
+                    />
+                  )}
+                />
 
                 <TextField
                   select
@@ -464,7 +479,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
                   {filteredCandidatesAdd.length > 0 ? (
                     filteredCandidatesAdd.map((candidate) => (
                       <MenuItem key={candidate._id} value={candidate._id}>
-                        {`${candidate.fullname} `}
+                        {`${candidate.fullname}`}
                       </MenuItem>
                     ))
                   ) : (
@@ -482,7 +497,6 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
                   className="mb-3"
                   InputLabelProps={{ shrink: true }}
                 />
-
                 <TextField
                   label="Meeting Link"
                   name="meeting_link"
@@ -491,7 +505,6 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
                   fullWidth
                   className="mb-3"
                 />
-
                 <TextField
                   label="Note"
                   name="note"
