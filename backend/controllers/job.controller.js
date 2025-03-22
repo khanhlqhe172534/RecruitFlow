@@ -929,23 +929,23 @@ const exportJobs = async (req, res) => {
 // Apply for a job, add candidate to applicant array of job
 const applyJob = async (req, res, next) => {
   const { jobId } = req.params;
-  const { candidateId } = req.body;
+  const { userId  } = req.body;
 
   try {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    const candidate = await Candidate.findById(candidateId);
+    const candidate = await Candidate.findById(userId );
     if (!candidate)
       return res.status(404).json({ message: "Candidate not found" });
 
-    if (job.applicants.includes(candidateId)) {
+    if (job.applicants.includes(userId )) {
       return res
         .status(400)
         .json({ message: "Candidate already applied for this job" });
     }
 
-    job.applicants.push(candidateId);
+    job.applicants.push(userId );
     await job.save();
 
     res.status(200).json({ message: "Applied successfully", job });
@@ -957,24 +957,24 @@ const applyJob = async (req, res, next) => {
 
 const unapplyJob = async (req, res, next) => {
   const { jobId } = req.params;
-  const { candidateId } = req.body;
+  const { userId  } = req.body;
 
   try {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    const candidate = await Candidate.findById(candidateId);
+    const candidate = await Candidate.findById(userId );
     if (!candidate)
       return res.status(404).json({ message: "Candidate not found" });
 
-    if (!job.applicants.includes(candidateId)) {
+    if (!job.applicants.includes(userId )) {
       return res
         .status(400)
         .json({ message: "Candidate has not applied for this job" });
     }
 
     job.applicants = job.applicants.filter(
-      (id) => id.toString() !== candidateId
+      (id) => id.toString() !== userId 
     );
     await job.save();
 

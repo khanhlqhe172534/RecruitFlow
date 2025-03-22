@@ -223,6 +223,7 @@ function JobDetails() {
           position: "top-right",
           autoClose: 3000,
         });
+        setRefreshTrigger((prev) => !prev);
       } else {
         toast.error("Failed to apply", {
           position: "top-right",
@@ -253,6 +254,7 @@ function JobDetails() {
           position: "top-right",
           autoClose: 3000,
         });
+        setRefreshTrigger((prev) => !prev);
       } else {
         toast.error("Failed to cancel application", {
           position: "top-right",
@@ -610,7 +612,7 @@ function JobDetails() {
                         job.applicants.includes(user.id) && (
                           <Button
                             variant="danger"
-                            className="btn btn-danger col-md-2 btn-md float-end me-2 mt-4"
+                            className="btn btn-danger col-md-3 btn-md float-end me-2 mt-4"
                             style={{ borderRadius: "8px" }}
                             onClick={() => handleCancelApply(job._id)}
                           >

@@ -23,6 +23,7 @@ function JobManagement() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(false);
   const [exportErrors, setExportErrors] = useState({
     startDate: "",
     endDate: "",
@@ -72,6 +73,8 @@ function JobManagement() {
     ]
   );
 
+  const userId = localStorage.getItem("userId");
+
   useEffect(() => {
     const fetchUserAndJobs = async () => {
       try {
@@ -97,6 +100,7 @@ function JobManagement() {
     workingType,
     levelFilter,
     experienceFilter,
+    reloadTrigger,
   ]);
 
   const handleExport = async () => {
@@ -316,6 +320,7 @@ function JobManagement() {
           position: "top-right",
           autoClose: 3000,
         });
+        setReloadTrigger(prev => !prev);
       } else {
         toast.error("Failed to apply", {
           position: "top-right",
@@ -346,6 +351,7 @@ function JobManagement() {
           position: "top-right",
           autoClose: 3000,
         });
+        setReloadTrigger(prev => !prev);
       } else {
         toast.error("Failed to cancel application", {
           position: "top-right",
@@ -472,57 +478,67 @@ function JobManagement() {
                                 {formatDate(job.start_date)} -{" "}
                                 {formatDate(job.end_date)}
                               </p>
-                              <span
-                                className="fw-bold"
-                                style={{ fontSize: "0.95rem" }}
-                              >
-                                Salary:&nbsp;
+                              {user.role !== "Candidate" ? (
                                 <span
-                                  className={`${
-                                    job.salaryChecked === true
-                                      ? "text-success"
+                                  className="fw-bold"
+                                  style={{ fontSize: "0.95rem" }}
+                                >
+                                  Salary:&nbsp;
+                                  <span
+                                    className={`${
+                                      job.salaryChecked === true
+                                        ? "text-success"
+                                        : job.salaryChecked === false
+                                        ? "text-danger"
+                                        : "text-warning"
+                                    } fw-bold`}
+                                  >
+                                    {job.salaryChecked === true
+                                      ? "Approved"
                                       : job.salaryChecked === false
-                                      ? "text-danger"
-                                      : "text-warning"
-                                  } fw-bold`}
-                                >
-                                  {job.salaryChecked === true
-                                    ? "Approved"
-                                    : job.salaryChecked === false
-                                    ? "Rejected"
-                                    : "Pending"}
-                                </span>
-                                &nbsp;- Benefit:&nbsp;
-                                <span
-                                  className={`${
-                                    job.benefitChecked === true
-                                      ? "text-success"
+                                      ? "Rejected"
+                                      : "Pending"}
+                                  </span>
+                                  &nbsp;- Benefit:&nbsp;
+                                  <span
+                                    className={`${
+                                      job.benefitChecked === true
+                                        ? "text-success"
+                                        : job.benefitChecked === false
+                                        ? "text-danger"
+                                        : "text-warning"
+                                    } fw-bold`}
+                                  >
+                                    {job.benefitChecked === true
+                                      ? "Approved"
                                       : job.benefitChecked === false
-                                      ? "text-danger"
-                                      : "text-warning"
-                                  } fw-bold`}
-                                >
-                                  {job.benefitChecked === true
-                                    ? "Approved"
-                                    : job.benefitChecked === false
-                                    ? "Rejected"
-                                    : "Pending"}
+                                      ? "Rejected"
+                                      : "Pending"}
+                                  </span>
                                 </span>
-                              </span>
+                              ) : null}
 
                               {/* Nếu role là "Candidate" thì hiển thị Apply hoặc Cancel Apply */}
                               {user.role === "Candidate" ? (
-                                job.applicants.includes(user.userId) ? (
+                                job.applicants.includes(userId) ? (
                                   <button
                                     className="btn btn-danger ms-3"
-                                    onClick={() => handleCancelApply(job._id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCancelApply(job._id);
+                                    }}
+                                    variant="danger"
                                   >
                                     Cancel Apply
                                   </button>
                                 ) : (
                                   <button
-                                    className="btn btn-primary ms-3"
-                                    onClick={() => handleApply(job._id)}
+                                    className="btn btn-success ms-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApply(job._id);
+                                    }}
+                                    variant="success"
                                   >
                                     Apply Job
                                   </button>
