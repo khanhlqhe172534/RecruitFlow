@@ -5,11 +5,22 @@ import {
   Table,
   Form,
   Button,
-  Modal
+  Modal,
+  Spinner
 } from "react-bootstrap";
-import { Eye, Pencil, UserPlus, ChevronsUpDown } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  UserPlus,
+  ChevronsUpDown,
+  Import,
+  FileUp
+} from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDropzone } from "react-dropzone";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
 
 function CandidateManagement() {
   const nav = useNavigate();
@@ -35,6 +46,75 @@ function CandidateManagement() {
     status: "67bc5a667ddc08921b739694", // default status = activated
     role: "67bc59b77ddc08921b73968f" // default role = candidate
   });
+
+  // import excel start
+
+  const [file, setFile] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importStatus, setImportStatus] = useState("");
+  const [isImporting, setIsImporting] = useState(false); // Trạng thái import
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // Trạng thái vô hiệu hóa nút
+  const [errorImport, setErrorImport] = useState([]);
+
+  const onDrop = (acceptedFiles) => {
+    setFile(acceptedFiles[0]);
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: ".xlsx, .xls" // Chỉ chấp nhận file Excel
+  });
+
+  const handleImportCandidates = async () => {
+    if (!file) {
+      toast.error("Please select a file to upload.");
+      return;
+    }
+
+    // Kiểm tra loại file
+    const allowedTypes = [".xlsx", ".xls"];
+    const fileExtension = file.name.split(".").pop();
+
+    if (!allowedTypes.includes(`.${fileExtension}`)) {
+      toast.error("Invalid file type. Only .xlsx or .xls files are allowed.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsImporting(true); // Bắt đầu quá trình import
+    setIsButtonDisabled(true); // Vô hiệu hóa nút khi bắt đầu import
+
+    try {
+      setImportStatus("Importing...");
+
+      const response = await axios.post(
+        "http://localhost:9999/candidate/import",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" }
+        }
+      );
+
+      setImportStatus("Import successful!");
+      // Reset state
+      setFile(null);
+      setShowImportModal(false);
+      toast.success(response.data.message);
+    } catch (error) {
+      setImportStatus("Import failed!");
+      toast.error("Error importing candidates.");
+      console.log("Error importing candidates:", error);
+      setErrorImport(error.response.data.errors);
+    } finally {
+      setIsImporting(false); // Kết thúc quá trình import
+      setIsButtonDisabled(false); // Bỏ vô hiệu hóa nút
+    }
+  };
+
+  // import excel end
+
   const [errors, setErrors] = useState({});
 
   const usersPerPage = 6;
@@ -61,7 +141,7 @@ function CandidateManagement() {
         setFilteredCandidates(res);
       })
       .catch((err) => console.log(err));
-  }, []);
+  }, [file]);
 
   // Handle search
   useEffect(() => {
@@ -276,7 +356,7 @@ function CandidateManagement() {
       <Container fluid className="p-4 vh-100 bg-light">
         <Row className="card p-4 rounded shadow border-0 overflow-auto">
           <Row className="mb-4">
-            <Col md={6}>
+            <Col md={8}>
               <Form.Control
                 className="form-control bg-light rounded-pill"
                 type="text"
@@ -285,8 +365,8 @@ function CandidateManagement() {
                 value={searchInput}
               />
             </Col>
-            <Col md={3}></Col>
-            <Col md={3} className="text-end">
+
+            <Col md={2} className="text-end">
               {hasRecruiterPermission && (
                 <Button
                   variant="warning"
@@ -296,6 +376,101 @@ function CandidateManagement() {
                   <UserPlus className="pb-1" size={20} /> Add Candidate
                 </Button>
               )}
+            </Col>
+            <Col md={2}>
+              {hasRecruiterPermission && (
+                <Button
+                  variant="success"
+                  className="rounded-pill"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={isButtonDisabled}
+                >
+                  <Import className="pb-1" size={20} /> Import
+                </Button>
+              )}
+
+              {/* Modal import excel start */}
+              <Modal
+                show={showImportModal}
+                onHide={() => {
+                  setFile(null);
+                  setErrorImport([]);
+                  setImportStatus("");
+                  setIsImporting(false);
+                  setIsButtonDisabled(false);
+                  setShowImportModal(false);
+                }}
+                centered
+              >
+                <Modal.Header closeButton>
+                  <Modal.Title>Import Candidates from File</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  <Form>
+                    <div
+                      {...getRootProps()}
+                      className="dropzone"
+                      style={{
+                        border: "2px dashed #ccc",
+                        padding: "20px",
+                        textAlign: "center"
+                      }}
+                    >
+                      <input {...getInputProps()} />
+                      <FileUp className="pb-1 mb-2" size={60} />
+                      <p>
+                        Drag & drop an Excel (.xlsx, .xls) file here, or click
+                        to select a file
+                      </p>
+                    </div>
+                  </Form>
+                  {file && (
+                    <div>
+                      <strong>Selected File:</strong> {file.name}
+                    </div>
+                  )}
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setFile(null);
+                      setErrorImport([]);
+                      setImportStatus("");
+                      setIsImporting(false);
+                      setIsButtonDisabled(false);
+                      setShowImportModal(false);
+                    }}
+                    disabled={isButtonDisabled}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleImportCandidates}
+                    disabled={isButtonDisabled} // Vô hiệu hóa nút khi đang import
+                  >
+                    {isImporting ? (
+                      <Spinner animation="border" size="sm" /> // Hiển thị spinner khi đang import
+                    ) : (
+                      "Import"
+                    )}
+                  </Button>
+
+                  {/* Displaying the errors below the file selection */}
+                  {errorImport.length > 0 && (
+                    <div className="mt-3 text-danger">
+                      <h3>Import Errors:</h3>
+                      <ul>
+                        {errorImport.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </Modal.Footer>
+              </Modal>
+              {/* Modal import excel end */}
             </Col>
           </Row>
           <Row>
@@ -822,6 +997,15 @@ function CandidateManagement() {
           </Modal.Footer>
         </Modal>
       </Container>
+      {/* ToastContainer for notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

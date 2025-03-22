@@ -180,6 +180,12 @@ function InterviewManagement() {
                   bgColor = "#E0E0E0"; // Light gray background
                   textColor = "#6C757D"; // Medium gray text
                   borderColor = "#495057"; // Dark gray border
+                } else if (
+                  event.interview.status.name === "waiting for approved"
+                ) {
+                  bgColor = "#FFF3CD"; // Light yellow background
+                  textColor = "#856404"; // Dark yellow text
+                  borderColor = "#FFC107"; // Yellow border
                 }
 
                 return {
