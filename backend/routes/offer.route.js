@@ -13,5 +13,5 @@ offerRouter.delete("/:id", offerController.deleteOfferById);
 offerRouter.put("/:id/cancel", offerController.cancelOffer);
 offerRouter.put("/:id/accept", offerController.acceptOffer);
 offerRouter.put("/:id/reject", offerController.rejectOffer);
-
+offerRouter.get("/candidate/:id", offerController.getOfferByCandidateId);
 module.exports = offerRouter;

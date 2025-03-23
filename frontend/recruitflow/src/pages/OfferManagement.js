@@ -23,22 +23,28 @@ function OfferManagement() {
     setUser({ email: userEmail, id: userId, role: userRole });
   }, []);
   useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        const api = "http://localhost:9999/offer";
-
-        if (user.role === "Candidate") {
-          api = `http://localhost:9999/offer/candidate/${user.id}`;
+    if (user.role) {
+      // Chỉ chạy khi user đã có dữ liệu
+      const fetchOffers = async () => {
+        try {
+          let api = "http://localhost:9999/offer";
+          console.log("user", user);
+          if (user.role === "Candidate") {
+            console.log("using candidate API");
+            api = `http://localhost:9999/offer/candidate/${user.id}`;
+          }
+          console.log("api", api);
+          const response = await axios.get(api);
+          setOffers(response.data.offers || []);
+          console.log(response.data);
+        } catch (error) {
+          console.error("Error fetching offers:", error);
+          toast.error("Failed to load data.");
         }
-        const response = await axios.get(api);
-        setOffers(response.data.offers || []);
-      } catch (error) {
-        console.error("Error fetching offers:", error);
-        toast.error("Failed to load data.");
-      }
-    };
-    fetchOffers();
-  }, []);
+      };
+      fetchOffers();
+    }
+  }, [user]);
 
   const handleViewClick = (offerId) => {
     navigate(`/offer/${offerId}`);

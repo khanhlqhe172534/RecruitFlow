@@ -90,6 +90,84 @@ async function getAllOffer(req, res, next) {
   }
 }
 
+// Get all offers by candidate ID
+
+async function getOfferByCandidateId(req, res, next) {
+  try {
+    const candidateId = new mongoose.Types.ObjectId(req.params.id);
+
+    const offers = await Offer.aggregate([
+      {
+        $lookup: {
+          from: "interviews",
+          localField: "interview",
+          foreignField: "_id",
+          as: "interview",
+        },
+      },
+      { $unwind: "$interview" },
+      { $match: { "interview.candidate": candidateId } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: "$createdBy" },
+      {
+        $lookup: {
+          from: "jobs",
+          localField: "interview.job",
+          foreignField: "_id",
+          as: "interview.job",
+        },
+      },
+      { $unwind: "$interview.job" },
+      {
+        $lookup: {
+          from: "candidates",
+          localField: "interview.candidate",
+          foreignField: "_id",
+          as: "interview.candidate",
+        },
+      },
+      { $unwind: "$interview.candidate" },
+      {
+        $addFields: {
+          "interview.candidate.fullname": "$interview.candidate.fullname",
+          "createdBy.fullname": "$createdBy.fullname",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          interview: 1,
+          offerType: 1,
+          offerFrom: 1,
+          offerTo: 1,
+          salary: 1,
+          createdBy: { _id: "$createdBy._id", fullname: "$createdBy.fullname" },
+          status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          updatedBy: 1,
+        },
+      },
+    ]);
+
+    if (!offers.length) {
+      return res.status(404).json({ message: "No offers found" });
+    }
+
+    res.status(200).json({ offers });
+  } catch (err) {
+    console.error("Error getting offers:", err);
+    next(err);
+  }
+}
+
 //============ Create new offer ===============================================================
 async function createOffer(req, res, next) {
   try {
@@ -718,6 +796,7 @@ const offerController = {
   cancelOffer,
   acceptOffer,
   rejectOffer,
+  getOfferByCandidateId,
 };
 
 module.exports = offerController;

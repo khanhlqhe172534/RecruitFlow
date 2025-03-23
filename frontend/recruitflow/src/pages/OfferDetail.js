@@ -496,7 +496,7 @@ function OfferDetail() {
           </div>
         </Card>
         {offer.status?.name === "waiting for approved" &&
-          user?.role === "Recruitment Manager" && (
+          user?.role === "Candidate" && (
             <div className="row">
               <div className="col-1">
                 <button
