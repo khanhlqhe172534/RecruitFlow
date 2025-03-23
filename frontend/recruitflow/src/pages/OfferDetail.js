@@ -214,7 +214,7 @@ function OfferDetail() {
           </div>
           <div className="col-1"></div>
           <div className="col-1">
-            {offer.status?.name === "waiting for approved" &&
+            {["waiting for approved", "reject"].includes(offer.status?.name) &&
               user?.role === "Recruitment Manager" && (
                 <button
                   className="btn btn-primary w-100"
