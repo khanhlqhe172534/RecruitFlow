@@ -24,4 +24,7 @@ interviewRouter.put("/:id/pass", interviewController.markAsPass);
 interviewRouter.put("/:id/fail", interviewController.markAsFail);
 interviewRouter.put("/:id/cancel", interviewController.cancelInterview);
 
+interviewRouter.put("/:id/accept", interviewController.acceptInterview);
+interviewRouter.put("/:id/reject", interviewController.rejectInterview);
+
 module.exports = interviewRouter;

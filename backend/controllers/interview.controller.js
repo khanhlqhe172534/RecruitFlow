@@ -7,7 +7,7 @@ async function getAllInterview(req, res, next) {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Đặt giờ phút giây về 0 để so sánh chính xác
 
-    // Tìm tất cả interview cần cập nhật
+    // Nếu interview đã qua ngày mà ko có kết quả thì cập nhật status thành "cancel"
     const interviewsToUpdate = await Interview.find({
       interview_date: { $lt: today }, // interview_date trước hôm nay
       status: "67bc5a667ddc08921b739697", // open
@@ -19,6 +19,17 @@ async function getAllInterview(req, res, next) {
         { _id: { $in: interviewsToUpdate.map((i) => i._id) } },
         { $set: { status: "67bc5a667ddc08921b739696" } } // cancel
       );
+    }
+    // nếu invite ko dc accept trong 1 ngày thì xóa
+    const interviewToDelete = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739695", // waiting for approved
+    });
+
+    if (interviewToDelete.length > 0) {
+      await Interview.deleteMany({
+        _id: { $in: interviewToDelete.map((i) => i._id) },
+      });
     }
 
     // Trả về tất cả interview sau khi cập nhật
@@ -37,6 +48,33 @@ async function getAllInterview(req, res, next) {
 async function getInterviewByInterviewerId(req, res, next) {
   try {
     const { interviewrId } = req.params;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt giờ phút giây về 0 để so sánh chính xác
+
+    // Nếu interview đã qua ngày mà ko có kết quả thì cập nhật status thành "cancel"
+    const interviewsToUpdate = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739697", // open
+    });
+
+    if (interviewsToUpdate.length > 0) {
+      // Cập nhật status của các interview này thành "67bc5a667ddc08921b739696"
+      await Interview.updateMany(
+        { _id: { $in: interviewsToUpdate.map((i) => i._id) } },
+        { $set: { status: "67bc5a667ddc08921b739696" } } // cancel
+      );
+    }
+    // nếu invite ko dc accept trong 1 ngày thì xóa
+    const interviewToDelete = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739695", // waiting for approved
+    });
+
+    if (interviewToDelete.length > 0) {
+      await Interview.deleteMany({
+        _id: { $in: interviewToDelete.map((i) => i._id) },
+      });
+    }
 
     // Chuyển đổi id thành ObjectId để đảm bảo kiểu dữ liệu khớp
     const objectId = new mongoose.Types.ObjectId(interviewrId);
@@ -63,6 +101,33 @@ async function getInterviewByInterviewerId(req, res, next) {
 async function getInterviewByCandidateId(req, res, next) {
   try {
     const { candidateId } = req.params;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt giờ phút giây về 0 để so sánh chính xác
+
+    // Nếu interview đã qua ngày mà ko có kết quả thì cập nhật status thành "cancel"
+    const interviewsToUpdate = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739697", // open
+    });
+
+    if (interviewsToUpdate.length > 0) {
+      // Cập nhật status của các interview này thành "67bc5a667ddc08921b739696"
+      await Interview.updateMany(
+        { _id: { $in: interviewsToUpdate.map((i) => i._id) } },
+        { $set: { status: "67bc5a667ddc08921b739696" } } // cancel
+      );
+    }
+    // nếu invite ko dc accept trong 1 ngày thì xóa
+    const interviewToDelete = await Interview.find({
+      interview_date: { $lt: today }, // interview_date trước hôm nay
+      status: "67bc5a667ddc08921b739695", // waiting for approved
+    });
+
+    if (interviewToDelete.length > 0) {
+      await Interview.deleteMany({
+        _id: { $in: interviewToDelete.map((i) => i._id) },
+      });
+    }
 
     // Chuyển đổi id thành ObjectId để đảm bảo kiểu dữ liệu khớp
     const objectId = new mongoose.Types.ObjectId(candidateId);
@@ -744,7 +809,7 @@ async function cancelInterview(req, res, next) {
       .populate("status");
 
     if (!interview) {
-      return res.status(404).json({ message: "Offer not found" });
+      return res.status(404).json({ message: "Interview not found" });
     }
 
     interview.status = "67bc5a667ddc08921b739696"; // Canceled status ID
@@ -841,6 +906,50 @@ async function cancelInterview(req, res, next) {
   }
 }
 
+async function acceptInterview(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    // Tìm offer và populate thông tin phỏng vấn
+    const interview = await Interview.findById(id)
+      .populate("candidate")
+      .populate("status");
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    interview.status = "67bc5a667ddc08921b739697"; // Opem status ID
+
+    const updateQueries = [interview.save()];
+
+    res.status(200).json({ message: "Interview accepted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function rejectInterview(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    // Tìm offer và populate thông tin phỏng vấn
+    const interview = await Interview.findById(id)
+      .populate("candidate")
+      .populate("status");
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    //delete invite interview if rejected
+    await Interview.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Interview rejected successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
 const interviewController = {
   getAllInterview,
   createInterview,
@@ -852,6 +961,8 @@ const interviewController = {
   getInterviewByCandidateId,
   cancelInterview,
   inviteInterview,
+  acceptInterview,
+  rejectInterview,
 };
 
 module.exports = interviewController;

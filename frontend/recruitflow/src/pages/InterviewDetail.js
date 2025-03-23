@@ -54,6 +54,8 @@ function InterviewDetail() {
     salary: "",
     createdBy: "", // Initialize createdBy as an empty string
   });
+  const [openAccept, setOpenAccept] = useState(false);
+  const [openReject, setOpenReject] = useState(false);
   const navigate = useNavigate();
   // tab change hook
   const [tabValue, setTabValue] = useState("1");
@@ -341,6 +343,38 @@ function InterviewDetail() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleOpenAcceptModal = () => {
+    setOpenAccept(true);
+  };
+  const handleCloseAcceptModal = () => {
+    setOpenAccept(false);
+  };
+  const handleSubmitAccept = async () => {
+    try {
+      await axios.put(`http://localhost:9999/interview/${id}/accept`);
+      handleCloseAcceptModal();
+      navigate("/interview");
+    } catch (error) {
+      console.error("Error updating interview status to fail:", error);
+    }
+  };
+
+  const handleOpenRejectModal = () => {
+    setOpenReject(true);
+  };
+  const handleCloseRejectModal = () => {
+    setOpenReject(false);
+  };
+  const handleSubmitReject = async () => {
+    try {
+      await axios.put(`http://localhost:9999/interview/${id}/reject`);
+      handleCloseRejectModal();
+      navigate("/interview");
+    } catch (error) {
+      console.error("Error updating interview status to fail:", error);
+    }
+  };
+
   return (
     <div className="d-flex vh-100">
       <div className="container p-4 vh-100">
@@ -417,6 +451,109 @@ function InterviewDetail() {
               </h3>
             )}
           </div>
+          {/* show accept/reject button for candidate if interview status is
+          waiting for approved */}
+          {interview.status.name === "waiting for approved" &&
+            user.role === "Candidate" && (
+              <div className="col-3">
+                <div className="row">
+                  <div className="col">
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      onClick={handleOpenAcceptModal}
+                    >
+                      Accept Invite
+                    </button>
+
+                    <Modal
+                      show={openAccept}
+                      onHide={handleCloseAcceptModal}
+                      centered
+                    >
+                      <Modal.Body>
+                        <div className="text-center p-4">
+                          <CheckIcon
+                            className="text-success"
+                            style={{ fontSize: 64 }}
+                          />
+                          <p className="h3 mt-3">Hang on a sec!</p>
+                          <p>
+                            You confirm to Accept this interview invitation ?
+                          </p>
+
+                          <div className="row mt-5">
+                            <div className="col-6">
+                              <button
+                                className="btn btn-success w-100 rounded-4"
+                                onClick={handleSubmitAccept}
+                              >
+                                Yes
+                              </button>
+                            </div>
+                            <div className="col-6">
+                              <button
+                                className="btn btn-outline-success w-100 rounded-4"
+                                onClick={handleCloseAcceptModal}
+                              >
+                                Let Me Rethink
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </Modal.Body>
+                    </Modal>
+                  </div>
+                  <div className="col">
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={handleOpenRejectModal}
+                    >
+                      Reject Invite
+                    </button>
+
+                    <Modal
+                      show={openReject}
+                      onHide={handleCloseRejectModal}
+                      centered
+                    >
+                      <Modal.Body>
+                        <div className="text-center p-4">
+                          <CheckIcon
+                            className="text-danger"
+                            style={{ fontSize: 64 }}
+                          />
+                          <p className="h3 mt-3">Hang on a sec!</p>
+                          <p>
+                            You confirm to Reject this interview invitation ?
+                          </p>
+
+                          <div className="row mt-5">
+                            <div className="col-6">
+                              <button
+                                className="btn btn-danger w-100 rounded-4"
+                                onClick={handleSubmitReject}
+                              >
+                                Yes
+                              </button>
+                            </div>
+                            <div className="col-6">
+                              <button
+                                className="btn btn-outline-danger w-100 rounded-4"
+                                onClick={handleCloseRejectModal}
+                              >
+                                Let Me Rethink
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </Modal.Body>
+                    </Modal>
+                  </div>
+                </div>
+              </div>
+            )}
           {/* Show "Create New Offer" Button if Result is "Pass" */}
           {interview.result === "Pass" &&
             interview.status.name == "done" && //done
