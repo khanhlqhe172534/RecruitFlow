@@ -14,9 +14,10 @@ import JobManagement from "./pages/JobManagement";
 import JobDetails from "./pages/JobDetails";
 import InterviewDetail from "./pages/InterviewDetail";
 import OfferDetail from "./pages/OfferDetail";
-import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 import EditProfile from "./pages/EditProfile";
 import RequestManagement from "./pages/RequestManagement";
+import ResetPassword from "./pages/ResetPassword";
 function ProtectedRoute({ isAuthenticated, children }) {
   return isAuthenticated ? children : <Navigate to="/no-access" />;
 }
@@ -43,7 +44,11 @@ function App() {
           element={<Login setAuth={setIsAuthenticated} />}
         />
         <Route
-          path="/reset-password"
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+        <Route
+          path="/reset-password/:token"
           element={<ResetPassword />}
         />
 

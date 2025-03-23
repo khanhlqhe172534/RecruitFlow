@@ -1,39 +1,64 @@
-import { Button } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Logo from "../LandingPage-assets/img/logo.png";
 
-function ResetPassword() {
-  const { token } = useParams();
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+function ForgotPassword() {
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const handleChangePassword = async (e) => {
+
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
+    setLoading(true);
     try {
-      await axios.post(`http://localhost:9999/user/reset-password/${token}`, {
-        password,
-      });
-      setSuccess(true);
-      setTimeout(() => navigate("/login"), 3000);
+      // Get all users
+      const response = await axios.post(
+        "http://localhost:9999/user/forgot-password",
+        {
+          email: email,
+        }
+      );
+      const user = response.data.user;
+
+      if (user) {
+        // Check if the user is deactivated
+        if (
+          user.status.name === "deactivated" ||
+          user.status === "deactivated"
+        ) {
+          setError("Your account is deactivated. Please contact support.");
+          setLoading(false);
+          return;
+        }
+        setSuccess(true);
+      } else {
+        setError("Invalid email or password.");
+        setLoading(false);
+      }
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.message || "Something went wrong.");
+        setError(
+          "Server error: " +
+            (err.response.data.message || "Something went wrong")
+        );
+      } else if (err.request) {
+        setError(
+          "Unable to connect to the server. Please check if the server is running."
+        );
       } else {
         setError("An error occurred. Please try again.");
       }
+      console.error("ResetPassword error:", err);
+    } finally {
+      setLoading(false);
     }
   };
+  useEffect(() => {}, [success]);
   return (
     <>
       <section
@@ -85,55 +110,37 @@ function ResetPassword() {
                     <div className="row">
                       <div className="col-12">
                         <div className="mb-4">
-                          <h3>Reset Password</h3>
+                          <h3>Forgot Password</h3>
+                          <p>
+                            Remember your password?{" "}
+                            <a href="/login">Login here</a>
+                          </p>
                         </div>
                       </div>
                     </div>
                     {error && <p style={{ color: "red" }}>{error}</p>}
                     <form
                       autoComplete="off"
-                      onSubmit={handleChangePassword}
+                      onSubmit={handleForgotPassword}
                     >
                       <div className="row gy-3 overflow-hidden">
                         <div className="col-12">
                           <div className="form-floating mb-3">
                             <input
-                              type="password"
+                              type="email"
                               className="form-control"
-                              name="password"
-                              id="password"
-                              placeholder="New Password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
+                              name="email"
+                              id="email"
+                              placeholder="name@example.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
                               required
                             />
                             <label
-                              htmlFor="password"
+                              htmlFor="email"
                               className="form-label"
                             >
-                              New Password
-                            </label>
-                          </div>
-                        </div>
-                        <div className="col-12">
-                          <div className="form-floating mb-3">
-                            <input
-                              type="password"
-                              name="confirmPassword"
-                              className="form-control"
-                              id="confirmPassword"
-                              placeholder="Confirm Password"
-                              value={confirmPassword}
-                              onChange={(e) =>
-                                setConfirmPassword(e.target.value)
-                              }
-                              required
-                            />
-                            <label
-                              htmlFor="confirmPassword"
-                              className="form-label"
-                            >
-                              Confirm Password
+                              Email
                             </label>
                           </div>
                         </div>
@@ -143,7 +150,14 @@ function ResetPassword() {
                               className="btn btn-primary btn-lg"
                               type="submit"
                             >
-                              Log in
+                              {loading ? (
+                                <CircularProgress
+                                  size={24}
+                                  style={{ color: "white" }}
+                                />
+                              ) : (
+                                "Send"
+                              )}
                             </button>
                           </div>
                         </div>
@@ -179,4 +193,4 @@ function ResetPassword() {
   );
 }
 
-export default ResetPassword;
+export default ForgotPassword;
