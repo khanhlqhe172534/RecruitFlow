@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
-
+const crypto = require("crypto");
 const Schema = mongoose.Schema;
 
 const candidateSchema = new Schema(
@@ -57,9 +57,10 @@ const candidateSchema = new Schema(
         //   "Rust",
         // ];
         // required: true
-      }
-    ]
-
+      },
+    ],
+    passwordResetToken: String,
+    passwordResetExpires: Date,
   },
   { timestamps: true }
 );
@@ -75,7 +76,16 @@ candidateSchema.methods.correctPassword = async function (userPassword) {
   const correct = await bcrypt.compare(userPassword, this.password);
   return correct;
 };
-
+candidateSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  console.log({ resetToken }, this.passwordResetToken);
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  return resetToken;
+};
 const Candidate = mongoose.model("Candidate", candidateSchema);
 
 module.exports = Candidate;

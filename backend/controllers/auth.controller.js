@@ -1,8 +1,10 @@
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 const User = require("../models/user.model");
 const Candidate = require("../models/candidate.model");
+
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -83,39 +85,51 @@ const isLoggedIn = async (req, res, next) => {
     message: "User haven't logged in!",
   });
 };
-// forgotPassword = catchAsync(async (req, res, next) => {
-//   const user = await User.findOne({ email: req.body.email });
-//   if (!user) {
-//     return next(new AppError("There is no user with this email address.", 404));
-//   }
-//   const resetToken = user.createPasswordResetToken();
-//   await user.save({ validateBeforeSave: false });
-//   try {
-//     const resetURL = `${req.protocol}://${req.get(
-//       "host"
-//     )}/api/v1/users/reset-password/${resetToken}`;
-//     await new Email(user, resetURL).sendResetPassword();
-//     // await sendEmail({
-//     //   email: user.email,
-//     //   subject: 'Your password reset token valid for 10 min',
-//     //   message,
-//     // });
-//     res.status(200).json({
-//       status: "success",
-//       message: "Token sent to email!",
-//     });
-//   } catch (error) {
-//     user.passwordResetToken = undefined;
-//     user.passwordResetExpires = undefined;
-//     await user.save({ validateBeforeSave: false });
-//     return next(
-//       new AppError(
-//         "There was an error in sending the email.Try again later!",
-//         500
-//       )
-//     );
-//   }
-// });
+const forgotPassword = async (req, res, next) => {
+  let user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    user = await Candidate.findOne({ email: req.body.email });
+  }
+  if (!user) {
+    return res
+      .status(404)
+      .json({ message: "There is no user with this email address." });
+  }
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+  try {
+    const frontendURL = "http://localhost:3000";
+    const resetURL = `${frontendURL}/reset-password/${resetToken}`;
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Your password reset token valid for 10 min",
+      text: `Hello ${user.fullname},\n\nYour account has been reseted. Here is your new password rest link: ${resetURL}\n\nPlease keep it secure.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({
+      status: "success",
+      message: "Token sent to email!",
+      user: user,
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    return res.status(500).json({
+      message: "There was an error in sending the email.Try again later!",
+    });
+  }
+};
 const generateRandomPassword = (length = 8) => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
@@ -127,35 +141,29 @@ const generateRandomPassword = (length = 8) => {
   return password;
 };
 const resetPassword = async (req, res, next) => {
-  let user = await User.findOne({ email: req.body.email });
+  const hashToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+  let user = await User.findOne({
+    passwordResetToken: hashToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
   if (!user) {
-    user = await Candidate.findOne({ email: req.body.email });
+    user = await Candidate.findOne({
+      passwordResetToken: hashToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
   }
   if (!user) {
     return res
-      .status(404)
-      .json({ message: "There is no user with this email address." });
+      .status(400)
+      .json({ message: "Token is invalid or has expired!" });
   }
-  const password = generateRandomPassword();
-  user.password = password;
+  user.password = req.body.password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
   await user.save();
-  // Send password via email
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: req.body.email,
-    subject: "Your Account Password",
-    text: `Hello ${user.fullname},\n\nYour account has been reseted. Here is your new password: ${password}\n\nPlease keep it secure.`,
-  };
-
-  await transporter.sendMail(mailOptions);
   createSendToken(user, 200, res);
 };
 const updatePassword = async (req, res, next) => {
@@ -177,6 +185,7 @@ const authController = {
   isLoggedIn,
   resetPassword,
   updatePassword,
+  forgotPassword,
 };
 
 module.exports = authController;

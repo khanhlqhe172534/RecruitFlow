@@ -6,8 +6,13 @@ const changeRequestSchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: "User",
       required: true,
+      refPath: "userType", // Dynamically determines the referenced model
+    },
+    userType: {
+      type: String,
+      required: true,
+      enum: ["User", "Candidate"], // Allowed referenced models
     },
     requestedChanges: {
       fullname: { type: String, trim: true },

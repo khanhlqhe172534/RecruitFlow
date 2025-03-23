@@ -26,14 +26,18 @@ function EditProfile() {
   const [requestToDelete, setRequestToDelete] = useState(null);
 
   const userId = localStorage.getItem("userId"); // Assuming user ID is stored in localStorage
+  const userRole = localStorage.getItem("userRole"); // Assuming user ID is stored in localStorage
 
   // Fetch user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:9999/user/by-id/${userId}`
-        );
+        let response;
+        if (userRole.toLowerCase() == "candidate") {
+          response = await fetch(`http://localhost:9999/candidate/${userId}`);
+        } else {
+          response = await fetch(`http://localhost:9999/user/by-id/${userId}`);
+        }
         if (!response.ok) throw new Error("Failed to fetch user profile");
         const data = await response.json();
         setUser(data);

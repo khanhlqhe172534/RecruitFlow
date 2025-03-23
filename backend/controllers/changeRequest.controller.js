@@ -1,5 +1,6 @@
 const ChangeRequest = require("../models/changeRequest.model");
 const User = require("../models/user.model");
+const Candidate = require("../models/candidate.model");
 
 // Employee submits a change request
 const submitChangeRequest = async (req, res) => {
@@ -16,9 +17,14 @@ const submitChangeRequest = async (req, res) => {
         .status(400)
         .json({ message: "You already have a pending request." });
     }
-
+    const user = await User.findById(userId);
+    let userType = "User";
+    if (!user) {
+      userType = "Candidate";
+    }
     const newRequest = new ChangeRequest({
       user: userId,
+      userType: userType,
       requestedChanges,
     });
 
@@ -49,7 +55,14 @@ const approveOrRejectRequest = async (req, res) => {
 
     if (status === "Approved") {
       // Apply the changes to the user's profile
-      await User.findByIdAndUpdate(request.user, request.requestedChanges);
+      if (userType == "User") {
+        await User.findByIdAndUpdate(request.user, request.requestedChanges);
+      } else {
+        await Candidate.findByIdAndUpdate(
+          request.user,
+          request.requestedChanges
+        );
+      }
     }
 
     await request.save();
@@ -78,9 +91,7 @@ const getUserRequests = async (req, res) => {
     const userRequests = await ChangeRequest.find({ user: userId });
 
     if (!userRequests.length) {
-      return res
-        .status(404)
-        .json({ message: "No requests found for this user." });
+      return res.status(200).json([]);
     }
 
     res.json(userRequests);
