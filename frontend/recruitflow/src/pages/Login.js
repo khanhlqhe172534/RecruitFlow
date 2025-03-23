@@ -41,9 +41,11 @@ function Login({ setAuth }) {
 
         // Set authentication state
         setAuth(true);
-
+        if (user.role.name.toLowerCase() == "candidate") {
+          navigate("/job");
+        }
         // Redirect to dashboard
-        navigate("/dashboard");
+        else navigate("/dashboard");
       } else {
         setError("Invalid email or password.");
       }
@@ -117,7 +119,7 @@ function Login({ setAuth }) {
                         <h3>Sign in</h3>
                         <p>
                           Forgotten your password?{" "}
-                          <a href="/reset-password">Reset it.</a>
+                          <a href="/forgot-password">Reset it.</a>
                         </p>
                       </div>
                     </div>

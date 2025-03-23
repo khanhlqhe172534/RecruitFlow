@@ -396,7 +396,11 @@ async function updateOfferById(req, res, next) {
       return res.status(404).json({ message: "Offer not found." });
     }
 
-    const updateData = { ...req.body, updatedBy };
+    const updateData = {
+      ...req.body,
+      updatedBy,
+      status: new mongoose.Types.ObjectId("67bc5a667ddc08921b739695"), // Chuyển thành ObjectId
+    };
 
     const updatedOffer = await Offer.findByIdAndUpdate(id, updateData, {
       new: true,
