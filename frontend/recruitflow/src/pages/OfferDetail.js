@@ -496,7 +496,9 @@ function OfferDetail() {
           </div>
         </Card>
         {offer.status?.name === "waiting for approved" &&
-          user?.role === "Candidate" && (
+          user?.role === "Candidate" &&
+          offer.interview?.job?.status === "67bc5a667ddc08921b739697" &&
+           (
             <div className="row">
               <div className="col-1">
                 <button

@@ -5,32 +5,36 @@ const interviewSchema = new Schema(
   {
     interviewer: {
       type: Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
+    },
+    rm: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     candidate: {
       type: Schema.Types.ObjectId,
-      ref: "Candidate"
+      ref: "Candidate",
     },
     job: {
       type: Schema.Types.ObjectId,
-      ref: "Job"
+      ref: "Job",
     },
     interview_date: {
-      type: Date
+      type: Date,
     },
     meeting_link: {
-      type: String
+      type: String,
     },
     result: {
-      type: String
+      type: String,
     },
     note: {
-      type: String
+      type: String,
     },
     status: {
       type: Schema.Types.ObjectId,
-      ref: "Status"
-    }
+      ref: "Status",
+    },
   },
   { timestamps: true }
 );

@@ -306,7 +306,7 @@ const getOfferById = async (req, res, next) => {
           {
             path: "job",
             select:
-              "job_name levels experience working_type salary_min salary_max benefits skills",
+              "job_name levels experience working_type salary_min salary_max benefits skills status",
           },
           {
             path: "candidate",

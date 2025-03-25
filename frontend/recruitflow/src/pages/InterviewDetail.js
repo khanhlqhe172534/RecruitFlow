@@ -31,6 +31,7 @@ import InterviewJob from "../components/InterviewJob";
 import InterviewInformation from "../components/InterviewInformation";
 import InterviewerInformation from "../components/InterviewerInformation";
 import InterviewCandidate from "../components/InterviewCandidate";
+import InterviewManager from "../components/InterviewManager";
 
 function InterviewDetail() {
   const { id } = useParams(); // Get interview ID from URL
@@ -38,6 +39,7 @@ function InterviewDetail() {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [interview, setInterview] = useState(null);
+
   const [openPass, setOpenPass] = useState(false);
   const [openFail, setOpenFail] = useState(false);
   const [openUpdate, setOpenUpdate] = useState(false);
@@ -221,7 +223,7 @@ function InterviewDetail() {
 
   if (!interview) return <p>Loading interview details...</p>;
 
-  const { interviewer, candidate, job } = interview;
+  const { interviewer, candidate, job, rm } = interview;
 
   // Handle data change for offer fields
   const handleOfferChange = (e) => {
@@ -1005,6 +1007,16 @@ function InterviewDetail() {
                       flex: 1,
                     }}
                   />
+                  <Tab
+                    label="Manager"
+                    value="5"
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textTransform: "none",
+                      flex: 1,
+                    }}
+                  />
                 </TabList>
               </Box>
 
@@ -1024,6 +1036,9 @@ function InterviewDetail() {
               </TabPanel>
               <TabPanel value="4">
                 <InterviewJob job={job} />
+              </TabPanel>
+              <TabPanel value="5">
+                <InterviewManager rm={rm} />
               </TabPanel>
             </TabContext>
           </Box>
