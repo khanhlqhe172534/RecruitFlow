@@ -235,12 +235,20 @@ function JobDetails() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update job status");
+        console.error("Failed to update job status:", await response.text());
+        toast.error("Failed to update status", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
 
       setRefreshTrigger((prev) => !prev);
       setApproveModal(false);
       setRejectModal(false);
+      toast.success("Status updated successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error("Error updating job:", error);
     }

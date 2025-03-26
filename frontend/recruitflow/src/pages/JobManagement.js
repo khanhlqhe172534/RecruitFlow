@@ -94,7 +94,6 @@ function JobManagement() {
         const userData = { email: userEmail, id: userId, role: userRole };
         setUser(userData);
   
-        // First fetch interviews if user is a candidate
         let interviewMap = {};
         if (userRole === "Candidate") {
           try {
@@ -105,8 +104,7 @@ function JobManagement() {
             if (response.ok) {
               const interviewsData = await response.json();
               setInterviews(Array.isArray(interviewsData) ? interviewsData : []);
-              
-              // Create a mapping of job IDs to interview IDs
+
               (Array.isArray(interviewsData) ? interviewsData : []).forEach(interview => {
                 if (interview.job) {
                   const jobId = typeof interview.job === 'object' ? interview.job._id : interview.job;
@@ -122,10 +120,7 @@ function JobManagement() {
           }
         }
   
-        // Then fetch jobs with the interview data available
         const jobsData = await fetchJobs(userData);
-        
-        // Store the interview map in a ref or state variable for use in rendering
         setInterviewJobMap(interviewMap);
         setJobs(jobsData);
       } catch (error) {
@@ -485,9 +480,7 @@ function JobManagement() {
                         interview?.job._id?.toString() === job._id.toString()
                     );
 
-                    const InterviewId = interview?._id;
                     const hasApplied = job.applicants.includes(userId);
-                    const hasInterview = !!interview;
 
                     return (
                       <div

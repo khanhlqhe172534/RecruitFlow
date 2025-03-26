@@ -175,7 +175,7 @@ async function addJob(req, res, next) {
     const validations = [
       {
         condition:
-          salary_min && salary_max && Number(salary_min) > Number(salary_max),
+          salary_min && salary_max && Number(salary_min) >= Number(salary_max),
         key: "salary_max",
         message: "Max Salary should be greater than Min Salary",
       },
@@ -389,7 +389,7 @@ async function updateJob(req, res, next) {
   const validations = [
     {
       condition:
-        salary_min && salary_max && Number(salary_min) > Number(salary_max),
+        salary_min && salary_max && Number(salary_min) >= Number(salary_max),
       key: "salary_max",
       message: "Max Salary should be greater than Min Salary",
     },
