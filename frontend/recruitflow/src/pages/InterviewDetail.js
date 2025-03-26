@@ -666,7 +666,8 @@ function InterviewDetail() {
           {interview.result === "N/A" &&
             user.role === "Interviewer" &&
             interview.status.name == "open" &&
-            new Date(interview.interview_date) <= new Date() && ( // cancel
+            // new Date(interview.interview_date) <= new Date() &&
+             ( // cancel
               <div className="col-3 ms-1">
                 <button
                   type="button"

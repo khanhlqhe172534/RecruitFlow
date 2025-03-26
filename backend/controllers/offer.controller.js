@@ -310,7 +310,7 @@ const getOfferById = async (req, res, next) => {
           },
           {
             path: "candidate",
-            select: "fullname email phoneNumber address dob cv_url",
+            select: "fullname email phoneNumber address dob cv_url status",
           },
           { path: "interviewer", select: "fullname" },
         ],
