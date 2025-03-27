@@ -499,6 +499,35 @@ async function updateJob(req, res, next) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
+    const isCreatedByUnchanged =
+      (typeof createdBy === "string"
+        ? createdBy
+        : createdBy._id || createdBy.toString()) ===
+      job.createdBy._id.toString();
+
+    const isUnchanged =
+      job.job_name === job_name &&
+      job.salary_max === Number(salary_max) &&
+      job.salary_min === Number(salary_min) &&
+      job.start_date.toISOString().split("T")[0] ===
+        new Date(start_date).toISOString().split("T")[0] &&
+      job.end_date.toISOString().split("T")[0] ===
+        new Date(end_date).toISOString().split("T")[0] &&
+      job.levels === levels &&
+      JSON.stringify(job.skills.sort()) === JSON.stringify(skills.sort()) &&
+      job.working_type === working_type &&
+      job.experience === experience &&
+      job.number_of_vacancies === Number(number_of_vacancies) &&
+      JSON.stringify(job.benefits.sort()) === JSON.stringify(benefits.sort()) &&
+      (job.description || "") === (description || "") &&
+      isCreatedByUnchanged;
+
+    if (isUnchanged) {
+      return res.status(400).json({
+        message: "No changes detected. Job update cancelled.",
+      });
+    }
+
     const updatedJob = job.set({
       job_name,
       salary_max,

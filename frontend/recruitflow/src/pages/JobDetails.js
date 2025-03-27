@@ -172,6 +172,12 @@ function JobDetails() {
 
       if (!response.ok) {
         const result = await response.json();
+        if (response.status === 400) {
+          if (result.message === "No changes detected. Job update cancelled.") {
+            toast.info("No changes were made to the job.");
+            return;
+          }
+        }
         if (response.status === 400 && result.errors) {
           setErrors(result.errors || {});
         } else {
@@ -604,7 +610,8 @@ function JobDetails() {
                         job.status.name === "waiting for approved" &&
                         job.salaryChecked == null &&
                         job.benefitChecked == null) ||
-                        job.status.name === "reject" && user.role === "Recruitment Manager") && (
+                        (job.status.name === "reject" &&
+                          user.role === "Recruitment Manager")) && (
                         <div>
                           <Button
                             variant="success"
