@@ -10,11 +10,19 @@ import {
   Alert,
   Table,
   Badge,
+  Spinner,
 } from "react-bootstrap";
 import { TextField, MenuItem } from "@mui/material";
-import { Delete, Edit, Send, Visibility } from "@mui/icons-material";
+import {
+  CloudUpload,
+  Delete,
+  Edit,
+  Send,
+  Visibility,
+} from "@mui/icons-material";
+import axios from "axios";
 
-function EditProfile() {
+function EditProfile({ setUserFullName }) {
   const [user, setUser] = useState(null);
   const [requests, setRequests] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -24,6 +32,8 @@ function EditProfile() {
   const [currentRequest, setCurrentRequest] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const userId = localStorage.getItem("userId"); // Assuming user ID is stored in localStorage
   const userRole = localStorage.getItem("userRole"); // Assuming user ID is stored in localStorage
@@ -73,7 +83,54 @@ function EditProfile() {
     const { name, value } = e.target;
     setUpdatedUser((prevData) => ({ ...prevData, [name]: value }));
   };
-
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setSelectedFile(file);
+    } else {
+      setSnackbarAlert({
+        type: "danger",
+        message: "Only PDF files are allowed.",
+      });
+    }
+  };
+  const handleUploadCV = async () => {
+    if (!selectedFile) {
+      setSnackbarAlert({
+        type: "danger",
+        message: "Please select a file to upload.",
+      });
+      return;
+    }
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("userId", userId);
+    try {
+      const response = await axios.post(
+        "http://localhost:9999/candidate/upload-cv",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      if (response.status !== 200) {
+        throw new Error("CV upload failed");
+      }
+      const data = await response.data;
+      setUser((prev) => ({ ...prev, cv_url: data.cv_url }));
+      setSelectedFile(null);
+      document.getElementById("fileInput").value = "";
+      setSnackbarAlert({
+        type: "success",
+        message: "CV uploaded successfully!",
+      });
+    } catch (error) {
+      setSnackbarAlert({ type: "danger", message: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
   // Submit change request
   const handleSubmitRequest = async () => {
     try {
@@ -96,6 +153,33 @@ function EditProfile() {
       setSnackbarAlert({
         type: "success",
         message: "Change request submitted!",
+      });
+      setShowEditModal(false);
+    } catch (error) {
+      setSnackbarAlert({ type: "danger", message: error.message });
+    }
+  };
+  const handleChangeProfile = async () => {
+    try {
+      let updateUrl = `http://localhost:9999/${userRole.toLowerCase()}/${userId}`;
+      if (userRole.toLowerCase() == "candidate") {
+        updateUrl = `http://localhost:9999/${userRole.toLowerCase()}/update/${userId}`;
+      }
+      const response = await fetch(updateUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit request");
+
+      const newUser = await response.json(); // Get the newly created request
+      setUser(newUser);
+      setUserFullName(newUser.fullname);
+      localStorage.setItem("userFullName", newUser.fullname);
+      setSnackbarAlert({
+        type: "success",
+        message: "Update profile successful!",
       });
       setShowEditModal(false);
     } catch (error) {
@@ -179,6 +263,60 @@ function EditProfile() {
                 <strong>Phone Number:</strong> {user.phoneNumber}
               </p>
             </Col>
+            {userRole.toLowerCase() == "candidate" && (
+              <Col md={6}>
+                <p>
+                  <strong>CV:</strong>{" "}
+                  {user.cv_url
+                    ? (() => {
+                        const [cvUrl, cvName] = user.cv_url.split("|"); // Extract URL & name
+                        const downloadUrl = cvUrl.replace(
+                          "/upload/",
+                          "/upload/fl_attachment/"
+                        );
+                        return (
+                          <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {cvName || "Download CV"}
+                          </a>
+                        );
+                      })()
+                    : "No CV uploaded"}
+                </p>
+                <Form.Group>
+                  <Form.Control
+                    id="fileInput"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                </Form.Group>
+                <Button
+                  className="mt-2"
+                  variant="primary"
+                  onClick={handleUploadCV}
+                >
+                  {loading ? (
+                    <>
+                      <Spinner
+                        animation="border"
+                        size="sm"
+                        className="me-2"
+                      />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <CloudUpload className="me-2" />
+                      {user.cv_url ? "Update CV" : "Upload CV"}
+                    </>
+                  )}
+                </Button>
+              </Col>
+            )}
             <Col md={6}>
               <p>
                 <strong>Date of Birth:</strong>{" "}
@@ -197,7 +335,7 @@ function EditProfile() {
               variant="warning"
               onClick={() => setShowEditModal(true)}
             >
-              <Edit className="me-2" /> Request Profile Change
+              <Edit className="me-2" /> Edit Profile
             </Button>
           </div>
         </Card>
@@ -206,7 +344,7 @@ function EditProfile() {
       )}
 
       {/* Past Change Requests */}
-      <Card className="mt-5 shadow-lg p-4">
+      {/* <Card className="mt-5 shadow-lg p-4">
         <h4 className="mb-3">My Change Requests</h4>
         <Table
           hover
@@ -278,7 +416,7 @@ function EditProfile() {
             )}
           </tbody>
         </Table>
-      </Card>
+      </Card> */}
 
       {/* Edit Profile Modal */}
       <Modal
@@ -345,10 +483,10 @@ function EditProfile() {
           </Button>
           <Button
             variant="success"
-            onClick={handleSubmitRequest}
+            onClick={handleChangeProfile}
             disabled={!hasUserChanged()}
           >
-            <Send className="me-2" /> Submit Request
+            <Send className="me-2" /> Save
           </Button>
         </Modal.Footer>
       </Modal>

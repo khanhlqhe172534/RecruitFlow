@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const mongoose = require("mongoose");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/upload");
 
 // Cấu hình multer để upload file
 const storage = multer.memoryStorage();
@@ -22,14 +23,14 @@ async function importCandidates(req, res, next) {
     // Kiểm tra kiểu file
     const allowedMimes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel"
+      "application/vnd.ms-excel",
     ];
     if (!allowedMimes.includes(file.mimetype)) {
       errorMessages.push(
         "Invalid file type. Only .xlsx or .xls files are allowed."
       );
       return res.status(400).json({
-        message: "Invalid file type. Only .xlsx or .xls files are allowed."
+        message: "Invalid file type. Only .xlsx or .xls files are allowed.",
       });
     }
 
@@ -48,16 +49,16 @@ async function importCandidates(req, res, next) {
     const addedCandidates = [];
     const errorMessages = [];
 
-     // Bắt đầu transaction
-     session.startTransaction();
+    // Bắt đầu transaction
+    session.startTransaction();
 
     for (const candidate of candidatesData) {
       // Kiểm tra trùng email và số điện thoại cùng lúc
       const existingCandidateEmail = await Candidate.findOne({
-        email: candidate["Email"]
+        email: candidate["Email"],
       }).session(session);
       const existingCandidatePhone = await Candidate.findOne({
-        phoneNumber: candidate["Phone Number"]
+        phoneNumber: candidate["Phone Number"],
       }).session(session);
 
       // Báo lỗi nếu trùng email
@@ -106,7 +107,7 @@ async function importCandidates(req, res, next) {
         cv_url: candidate["CV URL"],
         skills,
         status: "67bc5a667ddc08921b739694", // default status = activated
-        role: "67bc59b77ddc08921b73968f" // default role = candidate
+        role: "67bc59b77ddc08921b73968f", // default role = candidate
       });
 
       const newCandidateForEmail = new Candidate({
@@ -120,7 +121,7 @@ async function importCandidates(req, res, next) {
         cv_url: candidate["CV URL"],
         skills,
         status: "67bc5a667ddc08921b739694", // default status = activated
-        role: "67bc59b77ddc08921b73968f" // default role = candidate
+        role: "67bc59b77ddc08921b73968f", // default role = candidate
       });
 
       addedCandidates.push(newCandidateForEmail);
@@ -145,7 +146,7 @@ async function importCandidates(req, res, next) {
     // Trả về phản hồi trước khi gửi email
     res.status(201).json({
       message: "Candidates imported successfully",
-      data: addedCandidates
+      data: addedCandidates,
     });
 
     // Gửi email sau khi phản hồi đã được gửi
@@ -181,9 +182,7 @@ async function getAllCandidate(req, res, next) {
       .populate("role")
       .exec();
 
-
     if (candidates) {
-      
       res.status(200).json(candidates);
     }
   } catch (err) {
@@ -220,7 +219,7 @@ async function createCandidate(req, res, next) {
       cv_url,
       status,
       role,
-      skills
+      skills,
     } = req.body;
 
     // Generate a random password
@@ -248,7 +247,7 @@ async function createCandidate(req, res, next) {
       cv_url,
       status,
       role,
-      skills
+      skills,
     });
 
     await newCandidate.save().then(async (newDoc) => {
@@ -269,14 +268,14 @@ async function sendCandidateNotificationEmail(candidate, password) {
     secure: false,
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
+      pass: process.env.EMAIL_PASS,
+    },
   });
 
   const emailContent = {
     from: {
       name: "HR RecruitFlow Team",
-      address: process.env.EMAIL_USER
+      address: process.env.EMAIL_USER,
     },
     to: candidate.email,
     subject: "Welcome to Our Recruitment System",
@@ -302,7 +301,7 @@ async function sendCandidateNotificationEmail(candidate, password) {
   
         <p>Best regards,<br>HR RecruitFlow Team</p>
       </div>
-    `
+    `,
   };
 
   try {
@@ -320,7 +319,7 @@ async function updateCandidate(req, res, next) {
   try {
     const { id } = req.params;
     const updatedCandidate = await Candidate.findByIdAndUpdate(id, req.body, {
-      new: true
+      new: true,
     })
       .populate("status")
       .populate("role");
@@ -333,12 +332,37 @@ async function updateCandidate(req, res, next) {
     next(err);
   }
 }
+async function uploadCV(req, res, next) {
+  try {
+    const userId = req.body.userId; // Assuming user ID is available in req.user
+    const user = await Candidate.findById(userId);
+    if (user.cv_url) {
+      const publicId = user.cv_url.split("/").pop().split(".")[0]; // Extract public_id from URL
+      await deleteFromCloudinary(`cv/${publicId}`);
+    }
+    const result = await uploadToCloudinary(req.file.buffer, {
+      public_id: `cv_${userId}`, // Optional: set a custom file name
+      folder: "cv", // Optional: specify a folder in Cloudinary
+      resource_type: "raw", // For non-images file
+      format: "pdf",
+    });
+    user.cv_url = `${result.secure_url}|${req.file.originalname}`;
+    await user.save();
+    res.status(200).json({
+      success: true,
+      cv_url: `${result.secure_url}|${req.file.originalname}`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 const candidateController = {
   getAllCandidate,
   getOneCandidate,
   createCandidate,
   updateCandidate,
-  importCandidates
+  importCandidates,
+  uploadCV,
 };
 
 module.exports = candidateController;

@@ -26,6 +26,12 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => JSON.parse(localStorage.getItem("isAuthenticated")) || false
   );
+  const [userFullName, setUserFullName] = useState(
+    () => localStorage.getItem("userFullName") || null
+  );
+  useEffect(() => {
+    localStorage.setItem("userFullName", userFullName);
+  }, [userFullName]);
 
   useEffect(() => {
     localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
@@ -60,7 +66,12 @@ function App() {
         {/* Routes that require Layout */}
         <Route
           path="/"
-          element={<Layout />}
+          element={
+            <Layout
+              userFullName={userFullName}
+              setUserFullName={setUserFullName}
+            />
+          }
         >
           {/* Protected route for InterviewManagement */}
           <Route
@@ -92,7 +103,7 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
-                <EditProfile />
+                <EditProfile setUserFullName={setUserFullName} />
               </ProtectedRoute>
             }
           />

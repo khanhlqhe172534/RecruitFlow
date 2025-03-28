@@ -15,5 +15,6 @@ candidateRouter.get("/:id", candidateController.getOneCandidate);
 candidateRouter.post("/create", candidateController.createCandidate);
 candidateRouter.put("/update/:id", candidateController.updateCandidate);
 candidateRouter.post("/import", upload.single("file"), candidateController.importCandidates); // API import file Excel
+candidateRouter.post("/upload-cv", upload.single("file"), candidateController.uploadCV); 
 
 module.exports = candidateRouter;
