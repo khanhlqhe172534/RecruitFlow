@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -37,31 +37,71 @@ function JobDetails() {
   const [approveModal, setApproveModal] = useState(false);
   const [failFeedback, setFailFeedback] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
+  const [interviews, setInterviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const userEmail = localStorage.getItem("userEmail");
-    const userRole = localStorage.getItem("userRole");
-    const userId = localStorage.getItem("userId");
+    const fetchJobAndInterviews = async () => {
+      setIsLoading(true);
+      try {
+        const userEmail = localStorage.getItem("userEmail");
+        const userRole = localStorage.getItem("userRole");
+        const userId = localStorage.getItem("userId");
 
-    setUser({ email: userEmail, role: userRole, id: userId });
-  }, []);
+        setUser({ email: userEmail, role: userRole, id: userId });
+
+        const jobData = await fetchJobDetails();
+        let interviewsData = [];
+
+        if (userRole === "Candidate" && userId) {
+          const response = await fetch(
+            `http://localhost:9999/interview/candidate/${userId}`
+          );
+          if (response.ok) {
+            interviewsData = await response.json();
+            if (!Array.isArray(interviewsData)) {
+              interviewsData = [];
+            }
+          } else {
+            console.error("Error fetching interviews:", await response.text());
+          }
+        }
+
+        setJob(jobData?.job);
+        setUpdateJob(jobData?.job);
+        setInterviews(interviewsData);
+      } catch (error) {
+        console.error("Error fetching job or interviews:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchJobAndInterviews();
+  }, [jobId, refreshTrigger]);
 
   const fetchJobDetails = async () => {
     try {
       const response = await fetch(`http://localhost:9999/job/${jobId}`);
+      if (!response.ok) throw new Error("Failed to fetch job details");
+
       const data = await response.json();
-      setJob(data.job);
-      setUpdateJob(data.job);
+      return data;
     } catch (error) {
       console.error("Error fetching job details:", error);
+      return { job: null };
     }
   };
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [jobId, refreshTrigger]);
+  useEffect(() => {}, [job, interviews]);
 
-  if (!job) return <p>Loading...</p>;
+  if (!job) return <p className=""></p>;
+
+  const interview = interviews.find(
+    (interview) =>
+      interview?.job && interview?.job._id?.toString() === job._id.toString()
+  );
 
   const formatDate = (dateString) => {
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
@@ -132,6 +172,12 @@ function JobDetails() {
 
       if (!response.ok) {
         const result = await response.json();
+        if (response.status === 400) {
+          if (result.message === "No changes detected. Job update cancelled.") {
+            toast.info("No changes were made to the job.");
+            return;
+          }
+        }
         if (response.status === 400 && result.errors) {
           setErrors(result.errors || {});
         } else {
@@ -141,7 +187,7 @@ function JobDetails() {
       }
 
       handleCloseModal();
-      fetchJobDetails();
+      setRefreshTrigger((prev) => !prev);
       toast.success("Job updated successfully");
     } catch (error) {
       console.error("Error updating job:", error);
@@ -163,6 +209,7 @@ function JobDetails() {
       console.log(data);
       fetchJobDetails();
       setClose(false);
+      setRefreshTrigger((prev) => !prev);
     } catch (error) {
       console.error("Error closing job:", error);
     }
@@ -194,14 +241,20 @@ function JobDetails() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update job status");
+        console.error("Failed to update job status:", await response.text());
+        toast.error("Failed to update status", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
 
-      const updatedJob = await response.json();
-      setJob(updatedJob.job);
       setRefreshTrigger((prev) => !prev);
       setApproveModal(false);
       setRejectModal(false);
+      toast.success("Status updated successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error("Error updating job:", error);
     }
@@ -557,7 +610,8 @@ function JobDetails() {
                         job.status.name === "waiting for approved" &&
                         job.salaryChecked == null &&
                         job.benefitChecked == null) ||
-                        job.status.name === "reject") && (
+                        (job.status.name === "reject" &&
+                          user.role === "Recruitment Manager")) && (
                         <div>
                           <Button
                             variant="success"
@@ -609,28 +663,38 @@ function JobDetails() {
 
                     <div>
                       {user.role === "Candidate" &&
-                        job.applicants.includes(user.id) && (
-                          <Button
-                            variant="danger"
-                            className="btn btn-danger col-md-3 btn-md float-end me-2 mt-4"
-                            style={{ borderRadius: "8px" }}
-                            onClick={() => handleCancelApply(job._id)}
-                          >
-                            Cancel Apply
-                          </Button>
-                        )}
-
-                      {user.role === "Candidate" &&
-                        !job.applicants.includes(user.id) && (
+                        (job.applicants.includes(user.id) ? (
+                          interview ? (
+                            <Button
+                              variant="secondary"
+                              className="btn btn-secondary btn-md float-end mt-4"
+                              style={{ borderRadius: "8px" }}
+                              onClick={() =>
+                                navigate(`/interview/${interview._id}`)
+                              }
+                            >
+                              Interview Scheduled
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="danger"
+                              className="btn btn-danger btn-md float-end mt-4"
+                              style={{ borderRadius: "8px" }}
+                              onClick={() => handleCancelApply(job._id)}
+                            >
+                              Cancel Apply
+                            </Button>
+                          )
+                        ) : (
                           <Button
                             variant="success"
-                            className="btn btn-success col-md-2 btn-md float-end me-2 mt-4"
+                            className="btn btn-success btn-md float-end mt-4"
                             style={{ borderRadius: "8px" }}
                             onClick={() => handleApply(job._id)}
                           >
                             Apply
                           </Button>
-                        )}
+                        ))}
                     </div>
                   </div>
                 </CardContent>

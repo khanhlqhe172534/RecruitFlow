@@ -13,6 +13,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
   const [interviewers, setInterviewers] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [rm, setRm] = useState([]);
 
   const [filteredCandidates, setFilteredCandidates] = useState([]); // Danh sách candidates lọc theo job
   const [filteredCandidatesAdd, setFilteredCandidatesAdd] = useState([]); // Danh sách candidates lọc theo job
@@ -22,6 +23,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     interviewer: "",
+    rm: "",
     candidate: "",
     job: "",
     interview_date: "",
@@ -30,6 +32,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
   });
   const [formDataAdd, setFormDataAdd] = useState({
     interviewer: "",
+    rm: "",
     candidate: "",
     job: "",
     interview_date: "",
@@ -65,6 +68,7 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
     setOpenAdd(false);
     setFormDataAdd({
       interviewer: "",
+      rm: "",
       candidate: "",
       job: "",
       interview_date: "",
@@ -78,13 +82,26 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [interviewersRes, candidatesRes, jobsRes] = await Promise.all([
-          axios.get("http://localhost:9999/user/Interviewer"),
-          axios.get("http://localhost:9999/candidate"),
-          axios.get("http://localhost:9999/job/list"),
-        ]);
+        const [interviewersRes, candidatesRes, jobsRes, rmRes] =
+          await Promise.all([
+            axios.get("http://localhost:9999/user/Interviewer"),
+            axios.get("http://localhost:9999/candidate"),
+            axios.get("http://localhost:9999/job/list"),
+            axios.get(`http://localhost:9999/user`),
+          ]);
 
         setInterviewers(interviewersRes.data);
+        setRm(
+          rmRes.data
+            .filter((user) =>
+              [
+                "Recruitment Manager",
+                "Benefit Manager",
+                "Payroll Manager",
+              ].includes(user.role.name)
+            )
+            .sort((a, b) => b.role.name.localeCompare(a.role.name))
+        );
 
         const activatedCandidates = candidatesRes.data.filter(
           (candidate) => candidate.status.name === "activated"
@@ -319,6 +336,23 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
 
                 <TextField
                   select
+                  label="Select Manager"
+                  name="rm"
+                  value={formData.rm}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  className="mb-3"
+                >
+                  {rm.map((user) => (
+                    <MenuItem key={user._id} value={user._id}>
+                      {`${user.fullname} - ${user.role.name}`}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField
+                  select
                   label="Select Job"
                   name="job"
                   value={formData.job}
@@ -435,6 +469,24 @@ function CustomToolbar({ label, onNavigate, onView, onFetchInterviews }) {
                     </MenuItem>
                   ))}
                 </TextField>
+
+                <TextField
+                  select
+                  label="Select Manager"
+                  name="rm"
+                  value={formDataAdd.rm}
+                  onChange={handleChangeAdd}
+                  fullWidth
+                  required
+                  className="mb-3"
+                >
+                  {rm.map((user) => (
+                    <MenuItem key={user._id} value={user._id}>
+                      {`${user.fullname} - ${user.role.name}`}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
                 <Autocomplete
                   options={jobs}
                   getOptionLabel={(job) => job.job_name} // Hiển thị job_name trong dropdown

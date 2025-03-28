@@ -11,6 +11,7 @@ function JobManagement() {
   const [jobs, setJobs] = useState([]);
   const [page, setPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [interviews, setInterviews] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState({ email: "", id: "", role: "" });
   const limit = 5;
@@ -24,6 +25,8 @@ function JobManagement() {
   const [endDate, setEndDate] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
   const [reloadTrigger, setReloadTrigger] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [interviewJobMap, setInterviewJobMap] = useState({});
   const [exportErrors, setExportErrors] = useState({
     startDate: "",
     endDate: "",
@@ -34,8 +37,6 @@ function JobManagement() {
   const fetchJobs = useCallback(
     async (userData) => {
       try {
-        console.log("levelFilter:", levelFilter);
-        console.log("experienceFilter:", experienceFilter);
         const params = new URLSearchParams({
           page,
           limit,
@@ -58,8 +59,10 @@ function JobManagement() {
         const data = await response.json();
         setJobs(data.jobs || []);
         setTotalJobs(data.totalJobs || 0);
+        return data.jobs || [];
       } catch (error) {
         console.error("Error fetching jobs:", error);
+        return [];
       }
     },
     [
@@ -76,22 +79,59 @@ function JobManagement() {
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    const fetchUserAndJobs = async () => {
+    const fetchUserJobsAndInterviews = async () => {
+      setIsLoading(true);
       try {
         const userEmail = localStorage.getItem("userEmail");
         const userId = localStorage.getItem("userId");
         const userRole = localStorage.getItem("userRole");
-
+  
+        if (!userEmail || !userId || !userRole) {
+          navigate("/login");
+          return;
+        }
+  
         const userData = { email: userEmail, id: userId, role: userRole };
         setUser(userData);
+  
+        let interviewMap = {};
+        if (userRole === "Candidate") {
+          try {
+            const response = await fetch(
+              `http://localhost:9999/interview/candidate/${userId}`
+            );
+            
+            if (response.ok) {
+              const interviewsData = await response.json();
+              setInterviews(Array.isArray(interviewsData) ? interviewsData : []);
 
-        await fetchJobs(userData);
+              (Array.isArray(interviewsData) ? interviewsData : []).forEach(interview => {
+                if (interview.job) {
+                  const jobId = typeof interview.job === 'object' ? interview.job._id : interview.job;
+                  interviewMap[jobId] = interview._id;
+                }
+              });
+            } else {
+              setInterviews([]);
+            }
+          } catch (error) {
+            console.error("Error fetching interviews:", error);
+            setInterviews([]);
+          }
+        }
+  
+        const jobsData = await fetchJobs(userData);
+        setInterviewJobMap(interviewMap);
+        setJobs(jobsData);
       } catch (error) {
-        console.error("Error fetching user or jobs:", error);
+        console.error("Error:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
+  
 
-    fetchUserAndJobs();
+    fetchUserJobsAndInterviews();
   }, [
     page,
     limit,
@@ -101,6 +141,9 @@ function JobManagement() {
     levelFilter,
     experienceFilter,
     reloadTrigger,
+    user.role,
+    navigate,
+    fetchJobs,
   ]);
 
   const handleExport = async () => {
@@ -201,6 +244,7 @@ function JobManagement() {
     description: "",
     createdBy: user.id,
   });
+
 
   const formatDate = (dateString) => {
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
@@ -320,7 +364,7 @@ function JobManagement() {
           position: "top-right",
           autoClose: 3000,
         });
-        setReloadTrigger(prev => !prev);
+        setReloadTrigger((prev) => !prev);
       } else {
         toast.error("Failed to apply", {
           position: "top-right",
@@ -351,7 +395,7 @@ function JobManagement() {
           position: "top-right",
           autoClose: 3000,
         });
-        setReloadTrigger(prev => !prev);
+        setReloadTrigger((prev) => !prev);
       } else {
         toast.error("Failed to cancel application", {
           position: "top-right",
@@ -429,160 +473,181 @@ function JobManagement() {
                     scrollbarWidth: "none",
                   }}
                 >
-                  {jobs.map((job) => (
-                    <div
-                      key={job._id}
-                      className="card mb-3 shadow-sm"
-                      style={{
-                        border: "2px solid #ddd",
-                        borderRadius: "10px",
-                        transition: "all 0.2s ease-in-out",
-                        backgroundColor: "#fdfdfd",
-                        cursor: "pointer",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.borderColor = "#68b7ff")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.borderColor = "#ddd")
-                      }
-                    >
-                      <div
-                        className="card-body"
-                        onClick={() => navigate(`/job/${job._id}`)}
-                      >
-                        <div className="d-flex">
-                          <img
-                            className="me-3"
-                            src={skillImages[job.skills[0]]}
-                            alt={job.skills[0]}
-                            style={{
-                              width: 100,
-                              height: 100,
-                              marginRight: 10,
-                              objectFit: "fill",
-                              borderRadius: "5px",
-                            }}
-                          />
-                          <div className="w-100">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <h5 className="card-title mb-1">
-                                {job.job_name}
-                              </h5>
-                              <span className="text-bold mt-1">
-                                ${job.salary_min} - ${job.salary_max}
-                              </span>
-                            </div>
-                            <div className="d-flex justify-content-between align-items-start">
-                              <p className="card-subtitle text-muted ">
-                                {formatDate(job.start_date)} -{" "}
-                                {formatDate(job.end_date)}
-                              </p>
-                              {user.role !== "Candidate" ? (
-                                <span
-                                  className="fw-bold"
-                                  style={{ fontSize: "0.95rem" }}
-                                >
-                                  Salary:&nbsp;
-                                  <span
-                                    className={`${
-                                      job.salaryChecked === true
-                                        ? "text-success"
-                                        : job.salaryChecked === false
-                                        ? "text-danger"
-                                        : "text-warning"
-                                    } fw-bold`}
-                                  >
-                                    {job.salaryChecked === true
-                                      ? "Approved"
-                                      : job.salaryChecked === false
-                                      ? "Rejected"
-                                      : "Pending"}
-                                  </span>
-                                  &nbsp;- Benefit:&nbsp;
-                                  <span
-                                    className={`${
-                                      job.benefitChecked === true
-                                        ? "text-success"
-                                        : job.benefitChecked === false
-                                        ? "text-danger"
-                                        : "text-warning"
-                                    } fw-bold`}
-                                  >
-                                    {job.benefitChecked === true
-                                      ? "Approved"
-                                      : job.benefitChecked === false
-                                      ? "Rejected"
-                                      : "Pending"}
-                                  </span>
-                                </span>
-                              ) : null}
+                  {jobs.map((job) => {
+                    const interview = interviews.find(
+                      (interview) =>
+                        interview?.job &&
+                        interview?.job._id?.toString() === job._id.toString()
+                    );
 
-                              {/* Nếu role là "Candidate" thì hiển thị Apply hoặc Cancel Apply */}
-                              {user.role === "Candidate" ? (
-                                job.applicants.includes(userId) ? (
-                                  <button
-                                    className="btn btn-danger ms-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCancelApply(job._id);
-                                    }}
-                                    variant="danger"
+                    const hasApplied = job.applicants.includes(userId);
+
+                    return (
+                      <div
+                        key={job._id}
+                        className="card mb-3 shadow-sm"
+                        style={{
+                          border: "2px solid #ddd",
+                          borderRadius: "10px",
+                          transition: "all 0.2s ease-in-out",
+                          backgroundColor: "#fdfdfd",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.borderColor = "#68b7ff")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.borderColor = "#ddd")
+                        }
+                      >
+                        <div
+                          className="card-body"
+                          onClick={() => navigate(`/job/${job._id}`)}
+                        >
+                          <div className="d-flex">
+                            <img
+                              className="me-3"
+                              src={skillImages[job.skills[0]]}
+                              alt={job.skills[0]}
+                              style={{
+                                width: 100,
+                                height: 100,
+                                marginRight: 10,
+                                objectFit: "fill",
+                                borderRadius: "5px",
+                              }}
+                            />
+                            <div className="w-100">
+                              <div className="d-flex justify-content-between align-items-start">
+                                <h5 className="card-title mb-1">
+                                  {job.job_name}
+                                </h5>
+                                <span className="text-bold mt-1">
+                                  ${job.salary_min} - ${job.salary_max}
+                                </span>
+                              </div>
+                              <div className="d-flex justify-content-between align-items-start">
+                                <p className="card-subtitle text-muted ">
+                                  {formatDate(job.start_date)} -{" "}
+                                  {formatDate(job.end_date)}
+                                </p>
+                                {user.role !== "Candidate" ? (
+                                  <span
+                                    className="fw-bold"
+                                    style={{ fontSize: "0.95rem" }}
                                   >
-                                    Cancel Apply
-                                  </button>
-                                ) : (
-                                  <button
-                                    className="btn btn-success ms-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleApply(job._id);
-                                    }}
-                                    variant="success"
-                                  >
-                                    Apply Job
-                                  </button>
-                                )
-                              ) : null}
-                            </div>
-                            <div className="mt-2">
-                              <span className="badge bg-info text-white me-2">
-                                {formatWorkingType(job.working_type)}
-                              </span>
-                              <span className="badge bg-info text-white me-2">
-                                {job.experience}
-                              </span>
-                              <span className="badge bg-info text-white me-2">
-                                Vacancies: {job.number_of_vacancies}
-                              </span>
-                              <span
-                                className={`badge text-white ${
-                                  job.status.name === "closed"
-                                    ? "bg-secondary"
-                                    : job.status.name === "open"
-                                    ? "bg-success"
+                                    Salary:&nbsp;
+                                    <span
+                                      className={`${
+                                        job.salaryChecked === true
+                                          ? "text-success"
+                                          : job.salaryChecked === false
+                                          ? "text-danger"
+                                          : "text-warning"
+                                      } fw-bold`}
+                                    >
+                                      {job.salaryChecked === true
+                                        ? "Approved"
+                                        : job.salaryChecked === false
+                                        ? "Rejected"
+                                        : "Pending"}
+                                    </span>
+                                    &nbsp;- Benefit:&nbsp;
+                                    <span
+                                      className={`${
+                                        job.benefitChecked === true
+                                          ? "text-success"
+                                          : job.benefitChecked === false
+                                          ? "text-danger"
+                                          : "text-warning"
+                                      } fw-bold`}
+                                    >
+                                      {job.benefitChecked === true
+                                        ? "Approved"
+                                        : job.benefitChecked === false
+                                        ? "Rejected"
+                                        : "Pending"}
+                                    </span>
+                                  </span>
+                                ) : null}
+
+                                {/* Display Apply/Cancel Apply button for candidate */}
+                                {user.role === "Candidate" ? (
+                                  hasApplied ? (
+                                    interviewJobMap[job._id] ? (
+                                      <button
+                                        className="btn btn-secondary ms-3"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/interview/${interviewJobMap[job._id]}`);
+                                        }}
+                                      >
+                                        Interview Scheduled
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className="btn btn-danger ms-3"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCancelApply(job._id);
+                                        }}
+                                      >
+                                        Cancel Apply
+                                      </button>
+                                    )
+                                  ) : (
+                                    <button
+                                      className="btn btn-success ms-3"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleApply(job._id);
+                                      }}
+                                    >
+                                      Apply Job
+                                    </button>
+                                  )
+                                ) : null}
+                              </div>
+                              <div className="mt-2">
+                                <span className="badge bg-info text-white me-2">
+                                  {formatWorkingType(job.working_type)}
+                                </span>
+                                <span className="badge bg-info text-white me-2">
+                                  {job.experience}
+                                </span>
+                                <span className="badge bg-info text-white me-2">
+                                  Vacancies: {job.number_of_vacancies}
+                                </span>
+                                <span
+                                  className={`badge text-white ${
+                                    job.status.name === "closed"
+                                      ? "bg-secondary"
+                                      : job.status.name === "open"
+                                      ? "bg-success"
+                                      : job.status.name ===
+                                        "waiting for approved"
+                                      ? "bg-warning"
+                                      : "bg-danger"
+                                  }`}
+                                >
+                                  {job.status.name === "open"
+                                    ? "Open"
+                                    : job.status.name === "closed"
+                                    ? "Closed"
                                     : job.status.name === "waiting for approved"
-                                    ? "bg-warning"
-                                    : "bg-danger"
-                                }`}
-                              >
-                                {job.status.name === "open"
-                                  ? "Open"
-                                  : job.status.name === "closed"
-                                  ? "Closed"
-                                  : job.status.name === "waiting for approved"
-                                  ? "Waiting"
-                                  : "Rejected"}
-                              </span>
-                              <small className="text-muted float-end">
-                                {job.skills.join(", ")}
-                              </small>
+                                    ? "Waiting"
+                                    : "Rejected"}
+                                </span>
+                                <small className="text-muted float-end">
+                                  {job.skills.join(", ")}
+                                </small>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="d-flex justify-content-center mt-3 pb-3">
                   <Stack spacing={2}>

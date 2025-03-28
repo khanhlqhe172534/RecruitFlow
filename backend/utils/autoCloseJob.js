@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const Job = require("../models/job.model");
 const Status = require("../models/status.model");
+const User = require("../models/user.model");
 require("dotenv").config();
 
 // Cấu hình nodemailer
@@ -66,7 +67,7 @@ async function sendEndDateReminderEmail(job) {
   }
 }
 
-cron.schedule("0 7 * * *", async () => {
+cron.schedule("0 0 * * *", async () => {
   try {
     console.log("Checking jobs for end date reminders...");
     const closedStatus = await Status.findOne({ name: "closed" });

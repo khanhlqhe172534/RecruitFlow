@@ -215,7 +215,9 @@ function OfferDetail() {
           <div className="col-1"></div>
           <div className="col-1">
             {["waiting for approved", "reject"].includes(offer.status?.name) &&
-              user?.role === "Recruitment Manager" && (
+              user?.role === "Recruitment Manager" &&
+              offer.interview.candidate.status ===
+                "67bc5a667ddc08921b739694" && ( // activated
                 <button
                   className="btn btn-primary w-100"
                   onClick={handleOpenModalUpdate}
@@ -496,7 +498,8 @@ function OfferDetail() {
           </div>
         </Card>
         {offer.status?.name === "waiting for approved" &&
-          user?.role === "Candidate" && (
+          user?.role === "Candidate" &&
+          offer.interview?.job?.status === "67bc5a667ddc08921b739697" && (
             <div className="row">
               <div className="col-1">
                 <button

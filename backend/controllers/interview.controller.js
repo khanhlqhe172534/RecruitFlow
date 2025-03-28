@@ -153,11 +153,18 @@ async function getInterviewByCandidateId(req, res, next) {
 
 async function createInterview(req, res, next) {
   try {
-    const { interviewer, candidate, job, interview_date, meeting_link, note } =
-      req.body;
+    const {
+      interviewer,
+      candidate,
+      job,
+      interview_date,
+      meeting_link,
+      note,
+      rm,
+    } = req.body;
 
     // 1. Validate required fields
-    if (!interviewer || !candidate || !job || !interview_date) {
+    if (!interviewer || !candidate || !job || !interview_date || !rm) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -179,7 +186,7 @@ async function createInterview(req, res, next) {
       interviewDateTime.getTime() - 2 * 60 * 60 * 1000
     );
     const twoHoursAfter = interviewEndTime;
-
+    // Check for interviewer schedule conflict (must be 2 hours apart)
     const existingInterview = await Interview.findOne({
       interviewer,
       interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
@@ -189,6 +196,18 @@ async function createInterview(req, res, next) {
     if (existingInterview) {
       return res.status(400).json({
         message: "Interviewer already has an interview during this time.",
+      });
+    }
+
+    const existingInterviewofManager = await Interview.findOne({
+      rm,
+      interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
+      status: { $ne: "67bc5a667ddc08921b739696" }, // Exclude interviews with "cancel" status id
+    });
+
+    if (existingInterviewofManager) {
+      return res.status(400).json({
+        message: "Manager already has an interview during this time.",
       });
     }
 
@@ -229,6 +248,7 @@ async function createInterview(req, res, next) {
     // 7. Create the interview
     const interview = new Interview({
       interviewer,
+      rm,
       candidate,
       job,
       interview_date,
@@ -255,11 +275,18 @@ async function createInterview(req, res, next) {
 //==================== Invite interview ========================================
 async function inviteInterview(req, res, next) {
   try {
-    const { interviewer, candidate, job, interview_date, meeting_link, note } =
-      req.body;
+    const {
+      interviewer,
+      candidate,
+      job,
+      interview_date,
+      meeting_link,
+      note,
+      rm,
+    } = req.body;
 
     // 1. Validate required fields
-    if (!interviewer || !candidate || !job || !interview_date) {
+    if (!interviewer || !candidate || !job || !interview_date || !rm) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -281,7 +308,7 @@ async function inviteInterview(req, res, next) {
       interviewDateTime.getTime() - 2 * 60 * 60 * 1000
     );
     const twoHoursAfter = interviewEndTime;
-
+    // Check for interviewer schedule conflict (must be 2 hours apart)
     const existingInterview = await Interview.findOne({
       interviewer,
       interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
@@ -291,6 +318,18 @@ async function inviteInterview(req, res, next) {
     if (existingInterview) {
       return res.status(400).json({
         message: "Interviewer already has an interview during this time.",
+      });
+    }
+
+    const existingInterviewofManager = await Interview.findOne({
+      rm,
+      interview_date: { $gte: twoHoursBefore, $lte: twoHoursAfter },
+      status: { $ne: "67bc5a667ddc08921b739696" }, // Exclude interviews with "cancel" status id
+    });
+
+    if (existingInterviewofManager) {
+      return res.status(400).json({
+        message: "Manager already has an interview during this time.",
       });
     }
 
@@ -331,6 +370,7 @@ async function inviteInterview(req, res, next) {
     // 7. Create the interview
     const interview = new Interview({
       interviewer,
+      rm,
       candidate,
       job,
       interview_date,
@@ -575,6 +615,7 @@ async function getInterviewById(req, res, next) {
     const { id } = req.params;
     const interview = await Interview.findById(id)
       .populate("interviewer")
+      .populate("rm")
       .populate("candidate")
       .populate("job")
       .populate("status");
