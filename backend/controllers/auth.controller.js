@@ -112,7 +112,9 @@ const forgotPassword = async (req, res, next) => {
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: "Your password reset token valid for 10 min",
-      text: `Hello ${user.fullname},\n\nYour account has been reseted. Here is your new password rest link: ${resetURL}\n\nPlease keep it secure.`,
+      html: `<p>Hello ${user.fullname},</p>
+         <p>Your password reset link is <a href="${resetURL}">here</a>.</p>
+         <p>Please keep it secure.</p>`,
     };
 
     await transporter.sendMail(mailOptions);

@@ -1,6 +1,7 @@
 const ChangeRequest = require("../models/changeRequest.model");
 const User = require("../models/user.model");
 const Candidate = require("../models/candidate.model");
+// const { sendNotification } = require("../server");
 
 // Employee submits a change request
 const submitChangeRequest = async (req, res) => {
@@ -27,7 +28,15 @@ const submitChangeRequest = async (req, res) => {
       userType: userType,
       requestedChanges,
     });
-
+    // sendNotification(
+    //   { role: "ADMIN" },
+    //   {
+    //     resourceId: "RESOURCE_ID",
+    //     notifType: "communityNewPost",
+    //     title: "New Post in Your Community",
+    //     description: "Someone posted in your community.",
+    //   }
+    // );
     await newRequest.save();
     res.status(201).json(newRequest);
   } catch (error) {
@@ -40,7 +49,6 @@ const approveOrRejectRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { status, adminResponse } = req.body;
-
     if (!["Approved", "Rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status value." });
     }
@@ -52,10 +60,9 @@ const approveOrRejectRequest = async (req, res) => {
 
     request.status = status;
     request.adminResponse = adminResponse || "";
-
     if (status === "Approved") {
       // Apply the changes to the user's profile
-      if (userType == "User") {
+      if (request.userType == "User") {
         await User.findByIdAndUpdate(request.user, request.requestedChanges);
       } else {
         await Candidate.findByIdAndUpdate(
