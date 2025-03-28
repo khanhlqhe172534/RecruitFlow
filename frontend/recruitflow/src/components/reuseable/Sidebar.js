@@ -33,14 +33,14 @@ import {
 } from "@mui/icons-material";
 import { Form, Modal, Alert } from "react-bootstrap";
 
-export default function SideBar() {
+export default function SideBar({ userFullName }) {
   const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [snackbarAlert, setSnackbarAlert] = useState(null);
   const [user, setUser] = useState({
     email: "email",
     role: "User",
-    fullName: "No Name",
+    fullName: userFullName,
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -264,10 +264,16 @@ export default function SideBar() {
 
               {!collapsed && (
                 <div className="ms-3">
-                  <Typography variant="body1" fontWeight="bold">
-                    {user.fullName}
+                  <Typography
+                    variant="body1"
+                    fontWeight="bold"
+                  >
+                    {userFullName}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                  >
                     {user.role}
                   </Typography>
                 </div>
@@ -388,7 +394,7 @@ export default function SideBar() {
             </MenuItem>
           )}
 
-          {user.role == "Admin" && (
+          {/* {user.role == "Admin" && (
             <MenuItem
               icon={<AssignmentTurnedIn />}
               component={<Link to="/requests" />}
@@ -397,7 +403,7 @@ export default function SideBar() {
             >
               Requests
             </MenuItem>
-          )}
+          )} */}
         </Menu>
       </Sidebar>
       <Modal
@@ -447,7 +453,10 @@ export default function SideBar() {
           >
             Close
           </Button>
-          <Button variant="success" onClick={handleSubmitPasswordChange}>
+          <Button
+            variant="success"
+            onClick={handleSubmitPasswordChange}
+          >
             Change Password
           </Button>
         </Modal.Footer>
