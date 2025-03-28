@@ -1,7 +1,7 @@
 const ChangeRequest = require("../models/changeRequest.model");
 const User = require("../models/user.model");
 const Candidate = require("../models/candidate.model");
-const { sendNotification } = require("../server");
+// const { sendNotification } = require("../server");
 
 // Employee submits a change request
 const submitChangeRequest = async (req, res) => {
@@ -19,8 +19,6 @@ const submitChangeRequest = async (req, res) => {
         .json({ message: "You already have a pending request." });
     }
     const user = await User.findById(userId);
-    console.log(user);
-
     let userType = "User";
     if (!user) {
       userType = "Candidate";
@@ -51,8 +49,6 @@ const approveOrRejectRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { status, adminResponse } = req.body;
-    console.log(status);
-
     if (!["Approved", "Rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status value." });
     }
